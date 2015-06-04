@@ -1,68 +1,55 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <?eclipse version="3.4"?>
 <plugin>
-   <extension
-         point="org.eclipse.ltk.core.refactoring.refactoringContributions">
-      <contribution
-            class="edu.cuny.citytech.defaultrefactoring.contributions.MigrateSkeletalImplementationToInterfaceRefactoringContribution"
-            id="org.eclipse.migrate.skeletal.implementation.to.interface.contribution"/>
-   </extension>
-   <extension
-         point="org.eclipse.ui.commands">
-      <command
-			categoryId="org.eclipse.jdt.ui.category.refactoring"
-            description="%MigrateSkeletalImplementationToInterfaceDescription"
-            id="org.eclipse.migrate.skeletal.implementation.to.interface.command"
-            name="%MigrateSkeletalImplementationToInterfaceLabel">
+  <extension point="org.eclipse.ltk.core.refactoring.refactoringContributions">
+
+    <contribution class="edu.cuny.citytech.defaultrefactoring.contributions.MigrateSkeletalImplementationToInterfaceRefactoringContribution"
+    id="org.eclipse.migrate.skeletal.implementation.to.interface.contribution" />
+  </extension>
+  <extension point="org.eclipse.ui.commands">
+    <command categoryId="org.eclipse.jdt.ui.category.refactoring"
+    description="%MigrateSkeletalImplementationToInterfaceDescription"
+    id="org.eclipse.migrate.skeletal.implementation.to.interface.command"
+    name="%MigrateSkeletalImplementationToInterfaceLabel">
+    </command>
+  </extension>
+  <extension point="org.eclipse.ui.handlers">
+    <handler class="edu.cuny.citytech.defaultrefactoring.handlers.MigrateSkeletalImplementationToInterfaceHandler"
+    commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command">
+
+      <activeWhen>
+        <with variable="selection">
+          <iterate ifEmpty="false" operator="or">
+            <!-- [rk] TODO: We'll probably need a compilation unit here as well. -->
+            <instanceof value="org.eclipse.jdt.core.IType">
+            </instanceof>
+          </iterate>
+        </with>
+      </activeWhen>
+    </handler>
+  </extension>
+  <extension point="org.eclipse.ui.menus">
+    <!-- [rk] Doesn't seem to be working -->
+    <menuContribution locationURI="menu:org.eclipse.jdt.ui.refactoring.menu?after=additions">
+
+      <command commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command"
+      mnemonic="S"
+      id="org.eclipse.migrate.skeletal.implementation.to.interface.menus.command">
+
+        <visibleWhen checkEnabled="true"></visibleWhen>
       </command>
-   </extension>
-   <extension
-         point="org.eclipse.ui.handlers">
-      <handler
-            class="edu.cuny.citytech.defaultrefactoring.handlers.MigrateSkeletalImplementationToInterfaceHandler"
-            commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command">
-        <activeWhen> 
-	      <with 
-	            variable="selection"> 
-	         <iterate
-                ifEmpty="false"
-                operator="or"> 
-	            <instanceof 
-	                  value="org.eclipse.jdt.core.IType"> 
-	            </instanceof> 
-	         </iterate> 
-	      </with> 
-        </activeWhen> 
-      </handler>
-   </extension>
-   <extension
-         point="org.eclipse.ui.menus">
-      <!--
-      <menuContribution
-            locationURI="menu:org.eclipse.jdt.ui.refactoring.menu?after=additions">
-        <command
-              commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command"
-              mnemonic="S"
-              id="org.eclipse.migrate.skeletal.implementation.to.interface.menus.command">
-              <visibleWhen
-                  checkEnabled="true">
-              </visibleWhen>
-        </command>
-      </menuContribution>
-      -->
-      <menuContribution
-            locationURI="popup:org.eclipse.jdt.ui.refactoring.menu?after=additions">
-         <command
-               commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command"
-               style="push">
-            <visibleWhen
-                  checkEnabled="true">
-            </visibleWhen>
-         </command>
-      </menuContribution>
-   </extension>
-	<!-- [bm] we need to use actionSets for the Refactoring main menu as o.e.ui.menus is not capable of adding commands to actionsets -->
-   <!--
+    </menuContribution>
+    <menuContribution locationURI="popup:org.eclipse.jdt.ui.refactoring.menu?after=additions">
+
+      <command commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command"
+      style="push">
+        <visibleWhen checkEnabled="true"></visibleWhen>
+      </command>
+    </menuContribution>
+  </extension>
+  <!-- [rk] This is deprecated. -->
+  <!-- [bm] we need to use actionSets for the Refactoring main menu as o.e.ui.menus is not capable of adding commands to actionsets -->
+  <!--
    <extension
          point="org.eclipse.ui.actionSets">
       [bm] alphabetic order matters as we need to be plugged in after JDT, thus added XXX 
