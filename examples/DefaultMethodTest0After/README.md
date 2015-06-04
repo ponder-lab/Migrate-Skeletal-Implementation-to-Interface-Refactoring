@@ -1,0 +1,1 @@
+This is the canonocial, most basic example of the pull-up convert to default refactoring. Here, we have an interface `I`, an abstract class `A`, and a concrete class `C` that extends `A`. `C` does not override any of the methods of `A`, which is the partial implementation of `I`. As such, it uses `A` to receive an implementation of `I.m()`.
