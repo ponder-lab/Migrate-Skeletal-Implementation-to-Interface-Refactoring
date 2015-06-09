@@ -1,24 +1,29 @@
 package edu.cuny.citytech.defaultrefactoring.ui;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 /**
  * The activator class controls the plug-in life cycle
  */
-public class Activator extends AbstractUIPlugin {
+public class MigrateSkeletalImplementationToInterfaceRefactoring extends org.eclipse.ltk.core.refactoring.Refactoring {
 
 	// The plug-in ID
 	public static final String PLUGIN_ID = "edu.cuny.citytech.defaultrefactoring.ui"; //$NON-NLS-1$
 
 	// The shared instance
-	private static Activator plugin;
+	private static MigrateSkeletalImplementationToInterfaceRefactoring plugin;
 	
 	/**
 	 * The constructor
 	 */
-	public Activator() {
+	public MigrateSkeletalImplementationToInterfaceRefactoring() {
 	}
 
 	/*
@@ -44,7 +49,7 @@ public class Activator extends AbstractUIPlugin {
 	 *
 	 * @return the shared instance
 	 */
-	public static Activator getDefault() {
+	public static MigrateSkeletalImplementationToInterfaceRefactoring getDefault() {
 		return plugin;
 	}
 
@@ -57,5 +62,32 @@ public class Activator extends AbstractUIPlugin {
 	 */
 	public static ImageDescriptor getImageDescriptor(String path) {
 		return imageDescriptorFromPlugin(PLUGIN_ID, path);
+	}
+
+	@Override
+	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
+			throws CoreException, OperationCanceledException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RefactoringStatus checkFinalConditions(IProgressMonitor pm)
+			throws CoreException, OperationCanceledException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Change createChange(IProgressMonitor pm) throws CoreException,
+			OperationCanceledException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
