@@ -3,7 +3,7 @@
 <plugin>
   <extension point="org.eclipse.ltk.core.refactoring.refactoringContributions">
 
-    <contribution class="edu.cuny.citytech.defaultrefactoring.contributions.MigrateSkeletalImplementationToInterfaceRefactoringContribution"
+    <contribution class="edu.cuny.citytech.defaultrefactoring.ui.contributions.MigrateSkeletalImplementationToInterfaceRefactoringContribution"
     id="org.eclipse.migrate.skeletal.implementation.to.interface.contribution" />
   </extension>
   <extension point="org.eclipse.ui.commands">
@@ -14,7 +14,7 @@
     </command>
   </extension>
   <extension point="org.eclipse.ui.handlers">
-    <handler class="edu.cuny.citytech.defaultrefactoring.handlers.MigrateSkeletalImplementationToInterfaceHandler"
+    <handler class="edu.cuny.citytech.defaultrefactoring.ui.handlers.MigrateSkeletalImplementationToInterfaceHandler"
     commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command">
 
       <activeWhen>

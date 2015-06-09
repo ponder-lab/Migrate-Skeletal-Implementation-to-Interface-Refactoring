@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %Bundle-Name
-Bundle-SymbolicName: edu.cuny.citytech.defaultrefactoring;singleton:=true
+Bundle-SymbolicName: edu.cuny.citytech.defaultrefactoring.ui;singleton:=true
 Bundle-Version: 1.0.0
-Bundle-Activator: edu.cuny.citytech.defaultrefactoring.Activator
+Bundle-Activator: edu.cuny.citytech.defaultrefactoring.ui.Activator
 Bundle-Vendor: %Bundle-Vendor
 Bundle-Localization: bundle
 Require-Bundle: org.eclipse.ui,

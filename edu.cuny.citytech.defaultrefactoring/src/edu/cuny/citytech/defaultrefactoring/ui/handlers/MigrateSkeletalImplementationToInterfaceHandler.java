@@ -1,4 +1,4 @@
-package edu.cuny.citytech.defaultrefactoring.handlers;
+package edu.cuny.citytech.defaultrefactoring.ui.handlers;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;

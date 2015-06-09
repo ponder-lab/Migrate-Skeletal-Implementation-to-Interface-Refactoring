@@ -1,11 +1,12 @@
-package edu.cuny.citytech.defaultrefactoring.contributions;
+package edu.cuny.citytech.defaultrefactoring.ui.contributions;
 
 import java.util.Map;
 
+import org.eclipse.ltk.core.refactoring.RefactoringContribution;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 
 public class MigrateSkeletalImplementationToInterfaceRefactoringContribution
-		extends org.eclipse.ltk.core.refactoring.RefactoringContribution {
+		extends RefactoringContribution {
 
 	@Override
 	public RefactoringDescriptor createDescriptor(String id, String project,
