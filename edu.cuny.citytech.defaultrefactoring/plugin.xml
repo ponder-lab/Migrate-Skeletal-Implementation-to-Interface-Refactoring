@@ -20,7 +20,7 @@
       <activeWhen>
         <with variable="selection">
           <iterate ifEmpty="false" operator="or">
-            <!-- [rk] TODO: We'll probably need a compilation unit here as well. -->
+            <!-- [rk] TODO: We'll probably need a compilation unit here as well. #1 -->
             <instanceof value="org.eclipse.jdt.core.IType">
             </instanceof>
           </iterate>
@@ -47,7 +47,7 @@
       </command>
     </menuContribution>
   </extension>
-  <!-- [rk] This is deprecated. -->
+  <!-- [rk] This is deprecated #2. -->
   <!-- [bm] we need to use actionSets for the Refactoring main menu as o.e.ui.menus is not capable of adding commands to actionsets -->
   <!--
    <extension
