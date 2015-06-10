@@ -1,59 +1,38 @@
-package edu.cuny.citytech.defaultrefactoring.ui;
+package edu.cuny.citytech.defaultrefactoring.ui.refactorings;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ltk.core.refactoring.Change;
-import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.osgi.framework.BundleContext;
+
+import edu.cuny.citytech.defaultrefactoring.ui.messages.Messages;
+import edu.cuny.citytech.refactoring.common.Refactoring;
 
 /**
  * The activator class controls the plug-in life cycle
  */
 public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refactoring {
 
-	// The plug-in ID
-	public static final String PLUGIN_ID = "edu.cuny.citytech.defaultrefactoring.ui"; //$NON-NLS-1$
-
-	// The shared instance
-	private static MigrateSkeletalImplementationToInterfaceRefactoring plugin;
-	
-	/**
-	 * The constructor
-	 */
-	public MigrateSkeletalImplementationToInterfaceRefactoring() {
-	}
-
-	/**
-	 * Returns the shared instance
-	 *
-	 * @return the shared instance
-	 */
-	public static MigrateSkeletalImplementationToInterfaceRefactoring getDefault() {
-		return plugin;
-	}
-
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return Messages.MigrateSkeletalImplementationToInferfaceRefactoring_Name;
 	}
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
+		final RefactoringStatus status = new RefactoringStatus();
 		// TODO Auto-generated method stub
-		return null;
+		return status;
 	}
 
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
+		final RefactoringStatus status = new RefactoringStatus();
 		// TODO Auto-generated method stub
-		return null;
+		return status;
 	}
 
 	@Override
