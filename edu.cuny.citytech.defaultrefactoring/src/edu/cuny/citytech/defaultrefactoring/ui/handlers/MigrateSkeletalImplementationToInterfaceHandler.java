@@ -9,10 +9,12 @@ import org.eclipse.jface.dialogs.MessageDialog;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
+ * 
  * @see org.eclipse.core.commands.IHandler
  * @see org.eclipse.core.commands.AbstractHandler
  */
-public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHandler {
+public class MigrateSkeletalImplementationToInterfaceHandler extends
+		AbstractHandler {
 	/**
 	 * The constructor.
 	 */
@@ -25,9 +27,9 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 	 */
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
-		MessageDialog.openInformation(
-				window.getShell(),
+		IWorkbenchWindow window = HandlerUtil
+				.getActiveWorkbenchWindowChecked(event);
+		MessageDialog.openInformation(window.getShell(),
 				"Migrate Skeletal Implementation to Interface",
 				"Hello, Eclipse world");
 		return null;
