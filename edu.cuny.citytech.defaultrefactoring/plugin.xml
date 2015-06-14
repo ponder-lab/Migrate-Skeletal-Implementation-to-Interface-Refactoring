@@ -21,7 +21,7 @@
         <with variable="selection">
           <iterate ifEmpty="false" operator="or">
             <!-- [rk] TODO: We'll probably need a compilation unit here as well. #1 -->
-            <instanceof value="org.eclipse.jdt.core.IType">
+            <instanceof value="org.eclipse.jdt.core.IMethod">
             </instanceof>
           </iterate>
         </with>

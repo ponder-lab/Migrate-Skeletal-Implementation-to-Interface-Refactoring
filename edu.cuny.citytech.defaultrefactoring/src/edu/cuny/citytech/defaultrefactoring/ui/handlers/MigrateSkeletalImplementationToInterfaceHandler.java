@@ -1,21 +1,15 @@
 package edu.cuny.citytech.defaultrefactoring.ui.handlers;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.handlers.HandlerUtil;
-import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
-import org.eclipse.jdt.internal.corext.refactoring.util.JavaElementUtil;
-import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.handlers.HandlerUtil;
 
 import edu.cuny.citytech.defaultrefactoring.ui.wizards.MigrateSkeletalImplementationToInterfaceRefactoringWizard;
 
@@ -38,13 +32,13 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends
 				.getCurrentSelectionChecked(event);
 
 		List<?> list = SelectionUtil.toList(currentSelection);
-		IType[] types = (IType[]) list.stream().filter(e -> e instanceof IType)
+		IMethod[] methods = (IMethod[]) list.stream().filter(e -> e instanceof IMethod)
 				.toArray();
 
-		if (types.length > 0) {
+		if (methods.length > 0) {
 			Shell shell = HandlerUtil.getActiveShellChecked(event);
 			MigrateSkeletalImplementationToInterfaceRefactoringWizard
-					.startRefactoring(types, shell);
+					.startRefactoring(methods, shell);
 		}
 
 		return null;
