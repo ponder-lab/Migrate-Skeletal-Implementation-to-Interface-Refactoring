@@ -32,8 +32,8 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends
 				.getCurrentSelectionChecked(event);
 
 		List<?> list = SelectionUtil.toList(currentSelection);
-		IMethod[] methods = (IMethod[]) list.stream().filter(e -> e instanceof IMethod)
-				.toArray();
+		IMethod[] methods = list.stream().filter(e -> e instanceof IMethod)
+				.toArray(length -> new IMethod[length]);
 
 		if (methods.length > 0) {
 			Shell shell = HandlerUtil.getActiveShellChecked(event);
