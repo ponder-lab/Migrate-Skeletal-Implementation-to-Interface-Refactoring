@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Default Refactoring Tests
-Bundle-SymbolicName: edu.cuny.citytech.defaultrefactoring.ui.tests
+Bundle-SymbolicName: edu.cuny.citytech.defaultrefactoring.tests
 Bundle-Version: 1.0.0
 Bundle-Vendor: New York City College of Technology, City University of New York
 Fragment-Host: edu.cuny.citytech.defaultrefactoring.ui;bundle-version="1.0.0"
