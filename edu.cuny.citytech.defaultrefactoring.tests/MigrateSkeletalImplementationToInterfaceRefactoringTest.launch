@@ -14,7 +14,7 @@
 <booleanAttribute key="includeOptional" value="true"/>
 <stringAttribute key="location" value="${workspace_loc}/../junit-workspace"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/edu.cuny.citytech.defaultrefactoring.ui.tests/test cases/edu/cuny/citytech/defaultrefactoring/ui/tests/MigrateSkeletalImplementationToInterfaceRefactoringTest.java"/>
+<listEntry value="/edu.cuny.citytech.defaultrefactoring.tests/test cases/edu/cuny/citytech/defaultrefactoring/ui/tests/MigrateSkeletalImplementationToInterfaceRefactoringTest.java"/>
 </listAttribute>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
 <listEntry value="1"/>
@@ -30,7 +30,7 @@
 <stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.cuny.citytech.defaultrefactoring.ui.tests.MigrateSkeletalImplementationToInterfaceRefactoringTest"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-os ${target.os} -ws ${target.ws} -arch ${target.arch} -nl ${target.nl} -consoleLog"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="edu.cuny.citytech.defaultrefactoring.ui.tests"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="edu.cuny.citytech.defaultrefactoring.tests"/>
 <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.pde.ui.workbenchClasspathProvider"/>
 <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xdock:icon=../Resources/Eclipse.icns -XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts -Dosgi.requiredJavaVersion=1.7 -Xms40m -Xmx512m -XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts -XX:MaxPermSize=256m"/>
 <stringAttribute key="pde.version" value="3.3"/>
