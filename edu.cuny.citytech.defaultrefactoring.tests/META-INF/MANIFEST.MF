@@ -10,5 +10,3 @@ Require-Bundle: org.junit,
  org.eclipse.ltk.ui.refactoring.tests,
  org.eclipse.jdt.ui.tests,
  org.eclipse.jdt.ui.tests.refactoring
-Import-Package: org.eclipse.jdt.testplugin,
- org.eclipse.jdt.ui.tests.refactoring
