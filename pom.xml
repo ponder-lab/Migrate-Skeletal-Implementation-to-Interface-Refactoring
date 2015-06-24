@@ -19,6 +19,16 @@
       <layout>p2</layout>
       <url>http://download.eclipse.org/releases/luna</url>
     </repository>
+    <repository>
+      <id>common-refactoring</id>
+      <layout>p2</layout>
+      <url>https://raw.githubusercontent.com/khatchad/Common-Eclipse-Refactoring-Framework/master/edu.cuny.citytech.refactoring.common.updatesite</url>
+    </repository>
+    <repository>
+      <id>luna-update</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/eclipse/updates/4.4</url>
+    </repository>
   </repositories>
   <build>
     <plugins>
