@@ -17,6 +17,10 @@
         <configuration>
           <useUIHarness>false</useUIHarness>
           <useUIThread>true</useUIThread>
+          <failIfNoTests>true</failIfNoTests>
+          <showEclipseLog>true</showEclipseLog>
+          <skip>false</skip>
+          <skipTests>false</skipTests>
           <explodedBundles>
             <bundle>org.junit</bundle>
           </explodedBundles>
