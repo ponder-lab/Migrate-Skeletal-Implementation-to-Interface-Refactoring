@@ -18,13 +18,18 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
         <artifactId>tycho-surefire-plugin</artifactId>
         <version>${tycho-version}</version>
         <configuration>
-          <useuiharness>false</useuiharness>
-          <useuithread>false</useuithread>
-          <!--
-          <excludes>
-            <exclude>**/DebugErrorReporter.java</exclude>
-          </excludes>
-          -->
+          <useUIHarness>false</useUIHarness>
+          <useUIThread>true</useUIThread>
+          <explodedBundles>
+            <bundle>org.junit</bundle>
+          </explodedBundles>
+          <dependencies>
+            <dependency>
+              <type>eclipse-plugin</type>
+              <artifactId>org.eclipse.equinox.event</artifactId>
+              <version>0.0.0</version>
+            </dependency>
+          </dependencies>
         </configuration>
       </plugin>
     </plugins>
