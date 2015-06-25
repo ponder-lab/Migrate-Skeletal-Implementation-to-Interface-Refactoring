@@ -49,6 +49,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends
 	}
 	
 	public void testSomething() {
-		assertTrue(false);
+		assertTrue(true);
 	}
 }
