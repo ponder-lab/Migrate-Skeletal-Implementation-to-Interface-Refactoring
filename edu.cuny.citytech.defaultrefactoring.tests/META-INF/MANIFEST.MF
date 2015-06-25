@@ -6,7 +6,5 @@ Bundle-Version: 1.0.0
 Bundle-Vendor: New York City College of Technology, City University of New York
 Fragment-Host: org.eclipse.jdt.ui
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Require-Bundle: org.junit,
- org.eclipse.ltk.ui.refactoring.tests,
- org.eclipse.jdt.ui.tests,
- org.eclipse.jdt.ui.tests.refactoring
+Require-Bundle: org.eclipse.jdt.ui.tests.refactoring,
+ org.junit
