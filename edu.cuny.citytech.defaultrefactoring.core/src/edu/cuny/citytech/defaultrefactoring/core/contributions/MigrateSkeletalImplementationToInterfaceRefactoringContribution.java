@@ -1,10 +1,10 @@
-package edu.cuny.citytech.defaultrefactoring.ui.contributions;
+package edu.cuny.citytech.defaultrefactoring.core.contributions;
 
 import java.util.Map;
 
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 
-import edu.cuny.citytech.defaultrefactoring.ui.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
+import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
 import edu.cuny.citytech.refactoring.common.RefactoringContribution;
 
 public class MigrateSkeletalImplementationToInterfaceRefactoringContribution

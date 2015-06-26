@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.cuny.citytech.defaultrefactoring.ui.descriptors;
+package edu.cuny.citytech.defaultrefactoring.core.descriptors;
 
 import java.util.Map;
 

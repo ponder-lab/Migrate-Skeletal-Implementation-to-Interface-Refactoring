@@ -11,4 +11,5 @@ Require-Bundle: org.eclipse.ltk.core.refactoring,
  org.eclipse.jdt.core,
  edu.cuny.citytech.refactoring.common,
  org.eclipse.osgi
-Export-Package: edu.cuny.citytech.defaultrefactoring.core.refactorings
+Export-Package: edu.cuny.citytech.defaultrefactoring.core.descriptors,
+ edu.cuny.citytech.defaultrefactoring.core.refactorings

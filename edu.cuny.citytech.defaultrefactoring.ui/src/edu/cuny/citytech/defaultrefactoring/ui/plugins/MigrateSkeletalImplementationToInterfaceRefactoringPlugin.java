@@ -2,7 +2,7 @@ package edu.cuny.citytech.defaultrefactoring.ui.plugins;
 
 import org.osgi.framework.BundleContext;
 
-import edu.cuny.citytech.defaultrefactoring.ui.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
+import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
 import edu.cuny.citytech.refactoring.common.RefactoringPlugin;
 
 public class MigrateSkeletalImplementationToInterfaceRefactoringPlugin extends RefactoringPlugin {
