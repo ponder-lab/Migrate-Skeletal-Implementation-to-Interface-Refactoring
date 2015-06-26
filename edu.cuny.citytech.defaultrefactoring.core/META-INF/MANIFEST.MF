@@ -2,14 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %Bundle-Name
 Bundle-SymbolicName: edu.cuny.citytech.defaultrefactoring.core;singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: %Bundle-Vendor
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.ltk.core.refactoring,
  org.eclipse.equinox.registry,
  org.eclipse.jdt.core,
- edu.cuny.citytech.refactoring.common,
- org.eclipse.osgi
+ org.eclipse.osgi,
+ edu.cuny.citytech.refactoring.common.core;bundle-version="1.1.0"
 Export-Package: edu.cuny.citytech.defaultrefactoring.core.descriptors,
  edu.cuny.citytech.defaultrefactoring.core.refactorings

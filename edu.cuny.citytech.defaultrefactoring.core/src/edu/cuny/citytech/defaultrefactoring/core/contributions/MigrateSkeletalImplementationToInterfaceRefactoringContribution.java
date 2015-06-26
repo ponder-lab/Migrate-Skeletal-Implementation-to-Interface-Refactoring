@@ -5,7 +5,7 @@ import java.util.Map;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
-import edu.cuny.citytech.refactoring.common.RefactoringContribution;
+import edu.cuny.citytech.refactoring.common.core.RefactoringContribution;
 
 public class MigrateSkeletalImplementationToInterfaceRefactoringContribution
 		extends RefactoringContribution {

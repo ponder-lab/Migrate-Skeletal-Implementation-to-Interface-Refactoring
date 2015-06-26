@@ -16,7 +16,7 @@ import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
-import edu.cuny.citytech.refactoring.common.Refactoring;
+import edu.cuny.citytech.refactoring.common.core.Refactoring;
 
 /**
  * The activator class controls the plug-in life cycle

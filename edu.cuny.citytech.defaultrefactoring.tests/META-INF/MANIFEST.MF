@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Default Refactoring Tests
 Bundle-SymbolicName: edu.cuny.citytech.defaultrefactoring.tests
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: New York City College of Technology, City University of New York
 Fragment-Host: org.eclipse.jdt.ui
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
