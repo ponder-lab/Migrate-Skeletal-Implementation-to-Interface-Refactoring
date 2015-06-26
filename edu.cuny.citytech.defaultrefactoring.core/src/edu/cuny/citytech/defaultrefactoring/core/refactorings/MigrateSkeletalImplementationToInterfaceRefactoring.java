@@ -1,4 +1,4 @@
-package edu.cuny.citytech.defaultrefactoring.ui.refactorings;
+package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -15,7 +15,7 @@ import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.citytech.defaultrefactoring.ui.messages.Messages;
+import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.refactoring.common.Refactoring;
 
 /**

@@ -8,12 +8,11 @@ Bundle-Vendor: %Bundle-Vendor
 Bundle-Localization: bundle
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
- org.eclipse.ltk.core.refactoring,
  org.eclipse.ltk.ui.refactoring,
- org.eclipse.jdt.core,
  org.eclipse.jdt.ui,
- org.eclipse.jface.text,
- org.eclipse.core.resources,
- edu.cuny.citytech.refactoring.common
+ edu.cuny.citytech.refactoring.common,
+ org.eclipse.jdt.core,
+ org.eclipse.ltk.core.refactoring,
+ edu.cuny.citytech.defaultrefactoring.core
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: .

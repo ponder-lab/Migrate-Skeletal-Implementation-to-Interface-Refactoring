@@ -5,7 +5,7 @@ package edu.cuny.citytech.defaultrefactoring.ui.descriptors;
 
 import java.util.Map;
 
-import edu.cuny.citytech.defaultrefactoring.ui.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
+import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
 import edu.cuny.citytech.refactoring.common.Refactoring;
 import edu.cuny.citytech.refactoring.common.RefactoringDescriptor;
 

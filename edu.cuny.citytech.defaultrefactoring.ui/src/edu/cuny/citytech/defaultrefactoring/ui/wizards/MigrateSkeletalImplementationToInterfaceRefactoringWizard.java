@@ -11,7 +11,7 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 import org.eclipse.swt.widgets.Shell;
 
-import edu.cuny.citytech.defaultrefactoring.ui.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
+import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
 
 /**
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
