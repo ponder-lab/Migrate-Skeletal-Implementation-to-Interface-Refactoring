@@ -3,7 +3,7 @@ package edu.cuny.citytech.defaultrefactoring.ui.plugins;
 import org.osgi.framework.BundleContext;
 
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
-import edu.cuny.citytech.refactoring.common.RefactoringPlugin;
+import edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin;
 
 public class MigrateSkeletalImplementationToInterfaceRefactoringPlugin extends RefactoringPlugin {
 	
@@ -26,7 +26,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringPlugin extends R
 	}
 
 	/* (non-Javadoc)
-	 * @see edu.cuny.citytech.refactoring.common.RefactoringPlugin#getRefactoringId()
+	 * @see edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#getRefactoringId()
 	 */
 	@Override
 	protected String getRefactoringId() {
