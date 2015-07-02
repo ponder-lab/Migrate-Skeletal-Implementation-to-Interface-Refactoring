@@ -62,6 +62,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends
 		super(name);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jdt.ui.tests.refactoring.RefactoringTest#getFileContents(java
+	 * .lang.String) Had to override this method because, since this plug-in is
+	 * a fragment (at least I think that this is the reason), it doesn't have an
+	 * activator and the bundle is resolving to the eclipse refactoring test
+	 * bundle.
+	 */
 	@Override
 	public String getFileContents(String fileName) throws IOException {
 		Path path = Paths.get(RESOURCE_DIRECTORY_NAME, fileName);
@@ -77,8 +87,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends
 		return REFACTORING_PATH;
 	}
 
-	private void helperFail(String[] methodNames, String[][] signatures)
-			throws Exception {
+	private void helperPass(String[] methodNames, String[][] signatures) throws Exception {
 		ICompilationUnit cu = createCUfromTestFile(getPackageP(), "A");
 		IType type = getType(cu, "A");
 		IMethod[] methods = getMethods(type, methodNames, signatures);
@@ -86,19 +95,50 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends
 		MigrateSkeletalImplementationToInterfaceRefactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(
 				methods);
 
-		RefactoringStatus initialStatus = refactoring
-				.checkInitialConditions(new NullProgressMonitor());
+		RefactoringStatus initialStatus = refactoring.checkInitialConditions(new NullProgressMonitor());
 		logger.info("Initial status: " + initialStatus);
 
-		RefactoringStatus finalStatus = refactoring
-				.checkFinalConditions(new NullProgressMonitor());
+		RefactoringStatus finalStatus = refactoring.checkFinalConditions(new NullProgressMonitor());
 		logger.info("Final status: " + finalStatus);
 
-		assertTrue("Precondition was supposed to fail.", !initialStatus.isOK()
-				|| !finalStatus.isOK());
+		assertTrue("Precondition was supposed to pass.", initialStatus.isOK() && finalStatus.isOK());
+		performChange(refactoring, false);
+
+		String expected = getFileContents(getOutputTestFileName("A"));
+		String actual = cu.getSource();
+		assertEqualLines(expected, actual);
+	}
+
+	private void helperFail(String[] methodNames, String[][] signatures) throws Exception {
+		ICompilationUnit cu = createCUfromTestFile(getPackageP(), "A");
+		IType type = getType(cu, "A");
+		IMethod[] methods = getMethods(type, methodNames, signatures);
+
+		MigrateSkeletalImplementationToInterfaceRefactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(
+				methods);
+
+		RefactoringStatus initialStatus = refactoring.checkInitialConditions(new NullProgressMonitor());
+		logger.info("Initial status: " + initialStatus);
+
+		RefactoringStatus finalStatus = refactoring.checkFinalConditions(new NullProgressMonitor());
+		logger.info("Final status: " + finalStatus);
+
+		assertTrue("Precondition was supposed to fail.", !initialStatus.isOK() || !finalStatus.isOK());
 	}
 
 	public void testConstructor() throws Exception {
 		helperFail(new String[] { "A" }, new String[][] { new String[0] });
+	}
+
+	public void testAnnotatedMethod() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testStaticMethod() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testPlainMethod() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
