@@ -137,8 +137,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testStaticMethod() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testMethodContainedInAnnotation() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testPlainMethod() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInInterface() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodContainedInEnum() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
