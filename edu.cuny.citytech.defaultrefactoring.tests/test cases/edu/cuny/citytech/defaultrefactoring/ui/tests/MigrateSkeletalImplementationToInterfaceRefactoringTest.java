@@ -77,7 +77,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends
 		return REFACTORING_PATH;
 	}
 
-	private void helper(String[] methodNames, String[][] signatures)
+	private void helperFail(String[] methodNames, String[][] signatures)
 			throws Exception {
 		ICompilationUnit cu = createCUfromTestFile(getPackageP(), "A");
 		IType type = getType(cu, "A");
@@ -98,7 +98,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends
 				|| !finalStatus.isOK());
 	}
 
-	public void testFail0() throws Exception {
-		helper(new String[] { "A" }, new String[][] { new String[0] });
+	public void testConstructor() throws Exception {
+		helperFail(new String[] { "A" }, new String[][] { new String[0] });
 	}
 }
