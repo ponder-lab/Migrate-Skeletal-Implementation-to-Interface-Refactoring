@@ -29,19 +29,19 @@ import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImp
  *
  */
 @SuppressWarnings("restriction")
-public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends
-		RefactoringTest {
-
-	/**
-	 * 
-	 */
-	private static final String RESOURCE_DIRECTORY_NAME = "resources";
+public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends RefactoringTest {
 
 	private static final Class<MigrateSkeletalImplementationToInterfaceRefactoringTest> clazz = MigrateSkeletalImplementationToInterfaceRefactoringTest.class;
 
 	private static final Logger logger = Logger.getLogger(clazz.getName());
 
 	private static final String REFACTORING_PATH = "MigrateSkeletalImplementationToInterface/";
+
+	/**
+	 * The name of the directory containing resources under the project
+	 * directory.
+	 */
+	private static final String RESOURCE_PATH = "resources";
 
 	/**
 	 * @param testSuite
@@ -74,7 +74,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends
 	 */
 	@Override
 	public String getFileContents(String fileName) throws IOException {
-		Path path = Paths.get(RESOURCE_DIRECTORY_NAME, fileName);
+		Path path = Paths.get(RESOURCE_PATH, fileName);
 		Path absolutePath = path.toAbsolutePath();
 		return Files.lines(absolutePath).collect(Collectors.joining());
 	}
