@@ -26,8 +26,7 @@ import edu.cuny.citytech.refactoring.common.core.Refactoring;
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
  *         Khatchadourian</a>
  */
-public class MigrateSkeletalImplementationToInterfaceRefactoring extends
-		Refactoring {
+public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refactoring {
 
 	/**
 	 * The methods to refactor.
@@ -40,8 +39,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends
 	 * @param methods
 	 *            The methods to refactor.
 	 */
-	public MigrateSkeletalImplementationToInterfaceRefactoring(
-			IMethod... methods) {
+	public MigrateSkeletalImplementationToInterfaceRefactoring(IMethod... methods) {
 		this.methods = new HashSet<IMethod>(Arrays.asList(methods));
 	}
 
@@ -175,13 +173,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends
 	}
 
 	@Override
-	public Change createChange(IProgressMonitor pm) throws CoreException,
-			OperationCanceledException {
+	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 
 		try {
-			pm.beginTask(
-					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CreatingChange,
-					1);
+			pm.beginTask(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CreatingChange, 1);
 
 			return new NullChange(getName());
 		} finally {
