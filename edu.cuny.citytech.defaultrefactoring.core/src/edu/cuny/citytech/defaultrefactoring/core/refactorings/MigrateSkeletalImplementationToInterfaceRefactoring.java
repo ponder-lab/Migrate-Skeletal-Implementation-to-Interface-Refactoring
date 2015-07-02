@@ -77,14 +77,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends
 						removeMethod(
 								Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodDoesNotExist,
 								method, iterator, status, pm);
-						iterator.remove();
-						pm.worked(1);
 					} else if (method.isBinary() || method.isReadOnly()) {
 						removeMethod(
 								Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CantChangeMethod,
 								method, iterator, status, pm);
-						iterator.remove();
-						pm.worked(1);
 					} else if (!method.isStructureKnown()) {
 						removeMethod(
 								Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CUContainsCompileErrors,
