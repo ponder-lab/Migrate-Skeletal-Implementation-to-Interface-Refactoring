@@ -76,7 +76,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public String getFileContents(String fileName) throws IOException {
 		Path path = Paths.get(RESOURCE_PATH, fileName);
 		Path absolutePath = path.toAbsolutePath();
-		return Files.lines(absolutePath).collect(Collectors.joining());
+		return Files.lines(absolutePath).collect(Collectors.joining("\n"));
 	}
 
 	/**
