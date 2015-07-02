@@ -60,9 +60,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends
 		final RefactoringStatus status = new RefactoringStatus();
 		// TODO Probably should make sure that the enclosing type implements an
 		// interface.
-		// TODO Can't be a static method (for now).
-		// TODO Can't be part of an annotation (at least for now; this should be
-		// checked on the declaring type).
 		// TODO No enum methods.
 		try {
 			pm.beginTask(
@@ -97,10 +94,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends
 								Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoConstructors,
 								method, iterator, status, pm);
 					} else if (method.getAnnotations().length > 0) {
+						// TODO for now.
 						removeMethod(
 								Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoAnnotations,
 								method, iterator, status, pm);
 					} else if (Flags.isStatic(method.getFlags())) {
+						// TODO for now.
 						removeMethod(
 								Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoStaticMethods,
 								method, iterator, status, pm);
