@@ -18,7 +18,7 @@
         </os>
       </activation>
       <properties>
-        <ui.test.vmargs>-XstartOnFirstThread</ui.test.vmargs>
+        <ui.test.vmargs>${tycho.testArgLine} -XstartOnFirstThread</ui.test.vmargs>
       </properties>
     </profile>
     <profile>
@@ -30,7 +30,7 @@
         </os>
       </activation>
       <properties>
-        <ui.test.vmargs></ui.test.vmargs>
+        <ui.test.vmargs>${tycho.testArgLine}</ui.test.vmargs>
       </properties>
     </profile>
   </profiles>
@@ -43,7 +43,7 @@
         <configuration>
           <useUIHarness>true</useUIHarness>
           <useUIThread>false</useUIThread>
-          <argLine>${ui.test.vmargs} ${tycho.testArgLine}</argLine>
+          <argLine>${ui.test.vmargs}</argLine>
           <failIfNoTests>true</failIfNoTests>
           <showEclipseLog>true</showEclipseLog>
           <skip>false</skip>
