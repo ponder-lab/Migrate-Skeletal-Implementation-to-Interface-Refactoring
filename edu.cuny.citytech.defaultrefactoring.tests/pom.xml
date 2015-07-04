@@ -43,7 +43,7 @@
         <configuration>
           <useUIHarness>true</useUIHarness>
           <useUIThread>false</useUIThread>
-          <argLine>${ui.test.vmargs}</argLine>
+          <argLine>${tycho.testArgLine} ${ui.test.vmargs}</argLine>
           <failIfNoTests>true</failIfNoTests>
           <showEclipseLog>true</showEclipseLog>
           <skip>false</skip>
