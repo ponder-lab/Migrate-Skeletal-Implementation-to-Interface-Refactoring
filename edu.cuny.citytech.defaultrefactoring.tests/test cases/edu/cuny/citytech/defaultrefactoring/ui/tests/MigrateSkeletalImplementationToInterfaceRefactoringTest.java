@@ -110,8 +110,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	private void helperFail(String[] methodNames, String[][] signatures) throws Exception {
+		helperFail("A", methodNames, signatures);
+	}
+
+	private void helperFail(String typeName, String[] methodNames, String[][] signatures) throws Exception {
 		ICompilationUnit cu = createCUfromTestFile(getPackageP(), "A");
-		IType type = getType(cu, "A");
+		IType type = getType(cu, typeName);
 		IMethod[] methods = getMethods(type, methodNames, signatures);
 
 		MigrateSkeletalImplementationToInterfaceRefactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(
@@ -137,10 +141,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testStaticMethod() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
-	public void testMethodContainedInAnnotation() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	}
+
+	// TODO I have no idea how to create a test file for this.
+//	public void testLambdaMethod() throws Exception {
+//		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+//	}
 
 	public void testPlainMethod() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
@@ -149,8 +154,32 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodContainedInInterface() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
+	// TODO This helper only tests top-level types.
+//	public void testMethodContainedInAnonymousType() throws Exception {
+//		helperFail("A.1", new String[] { "n" }, new String[][] { new String[0] });
+//	}
+
 	public void testMethodContainedInEnum() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	// TODO No idea how to create a case for this.
+//	public void testMethodContainedInLambdas() throws Exception {
+//		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+//	}
+
+	// TODO This helper only tests top-level types.
+//	public void testMethodContainedInLocalType() throws Exception {
+//		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+//	}
+
+	// TODO This helper only tests top-level types.
+//	public void testMethodContainedInMemberType() throws Exception {
+//		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+//	}
+
+	public void testMethodContainedInAnnotation() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
