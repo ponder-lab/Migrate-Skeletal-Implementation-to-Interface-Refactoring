@@ -1,6 +1,8 @@
 package p;
 
-class A extends Exception {
+interface I {}
+
+abstract class A extends Exception implements I {
 	void m() {
 	}
 }

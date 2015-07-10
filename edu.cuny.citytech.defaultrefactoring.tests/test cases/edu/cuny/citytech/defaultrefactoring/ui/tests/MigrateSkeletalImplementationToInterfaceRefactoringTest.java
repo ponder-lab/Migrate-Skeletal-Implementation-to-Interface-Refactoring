@@ -143,9 +143,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	// TODO I have no idea how to create a test file for this.
-//	public void testLambdaMethod() throws Exception {
-//		helperFail(new String[] { "m" }, new String[][] { new String[0] });
-//	}
+	// public void testLambdaMethod() throws Exception {
+	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	// }
 
 	public void testPlainMethod() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
@@ -156,47 +156,48 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	// TODO This helper only tests top-level types.
-//	public void testMethodContainedInAnonymousType() throws Exception {
-//		helperFail("A.1", new String[] { "n" }, new String[][] { new String[0] });
-//	}
+	// public void testMethodContainedInAnonymousType() throws Exception {
+	// helperFail("A.1", new String[] { "n" }, new String[][] { new String[0]
+	// });
+	// }
 
 	public void testMethodContainedInEnum() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	// TODO No idea how to create a case for this.
-//	public void testMethodContainedInLambdas() throws Exception {
-//		helperFail(new String[] { "m" }, new String[][] { new String[0] });
-//	}
+	// public void testMethodContainedInLambdas() throws Exception {
+	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	// }
 
 	// TODO This helper only tests top-level types.
-//	public void testMethodContainedInLocalType() throws Exception {
-//		helperFail(new String[] { "m" }, new String[][] { new String[0] });
-//	}
+	// public void testMethodContainedInLocalType() throws Exception {
+	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	// }
 
 	// TODO This helper only tests top-level types.
-//	public void testMethodContainedInMemberType() throws Exception {
-//		helperFail(new String[] { "m" }, new String[][] { new String[0] });
-//	}
+	// public void testMethodContainedInMemberType() throws Exception {
+	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	// }
 
 	public void testMethodContainedInAnnotation() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodContainedInAnnotatedType() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] { new String[0] });
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodContainedInTypeWithField() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] { new String[0] });
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithInitializer() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] { new String[0] });
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithMoreThanOneMethod() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] { new String[0] });
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithTypeParameters() throws Exception {
@@ -209,5 +210,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 	public void testMethodContainedInTypeThatImplementsMultipleInterfaces() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatThrowsAnException() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodDeclaredInConcreteType() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	// TODO I'll need an inner type helper for this.
+	// public void testMethodDeclaredInStaticType() throws Exception {
+	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	// }
+
+	public void testMethodWithParameters() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[] { "I" } });
 	}
 }

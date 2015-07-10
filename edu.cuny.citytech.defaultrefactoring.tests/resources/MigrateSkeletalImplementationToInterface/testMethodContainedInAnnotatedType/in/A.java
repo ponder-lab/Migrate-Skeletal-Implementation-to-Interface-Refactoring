@@ -1,7 +1,9 @@
 package p;
 
+interface I {}
+
 @Deprecated
-class A {
+abstract class A implements I {
 	void m() {
 	}
 }

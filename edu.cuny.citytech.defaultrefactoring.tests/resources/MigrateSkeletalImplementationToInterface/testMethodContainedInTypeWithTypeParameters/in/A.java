@@ -1,6 +1,8 @@
 package p;
 
-class A<E> {
+interface I {}
+
+abstract class A<E> implements I {
 	void m() {
 	}
 }

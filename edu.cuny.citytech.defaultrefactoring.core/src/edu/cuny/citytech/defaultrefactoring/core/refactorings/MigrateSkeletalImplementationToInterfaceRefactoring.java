@@ -13,6 +13,7 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.NullChange;
@@ -180,8 +181,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 					method);
 		}
 		if (declaringType.getSuperInterfaceNames().length > 1) {
-			// TODO for now. Let's only deal with a single interface as that is part of the targeted pattern.
-			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesThatExtendMultipleInterfaces, method);
+			// TODO for now. Let's only deal with a single interface as that is
+			// part of the targeted pattern.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesThatExtendMultipleInterfaces,
+					method);
+		}
+		if (!Flags.isAbstract(declaringType.getFlags())) {
+			// TODO for now. This follows the target pattern. Maybe we can relax
+			// this but that would require checking for instantiations.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInConcreteTypes,
+					method);
+		}
+		if (Flags.isStatic(declaringType.getFlags())) {
+			// TODO no static types for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInStaticTypes, method);
 		}
 
 		return status;
@@ -215,12 +230,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 			// TODO for now.
 			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoLambdaMethods, method);
 		}
+		if (method.getExceptionTypes().length != 0) {
+			// TODO for now.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsThatThrowExceptions, method);
+		}
+		 if (method.getParameters().length != 0) {
+			// TODO for now.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithParameters, method);
+		 }
 
 		return status;
 	}
 
 	protected static void addWarning(RefactoringStatus status, String message, IMethod method) {
-		status.addWarning(MessageFormat.format(message, method.getElementName()));
+		status.addWarning(MessageFormat.format(message, method.getElementName()), JavaStatusContext.create(method));
 	}
 
 	@Override

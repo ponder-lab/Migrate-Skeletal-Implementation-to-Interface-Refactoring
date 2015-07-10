@@ -1,6 +1,6 @@
 package p;
 
-class A {
+abstract class A {
 	void m() {
 	}
 }

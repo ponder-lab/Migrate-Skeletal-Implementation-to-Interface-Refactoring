@@ -1,8 +1,9 @@
 package p;
 
-interface I {}
+interface I {
+}
 
 abstract class A implements I {
-	A() {
+	void m(int n) {
 	}
 }
