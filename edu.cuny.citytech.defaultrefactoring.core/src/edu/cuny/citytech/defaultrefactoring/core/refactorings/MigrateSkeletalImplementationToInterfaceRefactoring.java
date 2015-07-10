@@ -27,6 +27,7 @@ import edu.cuny.citytech.refactoring.common.core.Refactoring;
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
  *         Khatchadourian</a>
  */
+@SuppressWarnings("restriction")
 public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refactoring {
 
 	/**
@@ -55,7 +56,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		return Messages.MigrateSkeletalImplementationToInferfaceRefactoring_Name;
 	}
 
-	@SuppressWarnings("restriction")
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
