@@ -10,7 +10,8 @@ Require-Bundle: org.eclipse.ltk.core.refactoring,
  org.eclipse.equinox.registry,
  org.eclipse.jdt.core,
  org.eclipse.osgi,
- edu.cuny.citytech.refactoring.common.core;bundle-version="1.1.0"
+ edu.cuny.citytech.refactoring.common.core;bundle-version="1.1.0",
+ org.eclipse.jdt.ui
 Export-Package: edu.cuny.citytech.defaultrefactoring.core.descriptors,
  edu.cuny.citytech.defaultrefactoring.core.refactorings
 Import-Package: org.eclipse.jdt.internal.ui,
