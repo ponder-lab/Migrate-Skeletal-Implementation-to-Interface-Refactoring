@@ -179,6 +179,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesThatDontImplementInterfaces,
 					method);
 		}
+		if (declaringType.getSuperInterfaceNames().length > 1) {
+			// TODO for now. Let's only deal with a single interface as that is part of the targeted pattern.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesThatExtendMultipleInterfaces, method);
+		}
 
 		return status;
 	}
