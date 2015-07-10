@@ -4,14 +4,11 @@
 package edu.cuny.citytech.defaultrefactoring.ui.tests;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -22,6 +19,8 @@ import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 /**
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
@@ -76,7 +75,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public String getFileContents(String fileName) throws IOException {
 		Path path = Paths.get(RESOURCE_PATH, fileName);
 		Path absolutePath = path.toAbsolutePath();
-		return Files.lines(absolutePath).collect(Collectors.joining("\n"));
+		byte[] encoded = Files.readAllBytes(absolutePath);
+		return new String(encoded, Charset.defaultCharset());
 	}
 
 	/**
@@ -180,6 +180,30 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 //	}
 
 	public void testMethodContainedInAnnotation() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodContainedInAnnotatedType() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] { new String[0] });
+	}
+	
+	public void testMethodContainedInTypeWithField() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithInitializer() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithMoreThanOneMethod() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithTypeParameters() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithSuperTypes() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }

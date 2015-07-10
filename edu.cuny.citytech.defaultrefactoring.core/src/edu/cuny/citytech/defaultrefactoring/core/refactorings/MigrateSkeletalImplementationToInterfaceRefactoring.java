@@ -13,6 +13,8 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.core.util.Util;
+import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -54,114 +56,168 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		return Messages.MigrateSkeletalImplementationToInferfaceRefactoring_Name;
 	}
 
+	@SuppressWarnings("restriction")
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
-		final RefactoringStatus status = new RefactoringStatus();
 		try {
 			pm.beginTask(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CheckingPreconditions,
 					methods.size());
 
-			if (this.methods.isEmpty())
-				status.addFatalError(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodsNotSpecified);
+			if (methods.isEmpty())
+				return RefactoringStatus.createFatalErrorStatus(
+						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodsNotSpecified);
 			else {
+				final RefactoringStatus status = new RefactoringStatus();
+
 				for (Iterator<IMethod> iterator = methods.iterator(); iterator.hasNext();) {
 					IMethod method = iterator.next();
 
-					checkMethodLevelInitialConditions(method, iterator, status, pm);
-					checkDeclaringTypeLevelInitialConditions(method, iterator, status, pm);
+					status.merge(checkMethodLevelInitialConditions(method));
+					status.merge(checkDeclaringTypeLevelInitialConditions(method));
+
+					if (!status.isOK())
+						iterator.remove();
+
+					pm.worked(1);
 				}
+
+				if (methods.isEmpty())
+					status.addError(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_PreconditionFailed);
+
+				return status;
 			}
 
-			if (this.methods.isEmpty())
-				status.addError(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_PreconditionFailed);
-
+		} catch (Exception e) {
+			JavaPlugin.log(e);
+			throw e;
 		} finally {
 			pm.done();
+		}
+	}
+
+	protected RefactoringStatus checkDeclaringTypeLevelInitialConditions(IMethod method) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+		IType declaringType = method.getDeclaringType();
+
+		if (declaringType.isInterface()) {
+			// Should not support methods already in interfaces.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInInterfaces,
+					method);
+		}
+		if (declaringType.isAnonymous()) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInAnonymousTypes,
+					method);
+		}
+		if (declaringType.isEnum()) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInEnums, method);
+		}
+		if (declaringType.isLambda()) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInLambdas, method);
+		}
+		if (declaringType.isLocal()) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInLocals, method);
+		}
+		if (declaringType.isMember()) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInMemberTypes,
+					method);
+		}
+		if (!declaringType.isClass()) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodsOnlyInClasses,
+					method);
+		}
+		if (declaringType.getAnnotations().length != 0) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInAnnotatedTypes,
+					method);
+		}
+		if (declaringType.getFields().length != 0) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithFields,
+					method);
+		}
+		if (declaringType.getInitializers().length != 0) {
+			// TODO for now.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithInitializers,
+					method);
+		}
+		if (declaringType.getMethods().length > 1) {
+			// TODO for now.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithMoreThanOneMethod,
+					method);
+		}
+		if (declaringType.getTypeParameters().length != 0) {
+			// TODO for now.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithTypeParameters,
+					method);
+		}
+		if (declaringType.getTypes().length != 0) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithType,
+					method);
+		}
+		if (declaringType.getSuperclassName() != null) {
+			// TODO for now.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithSuperType, method);
+		}
+		if (declaringType.getSuperInterfaceNames().length == 0) {
+			// enclosing type must implement an interface, at least for now,
+			// which one of which will become the target interface.
+			// it is probably possible to still perform the refactoring without
+			// this condition but I believe that this is
+			// the particular pattern we are targeting.
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesThatDontImplementInterfaces,
+					method);
 		}
 
 		return status;
 	}
 
-	/**
-	 * @param method
-	 *            The method for which to check the enclosing type.
-	 * @param iterator
-	 * @param status
-	 * @param pm
-	 * @throws JavaModelException
-	 */
-	protected void checkDeclaringTypeLevelInitialConditions(IMethod method, Iterator<IMethod> iterator,
-			RefactoringStatus status, IProgressMonitor pm) throws JavaModelException {
-		// TODO Probably should make sure that the enclosing type implements an
-		// interface.
-		IType declaringType = method.getDeclaringType();
+	protected RefactoringStatus checkMethodLevelInitialConditions(IMethod method) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
 
-		if (declaringType.isInterface()) {
-			// Should not support methods already in interfaces.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInInterfaces, method,
-					iterator, status, pm);
-		} else if (declaringType.isAnonymous()) {
-			// TODO for now.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInAnonymousTypes, method,
-					iterator, status, pm);
-		} else if (declaringType.isEnum()) {
-			// TODO for now.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInEnums, method, iterator, status, pm);
-		} else if (declaringType.isLambda()) {
-			// TODO for now.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInLambdas, method, iterator, status, pm);
-		} else if (declaringType.isLocal()) {
-			// TODO for now.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInLocals, method, iterator, status, pm);
-		} else if (declaringType.isMember()) {
-			// TODO for now.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInMemberTypes, method, iterator, status, pm);
-		}
-
-	}
-
-	/**
-	 * @param method
-	 * @param iterator
-	 * @param status
-	 * @param pm
-	 * @throws JavaModelException
-	 */
-	protected void checkMethodLevelInitialConditions(IMethod method, Iterator<IMethod> iterator,
-			final RefactoringStatus status, IProgressMonitor pm) throws JavaModelException {
 		if (!method.exists()) {
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodDoesNotExist, method,
-					iterator, status, pm);
-		} else if (method.isBinary() || method.isReadOnly()) {
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CantChangeMethod, method,
-					iterator, status, pm);
-		} else if (!method.isStructureKnown()) {
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CUContainsCompileErrors, method,
-					iterator, status, pm);
-		} else if (method.isConstructor()) {
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoConstructors, method, iterator,
-					status, pm);
-		} else if (method.getAnnotations().length > 0) {
-			// TODO for now.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoAnnotations, method, iterator,
-					status, pm);
-		} else if (Flags.isStatic(method.getFlags())) {
-			// TODO for now.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoStaticMethods, method, iterator,
-					status, pm);
-		} else if (method.isLambdaMethod()) {
-			// TODO for now.
-			removeMethod(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoLambdaMethods, method, iterator,
-					status, pm);
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodDoesNotExist, method);
 		}
+		if (method.isBinary() || method.isReadOnly()) {
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CantChangeMethod, method);
+		}
+		if (!method.isStructureKnown()) {
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CUContainsCompileErrors,
+					method);
+		}
+		if (method.isConstructor()) {
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoConstructors, method);
+		}
+		if (method.getAnnotations().length > 0) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoAnnotations, method);
+		}
+		if (Flags.isStatic(method.getFlags())) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoStaticMethods, method);
+		}
+		if (method.isLambdaMethod()) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoLambdaMethods, method);
+		}
+
+		return status;
 	}
 
-	protected static void removeMethod(String message, IMethod method, Iterator<IMethod> iterator,
-			final RefactoringStatus status, IProgressMonitor pm) {
+	protected static void addWarning(RefactoringStatus status, String message, IMethod method) {
 		status.addWarning(MessageFormat.format(message, method.getElementName()));
-		iterator.remove();
-		pm.worked(1);
 	}
 
 	@Override
