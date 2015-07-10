@@ -72,8 +72,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 				for (Iterator<IMethod> iterator = methods.iterator(); iterator.hasNext();) {
 					IMethod method = iterator.next();
 
-					status.merge(checkMethodLevelInitialConditions(method));
-					status.merge(checkDeclaringTypeLevelInitialConditions(method));
+					status.merge(checkMethod(method));
+					status.merge(checkDeclaringType(method));
 
 					if (!status.isOK())
 						iterator.remove();
@@ -95,7 +95,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		}
 	}
 
-	protected RefactoringStatus checkDeclaringTypeLevelInitialConditions(IMethod method) throws JavaModelException {
+	protected RefactoringStatus checkDeclaringType(IMethod method) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 		IType declaringType = method.getDeclaringType();
 
@@ -187,7 +187,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		return status;
 	}
 
-	protected RefactoringStatus checkMethodLevelInitialConditions(IMethod method) throws JavaModelException {
+	protected RefactoringStatus checkMethod(IMethod method) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		if (!method.exists()) {
