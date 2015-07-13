@@ -120,7 +120,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	 * @throws Exception
 	 */
 	private void helperFail(String[] methodNames, String[][] signatures) throws Exception {
-		helperFail("A", null, null, methodNames, signatures);
+		helperFail("A", null, null, null, methodNames, signatures);
+	}
+	
+	private void helperFail(String innerTypeName, String[] methodNames, String[][] signatures) throws Exception {
+		helperFail("A", null, null, innerTypeName, methodNames, signatures);
 	}
 
 	/**
@@ -138,10 +142,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	 */
 	private void helperFail(String outerMethodName, String[] outerSignature, String[] methodNames,
 			String[][] signatures) throws Exception {
-		helperFail("A", outerMethodName, outerSignature, methodNames, signatures);
+		helperFail("A", outerMethodName, outerSignature, null, methodNames, signatures);
 	}
 
-	private void helperFail(String typeName, String outerMethodName, String[] outerSignature, String[] methodNames,
+	private void helperFail(String typeName, String outerMethodName, String[] outerSignature, String innerTypeName, String[] methodNames,
 			String[][] signatures) throws Exception {
 		ICompilationUnit cu = createCUfromTestFile(getPackageP(), typeName);
 		IType type = getType(cu, typeName);
@@ -149,6 +153,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		if (outerMethodName != null) { // anonymous type case.
 			IMethod method = type.getMethod(outerMethodName, outerSignature);
 			type = method.getType("", 1); // get the anonymous type.
+		} else if (innerTypeName != null) {
+			type = type.getType(innerTypeName);
 		}
 
 		IMethod[] methods = getMethods(type, methodNames, signatures);
@@ -243,10 +249,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
-	// TODO I'll need an inner type helper for this.
-	// public void testMethodDeclaredInStaticType() throws Exception {
-	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	// }
+	public void testMethodDeclaredInStaticType() throws Exception {
+		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testMethodWithParameters() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });

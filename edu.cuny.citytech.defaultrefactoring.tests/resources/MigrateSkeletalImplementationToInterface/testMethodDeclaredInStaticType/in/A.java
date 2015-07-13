@@ -3,7 +3,9 @@ package p;
 interface I {
 }
 
-class A implements I {
-	void m() {
+class A {
+	static abstract class B implements I {
+		void m() {
+		}
 	}
 }
