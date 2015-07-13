@@ -1,10 +1,10 @@
 package p;
 
-import java.io.Serializable;
+interface I {}
 
 class A {
 	void m() {
-		new Serializable() {
+		new I() {
 			void n() {
 			}
 		};
