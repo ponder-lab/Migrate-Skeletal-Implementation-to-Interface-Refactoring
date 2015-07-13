@@ -14,6 +14,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -226,7 +227,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	// }
 
 	public void testMethodWithParameters() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[] { "I" } });
+		helperFail(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
 	}
 
 	public void testMethodWithReturnType() throws Exception {
