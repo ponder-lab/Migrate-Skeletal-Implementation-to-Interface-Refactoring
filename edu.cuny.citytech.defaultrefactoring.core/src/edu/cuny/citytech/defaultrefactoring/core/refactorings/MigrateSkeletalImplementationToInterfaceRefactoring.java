@@ -191,13 +191,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		if (!Flags.isAbstract(declaringType.getFlags())) {
 			// TODO for now. This follows the target pattern. Maybe we can relax
 			// this but that would require checking for instantiations.
-			addWarning(status,
-					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInConcreteTypes,
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInConcreteTypes,
 					method);
 		}
 		if (Flags.isStatic(declaringType.getFlags())) {
 			// TODO no static types for now.
-			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInStaticTypes, method);
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInStaticTypes,
+					method);
 		}
 
 		return status;
@@ -236,16 +236,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsThatThrowExceptions, method);
 		}
-		 if (method.getParameters().length != 0) {
+		if (method.getParameters().length != 0) {
 			// TODO for now.
-			addWarning(status,
-					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithParameters, method);
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithParameters,
+					method);
 		}
 		if (!method.getReturnType().equals(Signature.SIG_VOID)) { //return type must be void.
 			// TODO for now.
 			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithReturnTypes,
 					method);
-		 }
+		}
 
 		return status;
 	}
