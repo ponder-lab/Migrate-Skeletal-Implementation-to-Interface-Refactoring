@@ -13,6 +13,7 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -239,6 +240,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 			// TODO for now.
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithParameters, method);
+		}
+		if (!method.getReturnType().equals(Signature.SIG_VOID)) { //return type must be void.
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithReturnTypes,
+					method);
 		 }
 
 		return status;
