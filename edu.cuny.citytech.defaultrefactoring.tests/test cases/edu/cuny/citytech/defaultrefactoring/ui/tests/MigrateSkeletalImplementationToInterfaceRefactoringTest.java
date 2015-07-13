@@ -115,7 +115,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	private void helperFail(String typeName, String[] methodNames, String[][] signatures) throws Exception {
-		ICompilationUnit cu = createCUfromTestFile(getPackageP(), "A");
+		ICompilationUnit cu = createCUfromTestFile(getPackageP(), typeName);
 		IType type = getType(cu, typeName);
 		IMethod[] methods = getMethods(type, methodNames, signatures);
 
