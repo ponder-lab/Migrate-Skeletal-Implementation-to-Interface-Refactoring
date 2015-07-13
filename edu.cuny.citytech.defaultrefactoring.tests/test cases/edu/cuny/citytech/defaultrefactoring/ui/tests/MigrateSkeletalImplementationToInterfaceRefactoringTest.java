@@ -209,6 +209,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	// }
 
+	// TODO This helper only tests top-level types.
+	// public void testMethodContainedInLocalType() throws Exception {
+	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	// }
+
+	public void testMethodDeclaredInMemberType() throws Exception {
+		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testMethodContainedInAnnotation() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
