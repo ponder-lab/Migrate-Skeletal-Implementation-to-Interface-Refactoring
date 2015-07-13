@@ -246,6 +246,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithReturnTypes,
 					method);
 		}
+		if (method.getTypeParameters().length != 0) {
+			// TODO for now but this will be an important one.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithTypeParameters,
+					method);
+		}
 
 		return status;
 	}
