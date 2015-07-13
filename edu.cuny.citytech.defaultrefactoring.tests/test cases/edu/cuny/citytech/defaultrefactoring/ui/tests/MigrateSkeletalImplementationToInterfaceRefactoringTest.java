@@ -110,13 +110,47 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		assertEqualLines(expected, actual);
 	}
 
+	/**
+	 * Check for failed precondition for a simple case.
+	 * 
+	 * @param methodNames
+	 *            The methods to test.
+	 * @param signatures
+	 *            Their signatures.
+	 * @throws Exception
+	 */
 	private void helperFail(String[] methodNames, String[][] signatures) throws Exception {
-		helperFail("A", methodNames, signatures);
+		helperFail("A", null, null, methodNames, signatures);
 	}
 
-	private void helperFail(String typeName, String[] methodNames, String[][] signatures) throws Exception {
+	/**
+	 * Check for a failed precondition for a case with an inner type.
+	 * 
+	 * @param outerMethodName
+	 *            The method declaring the anonymous type.
+	 * @param outerSignature
+	 *            The signature of the method declaring the anonymous type.
+	 * @param methodNames
+	 *            The methods in the anonymous type.
+	 * @param signatures
+	 *            The signatures of the methods in the anonymous type.
+	 * @throws Exception
+	 */
+	private void helperFail(String outerMethodName, String[] outerSignature, String[] methodNames,
+			String[][] signatures) throws Exception {
+		helperFail("A", outerMethodName, outerSignature, methodNames, signatures);
+	}
+
+	private void helperFail(String typeName, String outerMethodName, String[] outerSignature, String[] methodNames,
+			String[][] signatures) throws Exception {
 		ICompilationUnit cu = createCUfromTestFile(getPackageP(), typeName);
 		IType type = getType(cu, typeName);
+
+		if (outerMethodName != null) { // anonymous type case.
+			IMethod method = type.getMethod(outerMethodName, outerSignature);
+			type = method.getType("", 1); // get the anonymous type.
+		}
+
 		IMethod[] methods = getMethods(type, methodNames, signatures);
 
 		MigrateSkeletalImplementationToInterfaceRefactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(
@@ -156,11 +190,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
-	// TODO This helper only tests top-level types.
-	// public void testMethodContainedInAnonymousType() throws Exception {
-	// helperFail("A.1", new String[] { "n" }, new String[][] { new String[0]
-	// });
-	// }
+	public void testMethodContainedInAnonymousType() throws Exception {
+		helperFail("m", new String[] {}, new String[] { "n" }, new String[][] { new String[0] });
+	}
 
 	public void testMethodContainedInEnum() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
@@ -168,16 +200,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 	// TODO No idea how to create a case for this.
 	// public void testMethodContainedInLambdas() throws Exception {
-	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	// }
-
-	// TODO This helper only tests top-level types.
-	// public void testMethodContainedInLocalType() throws Exception {
-	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	// }
-
-	// TODO This helper only tests top-level types.
-	// public void testMethodContainedInMemberType() throws Exception {
 	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	// }
 
