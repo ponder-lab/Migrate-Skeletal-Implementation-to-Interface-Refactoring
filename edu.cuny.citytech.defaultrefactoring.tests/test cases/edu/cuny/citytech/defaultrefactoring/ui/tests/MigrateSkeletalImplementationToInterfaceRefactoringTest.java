@@ -10,8 +10,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.Signature;
@@ -167,7 +170,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		}
 
 		IMethod[] methods = getMethods(type, methodNames, signatures);
+		assertFailedPrecondition(methods);
+	}
 
+	private void assertFailedPrecondition(IMethod... methods) throws CoreException {
 		Refactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(methods);
 
 		RefactoringStatus initialStatus = refactoring.checkInitialConditions(new NullProgressMonitor());
@@ -176,7 +182,28 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		RefactoringStatus finalStatus = refactoring.checkFinalConditions(new NullProgressMonitor());
 		logger.info("Final status: " + finalStatus);
 
+		assertFailedPrecondition(initialStatus, finalStatus);
+	}
+
+	private static void assertFailedPrecondition(RefactoringStatus initialStatus, RefactoringStatus finalStatus) {
 		assertTrue("Precondition was supposed to fail.", !initialStatus.isOK() || !finalStatus.isOK());
+	}
+	
+	private void helperFailLambdaMethod(String typeName, String lambdaExpression) throws Exception {
+		ICompilationUnit cu = createCUfromTestFile(getPackageP(), typeName);
+		IBuffer buffer = cu.getBuffer();
+		String contents = buffer.getContents();
+		int start = contents.indexOf(lambdaExpression);
+		IJavaElement[] elements = cu.codeSelect(start, 1);
+		
+		assertEquals("Incorrect no of elements", 1, elements.length);
+		IJavaElement element = elements[0];
+		
+		assertEquals("Incorrect element type", IJavaElement.LOCAL_VARIABLE, element.getElementType());
+		
+		IMethod method = (IMethod) element.getParent();
+		assertFailedPrecondition(method);
+		
 	}
 
 	public void testConstructor() throws Exception {
@@ -191,10 +218,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
-	// TODO I have no idea how to create a test file for this.
-	// public void testLambdaMethod() throws Exception {
-	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	// }
+	public void testLambdaMethod() throws Exception {
+		helperFailLambdaMethod("A", "x) -> {}");
+	}
 
 	public void testPlainMethod() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
@@ -211,11 +237,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodContainedInEnum() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-
-	// TODO No idea how to create a case for this.
-	// public void testMethodContainedInLambdas() throws Exception {
-	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	// }
 
 	public void testMethodDeclaredInLocalType() throws Exception {
 		helperFail("m", new String[] {}, "B", new String[] { "m" }, new String[][] { new String[0] });

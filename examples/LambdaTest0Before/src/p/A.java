@@ -1,9 +1,11 @@
 package p;
 
-import java.util.function.Consumer;
+interface I {
+	void n(int x);
+}
 
 class A {
 	void m() {
-		Consumer<Object> consumer = s -> System.out.println(s);
+		I i = (x) -> {};
 	}
 }
