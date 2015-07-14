@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
+import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
@@ -93,8 +94,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		IType type = getType(cu, "A");
 		IMethod[] methods = getMethods(type, methodNames, signatures);
 
-		MigrateSkeletalImplementationToInterfaceRefactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(
-				methods);
+		Refactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(methods);
 
 		RefactoringStatus initialStatus = refactoring.checkInitialConditions(new NullProgressMonitor());
 		logger.info("Initial status: " + initialStatus);
@@ -168,8 +168,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 		IMethod[] methods = getMethods(type, methodNames, signatures);
 
-		MigrateSkeletalImplementationToInterfaceRefactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(
-				methods);
+		Refactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(methods);
 
 		RefactoringStatus initialStatus = refactoring.checkInitialConditions(new NullProgressMonitor());
 		logger.info("Initial status: " + initialStatus);
