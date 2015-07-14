@@ -28,7 +28,7 @@
     <menuContribution locationURI="menu:org.eclipse.jdt.ui.refactoring.menu?after=additions">
 
       <command commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command"
-      mnemonic="S"
+      mnemonic="%command.mnemonic"
       id="org.eclipse.migrate.skeletal.implementation.to.interface.menus.command">
 
         <visibleWhen checkEnabled="true"></visibleWhen>
