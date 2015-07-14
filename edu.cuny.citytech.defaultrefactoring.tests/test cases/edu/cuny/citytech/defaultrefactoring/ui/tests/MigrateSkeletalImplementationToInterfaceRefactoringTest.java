@@ -122,9 +122,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	private void helperFail(String[] methodNames, String[][] signatures) throws Exception {
 		helperFail("A", null, null, null, methodNames, signatures);
 	}
-	
+
 	private void helperFail(String innerTypeName, String[] methodNames, String[][] signatures) throws Exception {
 		helperFail("A", null, null, innerTypeName, methodNames, signatures);
+	}
+
+	private void helperFail(String outerMethodName, String[] outerSignature, String innerTypeName, String[] methodNames,
+			String[][] signatures) throws Exception {
+		helperFail("A", outerMethodName, outerSignature, innerTypeName, methodNames, signatures);
 	}
 
 	/**
@@ -145,16 +150,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail("A", outerMethodName, outerSignature, null, methodNames, signatures);
 	}
 
-	private void helperFail(String typeName, String outerMethodName, String[] outerSignature, String innerTypeName, String[] methodNames,
-			String[][] signatures) throws Exception {
+	private void helperFail(String typeName, String outerMethodName, String[] outerSignature, String innerTypeName,
+			String[] methodNames, String[][] signatures) throws Exception {
 		ICompilationUnit cu = createCUfromTestFile(getPackageP(), typeName);
 		IType type = getType(cu, typeName);
 
-		if (outerMethodName != null) { // anonymous type case.
+		if (outerMethodName != null) {
 			IMethod method = type.getMethod(outerMethodName, outerSignature);
-			type = method.getType("", 1); // get the anonymous type.
+			if (innerTypeName != null) {
+				type = method.getType(innerTypeName, 1); // get the local type
+			} else {
+				type = method.getType("", 1); // get the anonymous type.
+			}
 		} else if (innerTypeName != null) {
-			type = type.getType(innerTypeName);
+			type = type.getType(innerTypeName); // get the member type.
 		}
 
 		IMethod[] methods = getMethods(type, methodNames, signatures);
@@ -209,10 +218,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	// }
 
-	// TODO This helper only tests top-level types.
-	// public void testMethodContainedInLocalType() throws Exception {
-	// helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	// }
+	public void testMethodDeclaredInLocalType() throws Exception {
+		helperFail("m", new String[] {}, "B", new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testMethodDeclaredInMemberType() throws Exception {
 		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
