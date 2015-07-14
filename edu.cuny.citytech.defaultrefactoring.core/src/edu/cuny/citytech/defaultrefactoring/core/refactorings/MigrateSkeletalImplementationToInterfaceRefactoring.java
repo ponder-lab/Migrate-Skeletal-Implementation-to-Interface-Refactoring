@@ -4,17 +4,25 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
+import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
+import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.NullChange;
@@ -74,7 +82,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 				for (Iterator<IMethod> iterator = methods.iterator(); iterator.hasNext();) {
 					IMethod method = iterator.next();
 
-					status.merge(checkMethod(method));
+					status.merge(checkMethod(method, new SubProgressMonitor(pm, 1)));
 					status.merge(checkDeclaringType(method));
 
 					if (!status.isOK())
@@ -203,7 +211,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		return status;
 	}
 
-	protected RefactoringStatus checkMethod(IMethod method) throws JavaModelException {
+	protected RefactoringStatus checkMethod(IMethod method, IProgressMonitor pm) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		if (!method.exists()) {
@@ -241,7 +249,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithParameters,
 					method);
 		}
-		if (!method.getReturnType().equals(Signature.SIG_VOID)) { //return type must be void.
+		if (!method.getReturnType().equals(Signature.SIG_VOID)) { // return type
+																	// must be
+																	// void.
 			// TODO for now.
 			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithReturnTypes,
 					method);
@@ -249,6 +259,27 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		if (method.getTypeParameters().length != 0) {
 			// TODO for now but this will be an important one.
 			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithTypeParameters,
+					method);
+		}
+
+		status.merge(checkMethodBody(method, new SubProgressMonitor(pm, 1)));
+		return status;
+	}
+
+	protected RefactoringStatus checkMethodBody(IMethod method, IProgressMonitor pm) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		ITypeRoot root = method.getCompilationUnit();
+		CompilationUnit unit = RefactoringASTParser.parseWithASTProvider(root, false, new SubProgressMonitor(pm, 1));
+
+		MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
+		Block body = declaration.getBody();
+		@SuppressWarnings("rawtypes")
+		List statements = body.statements();
+
+		if (!statements.isEmpty()) {
+			// TODO for now.
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithStatements,
 					method);
 		}
 

@@ -49,6 +49,7 @@ public class Messages extends NLS {
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithParameters;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithReturnTypes;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithTypeParameters;
+	public static String MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithStatements;
 
 	static {
 		// initialize resource bundle
