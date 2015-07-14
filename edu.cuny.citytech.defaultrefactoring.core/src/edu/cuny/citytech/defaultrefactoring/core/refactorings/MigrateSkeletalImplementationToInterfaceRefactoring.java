@@ -273,14 +273,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		CompilationUnit unit = RefactoringASTParser.parseWithASTProvider(root, false, new SubProgressMonitor(pm, 1));
 
 		MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
-		Block body = declaration.getBody();
-		@SuppressWarnings("rawtypes")
-		List statements = body.statements();
+		
+		if (declaration != null) {
+			Block body = declaration.getBody();
 
-		if (!statements.isEmpty()) {
-			// TODO for now.
-			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithStatements,
-					method);
+			if (body != null) {
+				@SuppressWarnings("rawtypes")
+				List statements = body.statements();
+
+				if (!statements.isEmpty()) {
+					// TODO for now.
+					addWarning(status,
+							Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithStatements,
+							method);
+				}
+			}
 		}
 
 		return status;
