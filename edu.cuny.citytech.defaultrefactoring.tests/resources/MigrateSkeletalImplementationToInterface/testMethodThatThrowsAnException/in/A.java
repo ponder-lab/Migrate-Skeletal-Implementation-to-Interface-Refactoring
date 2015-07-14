@@ -1,7 +1,5 @@
 package p;
 
-import java.io.Serializable;
-
 interface I {
 }
 
