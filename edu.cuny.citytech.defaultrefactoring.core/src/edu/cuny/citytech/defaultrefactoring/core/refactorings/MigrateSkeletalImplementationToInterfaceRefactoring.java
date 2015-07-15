@@ -109,6 +109,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		RefactoringStatus status = new RefactoringStatus();
 		IType declaringType = method.getDeclaringType();
 
+		if (declaringType.isBinary()) {
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInBinaryTypes,
+					method);
+		}
+		if (declaringType.isReadOnly()) {
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInReadOnlyTypes,
+					method);
+		}
 		if (declaringType.isInterface()) {
 			// Should not support methods already in interfaces.
 			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInInterfaces,
