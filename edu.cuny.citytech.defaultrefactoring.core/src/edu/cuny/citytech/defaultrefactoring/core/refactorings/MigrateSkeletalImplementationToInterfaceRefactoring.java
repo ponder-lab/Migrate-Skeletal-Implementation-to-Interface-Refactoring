@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -24,6 +25,7 @@ import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -217,7 +219,48 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 					method);
 		}
 
+		status.merge(checkDeclaringSuperTypes(declaringType, monitor));
+
 		return status;
+	}
+
+	protected static RefactoringStatus checkDeclaringSuperTypes(IType declaringType, final IProgressMonitor monitor)
+			throws JavaModelException {
+		final RefactoringStatus result = new RefactoringStatus();
+		Set<IType> interfaces = getCandidateInterfaces(declaringType, monitor);
+
+		if (interfaces.isEmpty()) {
+			final String msg = MessageFormat.format(
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithNoCandidateTargets,
+					JavaElementLabels.getTextLabel(declaringType, JavaElementLabels.ALL_FULLY_QUALIFIED));
+			return RefactoringStatus.createWarningStatus(msg);
+		} else if (interfaces.size() > 1) {
+			// TODO For now, let's make sure there's only one candidate type.			
+			final String msg = MessageFormat.format(
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithMultipleCandidateTargets,
+					JavaElementLabels.getTextLabel(declaringType, JavaElementLabels.ALL_FULLY_QUALIFIED));
+			return RefactoringStatus.createWarningStatus(msg);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Returns the possible target interfaces for the migration.
+	 * 
+	 * @param declaringType
+	 *            The source type of the method.
+	 * @param monitor
+	 *            A progress monitor.
+	 * @return The possible target interfaces for the migration.
+	 * @throws JavaModelException
+	 *             upon Java model problems.
+	 */
+	protected static Set<IType> getCandidateInterfaces(IType declaringType, final IProgressMonitor monitor)
+			throws JavaModelException {
+		IType[] superInterfaces = declaringType.newSupertypeHierarchy(monitor).getAllSuperInterfaces(declaringType);
+		return Arrays.asList(superInterfaces).stream()
+				.filter(t -> t != null && t.exists() && !t.isReadOnly() && !t.isBinary()).collect(Collectors.toSet());
 	}
 
 	protected static RefactoringStatus checkMethod(IMethod method, IProgressMonitor pm) throws JavaModelException {
@@ -282,7 +325,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		CompilationUnit unit = RefactoringASTParser.parseWithASTProvider(root, false, new SubProgressMonitor(pm, 1));
 
 		MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
-		
+
 		if (declaration != null) {
 			Block body = declaration.getBody();
 

@@ -277,6 +277,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodContainedInTypeThatImplementsMultipleInterfaces() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testMethodThatThrowsAnException() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
