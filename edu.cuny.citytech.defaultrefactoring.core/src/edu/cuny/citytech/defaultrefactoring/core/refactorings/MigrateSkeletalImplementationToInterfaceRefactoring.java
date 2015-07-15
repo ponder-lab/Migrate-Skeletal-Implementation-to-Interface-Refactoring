@@ -83,7 +83,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 					IMethod method = iterator.next();
 
 					status.merge(checkMethod(method, new SubProgressMonitor(pm, 1)));
-					status.merge(checkDeclaringType(method));
+					status.merge(checkDeclaringType(method, new SubProgressMonitor(pm, 1)));
 
 					if (!status.isOK())
 						iterator.remove();
@@ -105,7 +105,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		}
 	}
 
-	protected RefactoringStatus checkDeclaringType(IMethod method) throws JavaModelException {
+	protected static RefactoringStatus checkDeclaringType(IMethod method, IProgressMonitor monitor)
+			throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 		IType declaringType = method.getDeclaringType();
 
@@ -219,7 +220,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		return status;
 	}
 
-	protected RefactoringStatus checkMethod(IMethod method, IProgressMonitor pm) throws JavaModelException {
+	protected static RefactoringStatus checkMethod(IMethod method, IProgressMonitor pm) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		if (!method.exists()) {
@@ -274,7 +275,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Refacto
 		return status;
 	}
 
-	protected RefactoringStatus checkMethodBody(IMethod method, IProgressMonitor pm) throws JavaModelException {
+	protected static RefactoringStatus checkMethodBody(IMethod method, IProgressMonitor pm) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		ITypeRoot root = method.getCompilationUnit();
