@@ -15,7 +15,9 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
@@ -23,7 +25,7 @@ import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
+import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -93,11 +95,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	private void helperPass(String[] methodNames, String[][] signatures) throws Exception {
-		ICompilationUnit cu = createCUfromTestFile(getPackageP(), "A");
+		IPackageFragment packageP = getPackageP();
+		ICompilationUnit cu = createCUfromTestFile(packageP, "A");
 		IType type = getType(cu, "A");
 		IMethod[] methods = getMethods(type, methodNames, signatures);
-
-		Refactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(methods);
+		IJavaProject project = packageP.getJavaProject();
+		Refactoring refactoring = Util.createRefactoring(project, methods);
 
 		RefactoringStatus initialStatus = refactoring.checkInitialConditions(new NullProgressMonitor());
 		logger.info("Initial status: " + initialStatus);
@@ -174,7 +177,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	private void assertFailedPrecondition(IMethod... methods) throws CoreException {
-		Refactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(methods);
+		Refactoring refactoring = Util.createRefactoring(methods);
 
 		RefactoringStatus initialStatus = refactoring.checkInitialConditions(new NullProgressMonitor());
 		logger.info("Initial status: " + initialStatus);
@@ -188,22 +191,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	private static void assertFailedPrecondition(RefactoringStatus initialStatus, RefactoringStatus finalStatus) {
 		assertTrue("Precondition was supposed to fail.", !initialStatus.isOK() || !finalStatus.isOK());
 	}
-	
+
 	private void helperFailLambdaMethod(String typeName, String lambdaExpression) throws Exception {
 		ICompilationUnit cu = createCUfromTestFile(getPackageP(), typeName);
 		IBuffer buffer = cu.getBuffer();
 		String contents = buffer.getContents();
 		int start = contents.indexOf(lambdaExpression);
 		IJavaElement[] elements = cu.codeSelect(start, 1);
-		
+
 		assertEquals("Incorrect no of elements", 1, elements.length);
 		IJavaElement element = elements[0];
-		
+
 		assertEquals("Incorrect element type", IJavaElement.LOCAL_VARIABLE, element.getElementType());
-		
+
 		IMethod method = (IMethod) element.getParent();
 		assertFailedPrecondition(method);
-		
+
 	}
 
 	public void testConstructor() throws Exception {
@@ -277,11 +280,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodContainedInTypeThatImplementsMultipleInterfaces() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces2() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
@@ -309,7 +312,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithTypeParameters() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodWithStatements() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}

@@ -5,7 +5,7 @@ package edu.cuny.citytech.defaultrefactoring.core.descriptors;
 
 import java.util.Map;
 
-import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
+import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 import edu.cuny.citytech.refactoring.common.core.Refactoring;
 import edu.cuny.citytech.refactoring.common.core.RefactoringDescriptor;
 
@@ -34,6 +34,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringDescriptor
 	 */
 	@Override
 	protected Refactoring createRefactoring() {
-		return new MigrateSkeletalImplementationToInterfaceRefactoring();
+		org.eclipse.ltk.core.refactoring.Refactoring refactoring = Util.createRefactoring();
+		return Util.createRefactoring(refactoring);
 	}
 }

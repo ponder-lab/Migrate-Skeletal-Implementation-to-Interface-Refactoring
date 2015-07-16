@@ -11,18 +11,16 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 import org.eclipse.swt.widgets.Shell;
 
-import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
+import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 
 /**
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
  *         Khatchadourian</a>
  *
  */
-public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends
-		RefactoringWizard {
+public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends RefactoringWizard {
 
-	public MigrateSkeletalImplementationToInterfaceRefactoringWizard(
-			Refactoring refactoring) {
+	public MigrateSkeletalImplementationToInterfaceRefactoringWizard(Refactoring refactoring) {
 		super(refactoring, RefactoringWizard.DIALOG_BASED_USER_INTERFACE);
 	}
 
@@ -36,12 +34,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends
 	}
 
 	public static void startRefactoring(IMethod[] methods, Shell shell) {
-		Refactoring refactoring = new MigrateSkeletalImplementationToInterfaceRefactoring(
-				methods);
-		MigrateSkeletalImplementationToInterfaceRefactoringWizard wizard = new MigrateSkeletalImplementationToInterfaceRefactoringWizard(
-				refactoring);
-		new RefactoringStarter().activate(wizard, shell,
-				RefactoringMessages.OpenRefactoringWizardAction_refactoring,
+		Refactoring refactoring = Util.createRefactoring(methods);
+		RefactoringWizard wizard = new MigrateSkeletalImplementationToInterfaceRefactoringWizard(refactoring);
+
+		new RefactoringStarter().activate(wizard, shell, RefactoringMessages.OpenRefactoringWizardAction_refactoring,
 				RefactoringSaveHelper.SAVE_REFACTORING);
 	}
 }

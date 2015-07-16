@@ -15,6 +15,7 @@ Require-Bundle: org.eclipse.ltk.core.refactoring,
 Export-Package: edu.cuny.citytech.defaultrefactoring.core.contributions,
  edu.cuny.citytech.defaultrefactoring.core.descriptors,
  edu.cuny.citytech.defaultrefactoring.core.messages,
- edu.cuny.citytech.defaultrefactoring.core.refactorings
+ edu.cuny.citytech.defaultrefactoring.core.refactorings,
+ edu.cuny.citytech.defaultrefactoring.core.utils
 Import-Package: org.eclipse.jdt.internal.ui,
  org.eclipse.ui.plugin
