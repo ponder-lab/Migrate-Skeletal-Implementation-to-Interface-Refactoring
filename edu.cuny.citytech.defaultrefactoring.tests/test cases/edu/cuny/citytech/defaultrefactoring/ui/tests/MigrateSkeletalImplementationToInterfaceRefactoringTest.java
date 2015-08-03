@@ -100,10 +100,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFailLambdaMethod("A", "x) -> {}");
 	}
 
-	public void testPlainMethod() throws Exception {
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
 	public void testMethodContainedInInterface() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
