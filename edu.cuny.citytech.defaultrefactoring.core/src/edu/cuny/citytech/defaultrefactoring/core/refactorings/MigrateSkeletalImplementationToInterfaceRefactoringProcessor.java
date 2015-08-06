@@ -1,11 +1,10 @@
 package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -13,6 +12,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeRoot;
@@ -26,18 +26,21 @@ import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
-import org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor;
+import org.eclipse.jdt.internal.corext.refactoring.structure.PullUpRefactoringProcessor;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
+import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
+import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
+import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -46,7 +49,7 @@ import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
  *         Khatchadourian</a>
  */
 @SuppressWarnings({ "restriction" })
-public class MigrateSkeletalImplementationToInterfaceRefactoring extends HierarchyProcessor {
+public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends PullUpRefactoringProcessor {
 
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
@@ -54,18 +57,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 	 * @param methods
 	 *            The methods to refactor.
 	 */
-	public MigrateSkeletalImplementationToInterfaceRefactoring(final IMethod[] methods,
+	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
 			final CodeGenerationSettings settings, boolean layer) {
 		super(methods, settings, layer);
+		this.fCreateMethodStubs = false;
 	}
 
-	public MigrateSkeletalImplementationToInterfaceRefactoring(final IMethod[] methods,
+	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
 			final CodeGenerationSettings settings) {
 		this(methods, settings, false);
 	}
 
-	public MigrateSkeletalImplementationToInterfaceRefactoring() {
-		super(null, null, false);
+	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor() {
+		this(null, null, false);
 	}
 
 	@Override
@@ -108,8 +112,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 				return createFatalError(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInAnonymousTypes, type);
 			}
-			// NOTE: This is being checked by the super implementation but need
-			// to revisit.
+			// TODO: This is being checked by the super implementation but need
+			// to revisit. It might be okay to have an enum. In that case, we can't call the super method.
 			// if (type.isEnum()) {
 			// // TODO for now.
 			// addWarning(status,
@@ -211,11 +215,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 		return status;
 	}
 
+	@Override
 	protected RefactoringStatus checkDeclaringSuperTypes(final IProgressMonitor monitor) throws JavaModelException {
 		final RefactoringStatus result = new RefactoringStatus();
-		Set<IType> interfaces = getCandidateInterfaces(monitor);
+		IType[] interfaces = getCandidateTypes(result, monitor);
 
-		if (interfaces.isEmpty()) {
+		if (interfaces.length == 0) {
 			IType declaringType = getDeclaringType();
 
 			final String msg = MessageFormat.format(
@@ -223,7 +228,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 					JavaElementLabels.getTextLabel(declaringType, JavaElementLabels.ALL_FULLY_QUALIFIED));
 
 			return RefactoringStatus.createWarningStatus(msg);
-		} else if (interfaces.size() > 1) {
+		} else if (interfaces.length > 1) {
 			// TODO For now, let's make sure there's only one candidate type.
 			IType declaringType = getDeclaringType();
 
@@ -238,7 +243,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 	}
 
 	/**
-	 * Returns the possible target interfaces for the migration.
+	 * Returns the possible target interfaces for the migration. NOTE: One
+	 * difference here between this refactoring and pull up is that we can have
+	 * a much more complex type hierarchy due to multiple interface inheritance
+	 * in Java.
+	 * 
+	 * TODO: It should be possible to pull up a method into an interface (i.e.,
+	 * "Pull Up Method To Interface") that is not implemented explicitly. For
+	 * example, there may be a skeletal implementation class that implements all
+	 * the target interface's methods without explicitly declaring so.
 	 * 
 	 * @param monitor
 	 *            A progress monitor.
@@ -246,12 +259,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 	 * @throws JavaModelException
 	 *             upon Java model problems.
 	 */
-	protected Set<IType> getCandidateInterfaces(final IProgressMonitor monitor) throws JavaModelException {
+	@Override
+	public IType[] getCandidateTypes(final RefactoringStatus status, final IProgressMonitor monitor)
+			throws JavaModelException {
 		IType declaringType = getDeclaringType();
 		IType[] superInterfaces = declaringType.newSupertypeHierarchy(monitor).getAllSuperInterfaces(declaringType);
 
-		return Arrays.asList(superInterfaces).parallelStream()
-				.filter(t -> t != null && t.exists() && !t.isReadOnly() && !t.isBinary()).collect(Collectors.toSet());
+		return Stream.of(superInterfaces).parallel()
+				.filter(t -> t != null && t.exists() && !t.isReadOnly() && !t.isBinary()).toArray(IType[]::new);
 	}
 
 	protected RefactoringStatus checkMethods(IProgressMonitor pm) throws JavaModelException {
@@ -287,6 +302,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 				if (Flags.isStatic(method.getFlags())) {
 					// TODO for now.
 					addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoStaticMethods,
+							method);
+				}
+				if (JdtFlags.isNative(method)) {
+					addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoNativeMethods,
 							method);
 				}
 				if (method.isLambdaMethod()) {
@@ -336,8 +355,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 	}
 
 	protected Iterator<IMethod> getMethodsToMoveIterator() {
-		return Arrays.asList(this.fMembersToMove).stream().filter(m -> m instanceof IMethod).map(m -> (IMethod) m)
-				.iterator();
+		return Stream.of(fMembersToMove).parallel().filter(m -> m instanceof IMethod).map(m -> (IMethod) m).iterator();
 	}
 
 	protected RefactoringStatus checkMethodBodies(IProgressMonitor pm) throws JavaModelException {
@@ -402,6 +420,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 				throw new OperationCanceledException();
 
 			status.merge(checkMethods(new SubProgressMonitor(monitor, 1)));
+			if (status.hasFatalError())
+				return status;
+
+			// status.merge(checkProjectCompliance(getCompilationUnitRewrite(compilationUnitRewrites,
+			// getDeclaringType().getCompilationUnit()), getDestinationType(),
+			// fMembersToMove));
+
 			return status;
 		} catch (Exception e) {
 			JavaPlugin.log(e);
@@ -411,40 +436,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 		}
 	}
 
-	/**
-	 * Creates a working copy layer if necessary.
-	 *
-	 * @param monitor
-	 *            the progress monitor to use
-	 * @return a status describing the outcome of the operation
-	 */
-	protected RefactoringStatus createWorkingCopyLayer(IProgressMonitor monitor) {
-		try {
-			monitor.beginTask(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CheckingPreconditions, 1);
-			ICompilationUnit unit = getDeclaringType().getCompilationUnit();
-			if (fLayer)
-				unit = unit.findWorkingCopy(fOwner);
-			resetWorkingCopies(unit);
-			return new RefactoringStatus();
-		} finally {
-			monitor.done();
-		}
-	}
-
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-
 		try {
 			pm.beginTask(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CreatingChange, 1);
 
-			return new NullChange(getName());
+			return new NullChange(getProcessorName());
 		} finally {
 			pm.done();
 		}
-	}
-
-	public String getName() {
-		return Messages.MigrateSkeletalImplementationToInferfaceRefactoring_Name;
 	}
 
 	@Override
@@ -452,13 +452,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 			CompilationUnitRewrite rewrite, ICompilationUnit unit, CompilationUnit node, Set<String> replacements,
 			IProgressMonitor monitor) throws CoreException {
 		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public Object[] getElements() {
-		// TODO Auto-generated method stub
-		return new Object[] {};
 	}
 
 	@Override
@@ -468,12 +461,84 @@ public class MigrateSkeletalImplementationToInterfaceRefactoring extends Hierarc
 
 	@Override
 	public String getProcessorName() {
-		return getName();
+		return Messages.MigrateSkeletalImplementationToInferfaceRefactoring_Name;
 	}
 
 	@Override
 	public boolean isApplicable() throws CoreException {
 		// TODO Auto-generated method stub
 		return true;
+	}
+
+	/**
+	 * Will always return false as this refactoring will never create method
+	 * stubs.
+	 */
+	@Override
+	public boolean getCreateMethodStubs() {
+		return false;
+	}
+
+	@Override
+	public IMethod[] getPullableMembersOfDeclaringType() {
+		try {
+			return RefactoringAvailabilityTester.getMigratableSkeletalImplementations(getDeclaringType());
+		} catch (JavaModelException e) {
+			return new IMethod[0];
+		}
+	}
+
+	@Override
+	protected void registerChanges(TextEditBasedChangeManager manager) throws CoreException {
+		// TODO Auto-generated method stub
+		super.registerChanges(manager);
+	}
+
+	@Override
+	public void resetEnvironment() {
+		// TODO Auto-generated method stub
+		super.resetEnvironment();
+	}
+
+	@Override
+	public void setAbstractMethods(IMethod[] methods) {
+		// TODO Auto-generated method stub
+		super.setAbstractMethods(methods);
+	}
+
+	@Override
+	public void setCreateMethodStubs(boolean create) {
+		// TODO Auto-generated method stub
+		super.setCreateMethodStubs(create);
+	}
+
+	@Override
+	public void setDeletedMethods(IMethod[] methods) {
+		// TODO Auto-generated method stub
+		super.setDeletedMethods(methods);
+	}
+
+	@Override
+	public void setDestinationType(IType type) {
+		// TODO Auto-generated method stub
+		super.setDestinationType(type);
+	}
+
+	@Override
+	public void setMembersToMove(IMember[] members) {
+		// TODO Auto-generated method stub
+		super.setMembersToMove(members);
+	}
+
+	@Override
+	protected RefactoringStatus checkConstructorCalls(IType type, IProgressMonitor monitor) throws JavaModelException {
+		// TODO Auto-generated method stub
+		return super.checkConstructorCalls(type, monitor);
+	}
+
+	@Override
+	public ProcessorBasedRefactoring getRefactoring() {
+		// TODO Auto-generated method stub
+		return super.getRefactoring();
 	}
 }

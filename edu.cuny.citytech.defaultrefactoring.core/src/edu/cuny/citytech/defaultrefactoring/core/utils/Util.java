@@ -16,7 +16,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
-import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
+import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoringProcessor;
 
 /**
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi Khatchadourian</a>
@@ -29,7 +29,7 @@ public final class Util {
 	
 	public static Refactoring createRefactoring(IJavaProject project, IMethod[] methods) {
 		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(project);
-		RefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoring(methods, settings);
+		RefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor(methods, settings);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
@@ -43,7 +43,7 @@ public final class Util {
 	}
 	
 	public static Refactoring createRefactoring() {
-		RefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoring();
+		RefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor();
 		return new ProcessorBasedRefactoring(processor);
 	}
 
