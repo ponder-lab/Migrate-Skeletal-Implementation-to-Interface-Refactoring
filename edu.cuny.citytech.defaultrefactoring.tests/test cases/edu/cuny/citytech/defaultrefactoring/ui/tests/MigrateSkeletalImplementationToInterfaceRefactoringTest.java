@@ -187,4 +187,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithStatements() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testNoMethods() throws Exception {
+		helperFail();
+	}
+	
+	public void testMultipleMethods() throws Exception {
+		helperFail(new String[] { "m", "n" }, new String[][] { new String[0], new String[0] });
+	}
 }

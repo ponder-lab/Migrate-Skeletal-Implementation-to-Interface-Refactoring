@@ -413,6 +413,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			final RefactoringStatus status = new RefactoringStatus();
 
+			// workaround https://bugs.eclipse.org/bugs/show_bug.cgi?id=474524.
+			if (fMembersToMove.length > 0)
 			status.merge(createWorkingCopyLayer(new SubProgressMonitor(monitor, 4)));
 			if (status.hasFatalError())
 				return status;
