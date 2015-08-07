@@ -13,7 +13,7 @@ import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 
-import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
+import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -31,7 +31,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	private static final Logger logger = Logger.getLogger(clazz.getName());
 
 	private static final String REFACTORING_PATH = "MigrateSkeletalImplementationToInterface/";
-	
+
 	/**
 	 * @param testSuite
 	 * @return
@@ -50,7 +50,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public MigrateSkeletalImplementationToInterfaceRefactoringTest(String name) {
 		super(name);
 	}
-	
+
 	/**
 	 * @return the refactoringPath
 	 */
@@ -58,11 +58,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public String getRefactoringPath() {
 		return REFACTORING_PATH;
 	}
-	
+
 	protected Refactoring getRefactoring(IMethod... methods) {
-		return new MigrateSkeletalImplementationToInterfaceRefactoring(methods);
+		return Util.createRefactoring(methods);
 	}
-	
+
 	protected Logger getLogger() {
 		return logger;
 	}
@@ -73,15 +73,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		String contents = buffer.getContents();
 		int start = contents.indexOf(lambdaExpression);
 		IJavaElement[] elements = cu.codeSelect(start, 1);
-		
+
 		assertEquals("Incorrect no of elements", 1, elements.length);
 		IJavaElement element = elements[0];
-		
+
 		assertEquals("Incorrect element type", IJavaElement.LOCAL_VARIABLE, element.getElementType());
-		
+
 		IMethod method = (IMethod) element.getParent();
 		assertFailedPrecondition(method);
-		
+
 	}
 
 	public void testConstructor() throws Exception {
@@ -151,11 +151,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodContainedInTypeThatImplementsMultipleInterfaces() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces2() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
@@ -183,7 +183,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithTypeParameters() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodWithStatements() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
