@@ -1,11 +1,12 @@
 package p;
 
 interface I {
+	void m();
 }
 
 class A {
 	abstract class B implements I {
-		void m() {
+		public void m() {
 		}
 	}
 }

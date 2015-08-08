@@ -4,12 +4,13 @@ interface I {
 }
 
 interface J extends I {
+	void m();
 }
 
 abstract class B implements J {
 }
 
 abstract class A extends B {
-	void m() {
+	public void m() {
 	}
 }
