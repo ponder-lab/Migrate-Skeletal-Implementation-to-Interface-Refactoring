@@ -42,6 +42,8 @@ import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImpl
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 
+// TODO: Are we checking the target interface? I think that the target interface should be completely empty for now.
+
 /**
  * The activator class controls the plug-in life cycle
  * 
@@ -117,7 +119,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInAnonymousTypes, type);
 			}
 			// TODO: This is being checked by the super implementation but need
-			// to revisit. It might be okay to have an enum. In that case, we can't call the super method.
+			// to revisit. It might be okay to have an enum. In that case, we
+			// can't call the super method.
 			// if (type.isEnum()) {
 			// // TODO for now.
 			// addWarning(status,
@@ -329,11 +332,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithParameters,
 							method);
 				}
-				if (!method.getReturnType().equals(Signature.SIG_VOID)) { // return
-																			// type
-																			// must
-																			// be
-																			// void.
+				if (!method.getReturnType().equals(Signature.SIG_VOID)) {
+					// return type must be void.
 					// TODO for now.
 					addWarning(status,
 							Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsWithReturnTypes,
@@ -429,9 +429,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (status.hasFatalError())
 				return status;
 
+			// TODO: Is this needed?
 			// status.merge(checkProjectCompliance(getCompilationUnitRewrite(compilationUnitRewrites,
 			// getDeclaringType().getCompilationUnit()), getDestinationType(),
 			// fMembersToMove));
+
+			// TODO: More checks need to be done here #15.
 
 			return status;
 		} catch (Exception e) {
@@ -509,12 +512,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	@Override
 	public void setAbstractMethods(IMethod[] methods) {
 		// TODO Auto-generated method stub
+		// I don't think this applicable for us.
 		super.setAbstractMethods(methods);
 	}
 
 	@Override
 	public void setCreateMethodStubs(boolean create) {
 		// TODO Auto-generated method stub
+		// I don't think this applicable for us.
 		super.setCreateMethodStubs(create);
 	}
 
