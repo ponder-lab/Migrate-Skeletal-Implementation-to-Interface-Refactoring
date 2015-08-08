@@ -81,7 +81,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (this.fMembersToMove.length == 0)
 				return RefactoringStatus.createFatalErrorStatus(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodsNotSpecified);
-			else {
+			else if (this.fMembersToMove.length > 1) {
+				// TODO: For now.
+				return RefactoringStatus.createFatalErrorStatus(
+						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMoreThanOneMethod);
+			} else {
 				final RefactoringStatus status = new RefactoringStatus();
 				status.merge(checkDeclaringType(new SubProgressMonitor(pm, 1)));
 
