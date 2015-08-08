@@ -362,6 +362,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return Stream.of(fMembersToMove).parallel().filter(m -> m instanceof IMethod).map(m -> (IMethod) m).iterator();
 	}
 
+	protected IMethod[] getMethodsToMove() {
+		return Stream.of(fMembersToMove).parallel().filter(m -> m instanceof IMethod).map(m -> (IMethod) m)
+				.toArray(IMethod[]::new);
+	}
+
 	protected RefactoringStatus checkMethodBodies(IProgressMonitor pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
@@ -419,7 +424,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			// workaround https://bugs.eclipse.org/bugs/show_bug.cgi?id=474524.
 			if (fMembersToMove.length > 0)
-			status.merge(createWorkingCopyLayer(new SubProgressMonitor(monitor, 4)));
+				status.merge(createWorkingCopyLayer(new SubProgressMonitor(monitor, 4)));
 			if (status.hasFatalError())
 				return status;
 			if (monitor.isCanceled())
@@ -433,7 +438,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// status.merge(checkProjectCompliance(getCompilationUnitRewrite(compilationUnitRewrites,
 			// getDeclaringType().getCompilationUnit()), getDestinationType(),
 			// fMembersToMove));
-
+			
 			// TODO: More checks need to be done here #15.
 
 			return status;
@@ -475,8 +480,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	@Override
 	public boolean isApplicable() throws CoreException {
-		// TODO Auto-generated method stub
-		return true;
+		return RefactoringAvailabilityTester.isInterfaceMigrationAvailable(getMethodsToMove());
 	}
 
 	/**
