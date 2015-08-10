@@ -1,9 +1,13 @@
 package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
@@ -26,9 +30,11 @@ import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor;
 import org.eclipse.jdt.internal.corext.refactoring.structure.PullUpRefactoringProcessor;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.ui.JavaElementLabels;
@@ -36,7 +42,6 @@ import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
-import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
@@ -63,6 +68,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final CodeGenerationSettings settings, boolean layer) {
 		super(methods, settings, layer);
 		this.fCreateMethodStubs = false;
+		this.fCompilationUnitRewrites = new HashMap<>();
 	}
 
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
@@ -404,12 +410,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected static void addWarning(RefactoringStatus status, String message, IMethod method) {
-		status.addWarning(MessageFormat.format(message, method.getElementName()), JavaStatusContext.create(method));
+	private static void addWarning(RefactoringStatus status, String message, IMember member) {
+		String elementName = JavaElementLabels.getElementLabel(member, JavaElementLabels.ALL_FULLY_QUALIFIED);
+		status.addWarning(MessageFormat.format(message, elementName), JavaStatusContext.create(member));
 	}
 
-	protected static RefactoringStatus createFatalError(String message, IType type) {
-		return RefactoringStatus.createFatalErrorStatus(MessageFormat.format(message, type.getElementName()),
+	private static void addError(RefactoringStatus status, String message, IMember member, IMember... more) {
+		List<String> elementNames = new ArrayList<>();
+		elementNames.add(JavaElementLabels.getElementLabel(member, JavaElementLabels.ALL_FULLY_QUALIFIED));
+
+		Stream<String> stream = Arrays.asList(more).parallelStream()
+				.map(m -> JavaElementLabels.getElementLabel(m, JavaElementLabels.ALL_DEFAULT));
+		Stream<String> concat = Stream.concat(elementNames.stream(), stream);
+		List<String> collect = concat.collect(Collectors.toList());
+
+		status.addError(MessageFormat.format(message, collect.toArray()), JavaStatusContext.create(member));
+	}
+
+	private static RefactoringStatus createFatalError(String message, IType type) {
+		String elementName = JavaElementLabels.getElementLabel(type, JavaElementLabels.ALL_DEFAULT);
+		return RefactoringStatus.createFatalErrorStatus(MessageFormat.format(message, elementName),
 				JavaStatusContext.create(type));
 	}
 
@@ -434,12 +454,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (status.hasFatalError())
 				return status;
 
-			// TODO: Is this needed?
-			// status.merge(checkProjectCompliance(getCompilationUnitRewrite(compilationUnitRewrites,
-			// getDeclaringType().getCompilationUnit()), getDestinationType(),
-			// fMembersToMove));
-			
+			status.merge(checkProjectCompliance(
+					getCompilationUnitRewrite(fCompilationUnitRewrites, getDeclaringType().getCompilationUnit()),
+					getDestinationType(), fMembersToMove));
+
 			// TODO: More checks need to be done here #15.
+			// TODO: More checks, perhaps resembling those in
+			// org.eclipse.jdt.internal.corext.refactoring.structure.PullUpRefactoringProcessor.checkFinalConditions(IProgressMonitor,
+			// CheckConditionsContext).
 
 			return status;
 		} catch (Exception e) {
@@ -448,6 +470,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			monitor.done();
 		}
+	}
+
+	protected static RefactoringStatus checkProjectCompliance(CompilationUnitRewrite sourceRewriter, IType destination,
+			IMember[] members) {
+		RefactoringStatus status = HierarchyProcessor.checkProjectCompliance(sourceRewriter, destination, members);
+
+		if (!JavaModelUtil.is18OrHigher(destination.getJavaProject())) {
+			Arrays.asList(members).stream().filter(e -> e instanceof IMethod).map(IMethod.class::cast)
+					.filter(IMethod::isLambdaMethod)
+					.forEach(m -> addError(status,
+							Messages.MigrateSkeletalImplementationToInferfaceRefactoring_IncompatibleLanguageConstruct,
+							m, destination));
+		}
+
+		return status;
 	}
 
 	@Override
@@ -508,52 +545,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	@Override
-	public void resetEnvironment() {
-		// TODO Auto-generated method stub
-		super.resetEnvironment();
-	}
-
-	@Override
 	public void setAbstractMethods(IMethod[] methods) {
-		// TODO Auto-generated method stub
-		// I don't think this applicable for us.
-		super.setAbstractMethods(methods);
+		// TODO: I don't think this applicable for us.
+		throw new UnsupportedOperationException(
+				"I don't think it makes sense to have abstract methods generated for this refactoring but I could be wrong.");
 	}
 
 	@Override
 	public void setCreateMethodStubs(boolean create) {
-		// TODO Auto-generated method stub
-		// I don't think this applicable for us.
-		super.setCreateMethodStubs(create);
-	}
-
-	@Override
-	public void setDeletedMethods(IMethod[] methods) {
-		// TODO Auto-generated method stub
-		super.setDeletedMethods(methods);
-	}
-
-	@Override
-	public void setDestinationType(IType type) {
-		// TODO Auto-generated method stub
-		super.setDestinationType(type);
-	}
-
-	@Override
-	public void setMembersToMove(IMember[] members) {
-		// TODO Auto-generated method stub
-		super.setMembersToMove(members);
+		// TODO: I don't think this applicable for us.
+		throw new UnsupportedOperationException("I don't think this makes sense for this refactoring.");
 	}
 
 	@Override
 	protected RefactoringStatus checkConstructorCalls(IType type, IProgressMonitor monitor) throws JavaModelException {
 		// TODO Auto-generated method stub
 		return super.checkConstructorCalls(type, monitor);
-	}
-
-	@Override
-	public ProcessorBasedRefactoring getRefactoring() {
-		// TODO Auto-generated method stub
-		return super.getRefactoring();
 	}
 }
