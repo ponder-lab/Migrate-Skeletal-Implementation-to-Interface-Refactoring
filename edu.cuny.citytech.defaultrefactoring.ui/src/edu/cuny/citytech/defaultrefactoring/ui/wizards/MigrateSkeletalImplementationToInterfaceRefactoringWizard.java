@@ -34,7 +34,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends R
 	}
 
 	public static void startRefactoring(IMethod[] methods, Shell shell) {
-		Refactoring refactoring = Util.createRefactoring(methods);
+		// TODO: Will need to set the target type at some point.
+		Refactoring refactoring = Util.createRefactoring(null, methods);
 		RefactoringWizard wizard = new MigrateSkeletalImplementationToInterfaceRefactoringWizard(refactoring);
 
 		new RefactoringStarter().activate(wizard, shell, RefactoringMessages.OpenRefactoringWizardAction_refactoring,
