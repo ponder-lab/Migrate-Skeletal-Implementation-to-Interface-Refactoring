@@ -9,6 +9,8 @@ import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.ltk.core.refactoring.Refactoring;
@@ -59,8 +61,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		return REFACTORING_PATH;
 	}
 
-	protected Refactoring getRefactoring(IMethod... methods) {
-		return Util.createRefactoring(methods);
+	protected Refactoring getRefactoring(ICompilationUnit cu, IMethod... methods) throws JavaModelException {
+        IType target = null;
+
+		if (cu != null) {
+			// get the target type.
+			target = this.getType(cu, "I");
+		}
+
+		return Util.createRefactoring(target, methods);
 	}
 
 	protected Logger getLogger() {
@@ -187,11 +196,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithStatements() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testNoMethods() throws Exception {
 		helperFail();
 	}
-	
+
 	public void testMultipleMethods() throws Exception {
 		helperFail(new String[] { "m", "n" }, new String[][] { new String[0], new String[0] });
 	}
