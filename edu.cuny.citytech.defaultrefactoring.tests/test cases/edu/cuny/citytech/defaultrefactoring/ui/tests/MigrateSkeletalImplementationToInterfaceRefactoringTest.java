@@ -89,7 +89,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		assertEquals("Incorrect element type", IJavaElement.LOCAL_VARIABLE, element.getElementType());
 
 		IMethod method = (IMethod) element.getParent();
-		assertFailedPrecondition(method);
+		assertFailedPrecondition(cu, method);
 
 	}
 

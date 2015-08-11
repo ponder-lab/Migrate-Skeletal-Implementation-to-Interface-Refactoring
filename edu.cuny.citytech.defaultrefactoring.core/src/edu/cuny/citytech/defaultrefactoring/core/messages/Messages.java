@@ -13,6 +13,8 @@ public class Messages extends NLS {
 	private static final String BUNDLE_NAME = "edu.cuny.citytech.defaultrefactoring.core.messages.messages"; //$NON-NLS-1$
 
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_Name;
+	public static String MigrateSkeletalImplementationToInferfaceRefactoring_CategoryName;
+	public static String MigrateSkeletalImplementationToInferfaceRefactoring_CategoryDescription;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_MethodsNotSpecified;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_CheckingPreconditions;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_CompilingSource;
