@@ -17,6 +17,8 @@ Export-Package: edu.cuny.citytech.defaultrefactoring.core.contributions,
  edu.cuny.citytech.defaultrefactoring.core.messages,
  edu.cuny.citytech.defaultrefactoring.core.refactorings,
  edu.cuny.citytech.defaultrefactoring.core.utils
-Import-Package: org.eclipse.jdt.core.refactoring.descriptors,
+Import-Package: org.eclipse.core.runtime;version="3.5.0",
+ org.eclipse.jdt.core.refactoring,
+ org.eclipse.jdt.core.refactoring.descriptors,
  org.eclipse.jdt.internal.ui,
  org.eclipse.ui.plugin

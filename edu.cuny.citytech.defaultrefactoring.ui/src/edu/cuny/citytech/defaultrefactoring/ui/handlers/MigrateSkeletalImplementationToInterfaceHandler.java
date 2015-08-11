@@ -6,6 +6,8 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Shell;
@@ -37,8 +39,13 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends
 
 		if (methods.length > 0) {
 			Shell shell = HandlerUtil.getActiveShellChecked(event);
-			MigrateSkeletalImplementationToInterfaceRefactoringWizard
-					.startRefactoring(methods, shell);
+			try {
+				MigrateSkeletalImplementationToInterfaceRefactoringWizard
+						.startRefactoring(methods, shell);
+			} catch (JavaModelException e) {
+				JavaPlugin.log(e);
+				throw new ExecutionException("Failed to start refactoring", e);
+			}
 		}
 
 		return null;

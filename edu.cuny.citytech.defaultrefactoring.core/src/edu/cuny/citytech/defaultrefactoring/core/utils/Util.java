@@ -9,6 +9,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -29,7 +30,7 @@ public final class Util {
 	private Util() {
 	}
 
-	public static Refactoring createRefactoring(IType target, IJavaProject project, IMethod[] methods) {
+	public static Refactoring createRefactoring(IType target, IJavaProject project, IMethod[] methods) throws JavaModelException {
 		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(project);
 		MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor(
 				methods, settings);
@@ -37,7 +38,7 @@ public final class Util {
 		return new ProcessorBasedRefactoring(processor);
 	}
 
-	public static Refactoring createRefactoring(IType target, IMethod[] methods) {
+	public static Refactoring createRefactoring(IType target, IMethod[] methods) throws JavaModelException {
 		IJavaProject project = null;
 
 		if (methods != null && methods.length > 0)

@@ -14,7 +14,9 @@ import java.util.stream.Stream;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -46,6 +48,7 @@ import org.eclipse.ltk.core.refactoring.GroupCategorySet;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
+import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
@@ -63,10 +66,13 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends HierarchyProcessor {
 
 	/**
-	 * The destination type
+	 * The destination interface.
 	 */
-	protected IType destinationType;
+	private IType destinationInterface;
 
+	/**
+	 * The map of compilation units to compilation unit rewrites.
+	 */
 	private Map<ICompilationUnit, CompilationUnitRewrite> compilationUnitRewrites = new HashMap<>();
 
 	@SuppressWarnings("unused")
@@ -133,6 +139,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			pm.done();
 		}
+	}
+
+	protected RefactoringStatus checkDestinationInterface(IProgressMonitor monitor) {
+		// TODO #15, #19
+		return null;
 	}
 
 	@Override
@@ -508,10 +519,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				return status;
 
 			// workaround https://bugs.eclipse.org/bugs/show_bug.cgi?id=474524.
-			if (fMembersToMove.length > 0)
-				status.merge(checkProjectCompliance(
-						getCompilationUnitRewrite(compilationUnitRewrites, getDeclaringType().getCompilationUnit()),
-						getDestinationType(), fMembersToMove));
+			// if (fMembersToMove.length > 0)
+			// status.merge(checkProjectCompliance(
+			// getCompilationUnitRewrite(compilationUnitRewrites,
+			// getDeclaringType().getCompilationUnit()),
+			// getDestinationType(), fMembersToMove));
 
 			// TODO: More checks need to be done here #15.
 			// TODO: More checks, perhaps resembling those in
@@ -547,6 +559,33 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		try {
 			pm.beginTask(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CreatingChange, 1);
 
+			IType targetInterface = getDestinationInterface();
+
+			Iterator<IMethod> methodsToMoveIterator = getMethodsToMoveIterator();
+			while (methodsToMoveIterator.hasNext()) {
+				IMethod method = methodsToMoveIterator.next();
+				logInfo("Migrating method: "
+						+ JavaElementLabels.getElementLabel(method, JavaElementLabels.ALL_FULLY_QUALIFIED)
+						+ " to interface: " + destinationInterface.getFullyQualifiedName());
+
+				ICompilationUnit sourceUnit = getDeclaringType().getCompilationUnit();
+				Map<ICompilationUnit, CompilationUnitRewrite> rewrites = this.getCompilationUnitRewrites();
+				CompilationUnitRewrite sourceRewrite = this.getCompilationUnitRewrite(rewrites, sourceUnit);
+				CompilationUnit sourceRoot = sourceRewrite.getRoot();
+
+				MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, sourceRoot);
+				logInfo("Source method declaration: " + sourceMethodDeclaration);
+				
+				Block sourceMethodBody = sourceMethodDeclaration.getBody();
+				Assert.isNotNull(sourceMethodBody, "Source method has a null body.");
+				
+				// TODO: Take the body onto the target method?
+				// TODO: Change the target method to default.
+				// TODO: Find the target method?
+			}
+
+			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
+
 			final Map<String, String> arguments = new HashMap<>();
 			int flags = RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
 
@@ -558,6 +597,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			pm.done();
 		}
+	}
+
+	private void logInfo(String message) {
+		String name = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
+		IStatus status = new Status(IStatus.INFO, name, message);
+		JavaPlugin.log(status);
 	}
 
 	@Override
@@ -592,21 +637,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * @return the destinationType
 	 */
-	public IType getDestinationType() {
-		return destinationType;
+	public IType getDestinationInterface() {
+		return destinationInterface;
 	}
 
 	/**
-	 * Sets the destination type.
+	 * Sets the destination interface.
 	 * 
-	 * @param destinationType
-	 *            the destinationType to set
+	 * @param destinationInterface
+	 *            The destination interface.
+	 * @throws JavaModelException
 	 */
-	public void setDestinationType(IType destinationType) {
-		Assert.isNotNull(destinationType);
+	public void setDestinationType(IType destinationInterface) throws JavaModelException {
+		Assert.isNotNull(destinationInterface);
+		// TODO: Is it possible to have a default method in an annotation?
+		// TODO: Test this?
+		Assert.isTrue(destinationInterface.isInterface() && !destinationInterface.isAnnotation(),
+				"Destination type must be a pure interface.");
 
 		// TODO: Cache type hierarchy?
-		this.destinationType = destinationType;
+		this.destinationInterface = destinationInterface;
 	}
 
 	@Override
@@ -614,5 +664,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			CompilationUnitRewrite rewrite, ICompilationUnit unit, CompilationUnit node, Set<String> replacements,
 			IProgressMonitor monitor) throws CoreException {
 		// TODO Auto-generated method stub
+	}
+
+	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitRewrites() {
+		return this.compilationUnitRewrites;
 	}
 }
