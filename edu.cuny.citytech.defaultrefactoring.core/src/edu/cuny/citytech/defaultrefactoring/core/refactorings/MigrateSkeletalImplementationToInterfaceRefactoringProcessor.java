@@ -15,6 +15,7 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
@@ -86,19 +87,37 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * 
 	 * @param methods
 	 *            The methods to refactor.
+	 * @throws JavaModelException
 	 */
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
-			final CodeGenerationSettings settings, boolean layer) {
+			final CodeGenerationSettings settings, boolean layer, IProgressMonitor monitor) throws JavaModelException {
 		super(methods, settings, layer);
+
+		if (methods != null && methods.length > 0) {
+			IType[] candidateTypes = this.getCandidateTypes(monitor);
+
+			if (candidateTypes != null && candidateTypes.length > 0) {
+				// TODO: For now, #23.
+				if (candidateTypes.length > 1)
+					logWarning("Encountered multiple candidate types (" + candidateTypes.length + ").");
+
+				this.setDestinationType(candidateTypes[0]);
+	}
+		}
 	}
 
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
-			final CodeGenerationSettings settings) {
-		this(methods, settings, false);
+			final CodeGenerationSettings settings, IProgressMonitor monitor) throws JavaModelException {
+		this(methods, settings, false, monitor);
 	}
 
-	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor() {
-		this(null, null, false);
+	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(IProgressMonitor monitor)
+			throws JavaModelException {
+		this(null, null, false, monitor);
+	}
+
+	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor() throws JavaModelException {
+		this(null, null, false, new NullProgressMonitor());
 	}
 
 	/**
@@ -264,7 +283,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	protected RefactoringStatus checkDeclaringSuperTypes(final IProgressMonitor monitor) throws JavaModelException {
 		final RefactoringStatus result = new RefactoringStatus();
-		IType[] interfaces = getCandidateTypes(result, monitor);
+		IType[] interfaces = getCandidateTypes(monitor);
 
 		if (interfaces.length == 0) {
 			IType declaringType = getDeclaringType();
@@ -305,8 +324,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 *             upon Java model problems.
 	 */
-	public IType[] getCandidateTypes(final RefactoringStatus status, final IProgressMonitor monitor)
-			throws JavaModelException {
+	public IType[] getCandidateTypes(final IProgressMonitor monitor) throws JavaModelException {
 		IType declaringType = getDeclaringType();
 		IType[] superInterfaces = declaringType.newSupertypeHierarchy(monitor).getAllSuperInterfaces(declaringType);
 
@@ -599,10 +617,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private void logInfo(String message) {
+	private void log(int severity, String message) {
 		String name = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
-		IStatus status = new Status(IStatus.INFO, name, message);
+		IStatus status = new Status(severity, name, message);
 		JavaPlugin.log(status);
+	}
+
+	private void logInfo(String message) {
+		log(IStatus.INFO, message);
+	}
+
+	private void logWarning(String message) {
+		log(IStatus.WARNING, message);
 	}
 
 	@Override

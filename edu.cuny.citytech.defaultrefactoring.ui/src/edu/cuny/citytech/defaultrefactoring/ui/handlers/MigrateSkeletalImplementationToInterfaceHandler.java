@@ -5,6 +5,8 @@ import java.util.List;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -13,6 +15,7 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+import edu.cuny.citytech.defaultrefactoring.ui.plugins.MigrateSkeletalImplementationToInterfaceRefactoringPlugin;
 import edu.cuny.citytech.defaultrefactoring.ui.wizards.MigrateSkeletalImplementationToInterfaceRefactoringWizard;
 
 /**
@@ -21,8 +24,7 @@ import edu.cuny.citytech.defaultrefactoring.ui.wizards.MigrateSkeletalImplementa
  * @see org.eclipse.core.commands.IHandler
  * @see org.eclipse.core.commands.AbstractHandler
  */
-public class MigrateSkeletalImplementationToInterfaceHandler extends
-		AbstractHandler {
+public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHandler {
 
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -30,22 +32,27 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends
 	 */
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		ISelection currentSelection = HandlerUtil
-				.getCurrentSelectionChecked(event);
+		ISelection currentSelection = HandlerUtil.getCurrentSelectionChecked(event);
 
 		List<?> list = SelectionUtil.toList(currentSelection);
-		IMethod[] methods = list.stream().filter(e -> e instanceof IMethod)
-				.toArray(length -> new IMethod[length]);
+		IMethod[] methods = list.stream().filter(e -> e instanceof IMethod).toArray(length -> new IMethod[length]);
 
 		if (methods.length > 0) {
 			Shell shell = HandlerUtil.getActiveShellChecked(event);
-			try {
-				MigrateSkeletalImplementationToInterfaceRefactoringWizard
-						.startRefactoring(methods, shell);
-			} catch (JavaModelException e) {
-				JavaPlugin.log(e);
-				throw new ExecutionException("Failed to start refactoring", e);
-			}
+			HandlerUtil.getActiveWorkbenchWindowChecked(event).getWorkbench().getProgressService().showInDialog(shell,
+					Job.create("Migrate skeletal implementation to interface", monitor -> {
+						try {
+							MigrateSkeletalImplementationToInterfaceRefactoringWizard.startRefactoring(methods,
+									shell, monitor);
+							return Status.OK_STATUS;
+						} catch (JavaModelException e) {
+							JavaPlugin.log(e);
+							return new Status(
+									Status.ERROR, MigrateSkeletalImplementationToInterfaceRefactoringPlugin
+											.getDefault().getBundle().getSymbolicName(),
+									"Failed to start refactoring.");
+						}
+					}));
 		}
 
 		return null;

@@ -9,7 +9,6 @@ import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
@@ -61,15 +60,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		return REFACTORING_PATH;
 	}
 
-	protected Refactoring getRefactoring(ICompilationUnit cu, IMethod... methods) throws JavaModelException {
-        IType target = null;
-
-		if (cu != null) {
-			// get the target type.
-			target = this.getType(cu, "I");
-		}
-
-		return Util.createRefactoring(target, methods);
+	protected Refactoring getRefactoring(IMethod... methods) throws JavaModelException {
+		return Util.createRefactoring(methods);
 	}
 
 	protected Logger getLogger() {
@@ -89,7 +81,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		assertEquals("Incorrect element type", IJavaElement.LOCAL_VARIABLE, element.getElementType());
 
 		IMethod method = (IMethod) element.getParent();
-		assertFailedPrecondition(cu, method);
+		assertFailedPrecondition(method);
 
 	}
 
