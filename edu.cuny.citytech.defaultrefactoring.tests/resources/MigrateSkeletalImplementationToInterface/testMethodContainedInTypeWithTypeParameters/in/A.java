@@ -1,8 +1,10 @@
 package p;
 
-interface I {}
+interface I {
+	void m();
+}
 
 abstract class A<E> implements I {
-	void m() {
+	public void m() {
 	}
 }

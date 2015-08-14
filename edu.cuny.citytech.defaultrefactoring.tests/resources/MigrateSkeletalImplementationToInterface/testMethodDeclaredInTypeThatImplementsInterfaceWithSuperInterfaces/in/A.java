@@ -4,9 +4,10 @@ interface I {
 }
 
 interface J extends I {
+	void m();
 }
 
 abstract class A implements J {
-	void m() {
+	public void m() {
 	}
 }

@@ -1,10 +1,11 @@
 package p;
 
 interface I {
+	void m();
 }
 
 enum A implements I {
 	;
-	void m() {
+	public void m() {
 	}
 }

@@ -5,35 +5,28 @@ package edu.cuny.citytech.defaultrefactoring.core.descriptors;
 
 import java.util.Map;
 
-import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoring;
-import edu.cuny.citytech.refactoring.common.core.Refactoring;
-import edu.cuny.citytech.refactoring.common.core.RefactoringDescriptor;
+import org.eclipse.jdt.core.refactoring.descriptors.JavaRefactoringDescriptor;
 
 /**
  * @author raffi
  *
  */
-public class MigrateSkeletalImplementationToInterfaceRefactoringDescriptor
-		extends RefactoringDescriptor {
+public class MigrateSkeletalImplementationToInterfaceRefactoringDescriptor extends JavaRefactoringDescriptor {
 
 	public static final String REFACTORING_ID = "edu.cuny.citytech.defaultrefactoring.migrate.skeletal.implementation.to.interface"; //$NON-NLS-1$
 
-	public MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(
-			String project, String description, String comment,
-			@SuppressWarnings("rawtypes") Map arguments) {
-		// TODO: May need an API change flag here as well.
-		super(REFACTORING_ID, project, description, comment, arguments);
+	protected MigrateSkeletalImplementationToInterfaceRefactoringDescriptor() {
+		super(REFACTORING_ID);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * edu.cuny.citytech.refactoring.common.RefactoringDescriptor#createRefactoring
-	 * ()
-	 */
-	@Override
-	protected Refactoring createRefactoring() {
-		return new MigrateSkeletalImplementationToInterfaceRefactoring();
+	public MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(String id, String project, String description,
+			String comment, @SuppressWarnings("rawtypes") Map arguments, int flags) {
+		super(id, project, description, comment, arguments, flags);
 	}
+
+	public MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(String project, String description,
+			String comment, @SuppressWarnings("rawtypes") Map arguments, int flags) {
+		this(REFACTORING_ID, project, description, comment, arguments, flags);
+	}
+
 }

@@ -1,9 +1,11 @@
 package p;
 
-interface I {}
+interface I {
+	void m();
+}
 
 @Deprecated
 abstract class A implements I {
-	void m() {
+	public void m() {
 	}
 }

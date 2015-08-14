@@ -1,8 +1,14 @@
 package p;
 
-import java.io.Serializable;
+interface I {
+	void m();
+}
 
-abstract class A implements Serializable, Cloneable {
-	void m() {
+interface J {
+	void m();
+}
+
+abstract class A implements I, J {
+	public void m() {
 	}
 }

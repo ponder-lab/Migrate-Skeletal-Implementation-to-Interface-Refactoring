@@ -2,13 +2,18 @@ package edu.cuny.citytech.defaultrefactoring.core.contributions;
 
 import java.util.Map;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.refactoring.descriptors.JavaRefactoringDescriptor;
+import org.eclipse.jdt.internal.corext.refactoring.scripting.JavaUIRefactoringContribution;
+import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
-import edu.cuny.citytech.refactoring.common.core.RefactoringContribution;
 
+@SuppressWarnings("restriction")
 public class MigrateSkeletalImplementationToInterfaceRefactoringContribution
-		extends RefactoringContribution {
+		extends JavaUIRefactoringContribution {
 
 	/*
 	 * (non-Javadoc)
@@ -24,6 +29,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringContribution
 			@SuppressWarnings("rawtypes") Map arguments, int flags)
 			throws IllegalArgumentException {
 		return new MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(
-				project, description, comment, arguments);
+				id, project, description, comment, arguments, flags);
+	}
+
+	@Override
+	public Refactoring createRefactoring(JavaRefactoringDescriptor descriptor, RefactoringStatus status)
+			throws CoreException {
+		return descriptor.createRefactoring(status);
 	}
 }
