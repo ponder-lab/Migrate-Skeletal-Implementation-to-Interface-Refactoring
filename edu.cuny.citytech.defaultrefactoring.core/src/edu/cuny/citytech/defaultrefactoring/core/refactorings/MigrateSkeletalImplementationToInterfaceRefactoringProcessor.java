@@ -27,10 +27,15 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTRequestor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
@@ -48,7 +53,9 @@ import org.eclipse.ltk.core.refactoring.GroupCategory;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.TextChange;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
+import org.eclipse.text.edits.TextEdit;
 import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
@@ -71,10 +78,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	private IType destinationInterface;
 
-	/**
-	 * The map of compilation units to compilation unit rewrites.
-	 */
-	private Map<ICompilationUnit, CompilationUnitRewrite> compilationUnitRewrites = new HashMap<>();
+	private Map<CompilationUnit, ASTRewrite> compilationUnitToASTRewriteMap = new HashMap<>();
+
+	private Map<ITypeRoot, CompilationUnit> typeRootToCompilationUnitMap = new HashMap<>();
 
 	@SuppressWarnings("unused")
 	private static final GroupCategorySet SET_MIGRATE_METHOD_IMPLEMENTATION_TO_INTERFACE = new GroupCategorySet(
@@ -102,7 +108,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					logWarning("Encountered multiple candidate types (" + candidateTypes.length + ").");
 
 				this.setDestinationType(candidateTypes[0]);
-	}
+			}
 		}
 	}
 
@@ -431,8 +437,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			while (it.hasNext()) {
 				IMethod method = it.next();
 				ITypeRoot root = method.getCompilationUnit();
-				CompilationUnit unit = RefactoringASTParser.parseWithASTProvider(root, false,
-						new SubProgressMonitor(pm, 1));
+				CompilationUnit unit = this.getCompilationUnit(root, new SubProgressMonitor(pm, 1));
 
 				MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
 
@@ -503,18 +508,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected CompilationUnitRewrite getCompilationUnitRewrite(
-			final Map<ICompilationUnit, CompilationUnitRewrite> rewrites, final ICompilationUnit unit) {
-		Assert.isNotNull(rewrites);
-		Assert.isNotNull(unit);
-		CompilationUnitRewrite rewrite = rewrites.get(unit);
-		if (rewrite == null) {
-			rewrite = new CompilationUnitRewrite(fOwner, unit);
-			rewrites.put(unit, rewrite);
-		}
-		return rewrite;
-	}
-
 	@Override
 	public RefactoringStatus checkFinalConditions(final IProgressMonitor monitor, final CheckConditionsContext context)
 			throws CoreException, OperationCanceledException {
@@ -577,32 +570,47 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		try {
 			pm.beginTask(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CreatingChange, 1);
 
-			IType targetInterface = getDestinationInterface();
+			CompilationUnit destinationCompilationUnit = this
+					.getCompilationUnit(getDestinationInterface().getTypeRoot(), pm);
+			ASTRewrite destinationRewrite = getASTRewrite(destinationCompilationUnit);
+			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
 
 			Iterator<IMethod> methodsToMoveIterator = getMethodsToMoveIterator();
 			while (methodsToMoveIterator.hasNext()) {
-				IMethod method = methodsToMoveIterator.next();
+				IMethod sourceMethod = methodsToMoveIterator.next();
 				logInfo("Migrating method: "
-						+ JavaElementLabels.getElementLabel(method, JavaElementLabels.ALL_FULLY_QUALIFIED)
+						+ JavaElementLabels.getElementLabel(sourceMethod, JavaElementLabels.ALL_FULLY_QUALIFIED)
 						+ " to interface: " + destinationInterface.getFullyQualifiedName());
 
-				ICompilationUnit sourceUnit = getDeclaringType().getCompilationUnit();
-				Map<ICompilationUnit, CompilationUnitRewrite> rewrites = this.getCompilationUnitRewrites();
-				CompilationUnitRewrite sourceRewrite = this.getCompilationUnitRewrite(rewrites, sourceUnit);
-				CompilationUnit sourceRoot = sourceRewrite.getRoot();
+				CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
 
-				MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, sourceRoot);
+				MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod,
+						sourceCompilationUnit);
 				logInfo("Source method declaration: " + sourceMethodDeclaration);
-				
-				Block sourceMethodBody = sourceMethodDeclaration.getBody();
-				Assert.isNotNull(sourceMethodBody, "Source method has a null body.");
-				
-				// TODO: Take the body onto the target method?
-				// TODO: Change the target method to default.
-				// TODO: Find the target method?
+
+				// Find the target method.
+				IMethod targetMethod = getTargetMethod(sourceMethod);
+				MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
+						destinationCompilationUnit);
+
+				// tack on the source method body to the target method.
+				copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+
+				// Change the target method to default.
+				convertToDefault(targetMethodDeclaration, destinationRewrite);
+
+				// Remove the source method.
+				ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
+				removeMethod(sourceMethodDeclaration, sourceRewrite);
+
+				// save the source changes.
+				// TODO: Need to deal with imports #22.
+				if (!manager.containsChangesIn(sourceMethod.getCompilationUnit()))
+					manageCompilationUnit(manager, sourceMethod.getCompilationUnit(), sourceRewrite);
 			}
 
-			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
+			if (!manager.containsChangesIn(getDestinationInterface().getCompilationUnit()))
+				manageCompilationUnit(manager, getDestinationInterface().getCompilationUnit(), destinationRewrite);
 
 			final Map<String, String> arguments = new HashMap<>();
 			int flags = RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
@@ -610,11 +618,81 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			MigrateSkeletalImplementationToInterfaceRefactoringDescriptor descriptor = new MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(
 					null, "TODO", null, arguments, flags);
 
-			// TODO: Need to add changes.
-			return new DynamicValidationRefactoringChange(descriptor, getProcessorName(), new Change[] {});
+			return new DynamicValidationRefactoringChange(descriptor, getProcessorName(), manager.getAllChanges());
 		} finally {
 			pm.done();
 		}
+	}
+
+	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
+		CompilationUnit compilationUnit = this.typeRootToCompilationUnitMap.get(root);
+		if (compilationUnit == null) {
+			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, false, pm);
+			this.typeRootToCompilationUnitMap.put(root, compilationUnit);
+		}
+		return compilationUnit;
+	}
+
+	private ASTRewrite getASTRewrite(CompilationUnit compilationUnit) {
+		ASTRewrite rewrite = this.compilationUnitToASTRewriteMap.get(compilationUnit);
+		if (rewrite == null) {
+			rewrite = ASTRewrite.create(compilationUnit.getAST());
+			this.compilationUnitToASTRewriteMap.put(compilationUnit, rewrite);
+		}
+		return rewrite;
+	}
+
+	private void manageCompilationUnit(final TextEditBasedChangeManager manager, ICompilationUnit compilationUnit,
+			ASTRewrite rewrite) throws JavaModelException {
+		TextEdit edit = rewrite.rewriteAST();
+
+		TextChange change = (TextChange) manager.get(compilationUnit);
+		change.setTextType("java");
+
+		if (change.getEdit() == null)
+			change.setEdit(edit);
+		else
+			change.addEdit(edit);
+
+		manager.manage(compilationUnit, change);
+	}
+
+	private void copyMethodBody(MethodDeclaration sourceMethodDeclaration, MethodDeclaration targetMethodDeclaration,
+			ASTRewrite destinationRewrite) {
+		Block sourceMethodBody = sourceMethodDeclaration.getBody();
+		Assert.isNotNull(sourceMethodBody, "Source method has a null body.");
+
+		ASTNode sourceMethodBodyCopy = ASTNode.copySubtree(destinationRewrite.getAST(), sourceMethodBody);
+		destinationRewrite.set(targetMethodDeclaration, MethodDeclaration.BODY_PROPERTY, sourceMethodBodyCopy, null);
+	}
+
+	private void removeMethod(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
+		// TODO: Do I need an edit group??
+		rewrite.remove(methodDeclaration, null);
+	}
+
+	private void convertToDefault(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
+		Modifier modifier = rewrite.getAST().newModifier(ModifierKeyword.DEFAULT_KEYWORD);
+		ListRewrite listRewrite = rewrite.getListRewrite(methodDeclaration, methodDeclaration.getModifiersProperty());
+		listRewrite.insertLast(modifier, null);
+	}
+
+	/**
+	 * Finds the target (interface) method declaration for the given source
+	 * method.
+	 * 
+	 * @param sourceMethod
+	 *            The method that will be migrated to the target interface.
+	 * @return The target method that will be manipulated or null if not found.
+	 */
+	private IMethod getTargetMethod(IMethod sourceMethod) {
+		IMethod[] methods = this.getDestinationInterface().findMethods(sourceMethod);
+		Assert.isTrue(methods.length <= 1,
+				"Found multiple target methods for method: " + sourceMethod.getElementName());
+		if (methods.length == 1)
+			return methods[0];
+		else
+			return null; // not found.
 	}
 
 	private void log(int severity, String message) {
@@ -690,9 +768,5 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			CompilationUnitRewrite rewrite, ICompilationUnit unit, CompilationUnit node, Set<String> replacements,
 			IProgressMonitor monitor) throws CoreException {
 		// TODO Auto-generated method stub
-	}
-
-	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitRewrites() {
-		return this.compilationUnitRewrites;
 	}
 }
