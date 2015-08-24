@@ -190,7 +190,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testNoMethods() throws Exception {
-		helperFail();
+		helperFail(null, null);
 	}
 
 	public void testMultipleMethods() throws Exception {
