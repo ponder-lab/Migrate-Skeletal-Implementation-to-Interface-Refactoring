@@ -525,7 +525,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private static void addWarning(RefactoringStatus status, String message, IMember member) {
 		if (member != null) { // workaround
 								// https://bugs.eclipse.org/bugs/show_bug.cgi?id=475753.
-		String elementName = JavaElementLabels.getElementLabel(member, JavaElementLabels.ALL_FULLY_QUALIFIED);
+			String elementName = JavaElementLabels.getElementLabel(member, JavaElementLabels.ALL_FULLY_QUALIFIED);
 			message = MessageFormat.format(message, elementName);
 		}
 
@@ -819,7 +819,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *            The destination interface.
 	 * @throws JavaModelException
 	 */
-	public void setDestinationType(IType destinationInterface) throws JavaModelException {
+	protected void setDestinationType(IType destinationInterface) throws JavaModelException {
 		Assert.isNotNull(destinationInterface);
 
 		// TODO: Cache type hierarchy?
