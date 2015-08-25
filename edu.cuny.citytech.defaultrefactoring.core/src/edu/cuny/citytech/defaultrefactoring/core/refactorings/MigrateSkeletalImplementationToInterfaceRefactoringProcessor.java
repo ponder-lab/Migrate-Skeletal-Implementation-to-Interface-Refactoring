@@ -598,6 +598,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			// workaround https://bugs.eclipse.org/bugs/show_bug.cgi?id=474524.
 			// if (fMembersToMove.length > 0)
+			// TODO: Check project compliance.
 			// status.merge(checkProjectCompliance(
 			// getCompilationUnitRewrite(compilationUnitRewrites,
 			// getDeclaringType().getCompilationUnit()),
