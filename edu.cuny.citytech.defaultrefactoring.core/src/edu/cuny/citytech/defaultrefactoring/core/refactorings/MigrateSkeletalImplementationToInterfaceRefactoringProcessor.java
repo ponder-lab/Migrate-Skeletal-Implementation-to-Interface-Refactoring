@@ -353,7 +353,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			IType declaringType = getDeclaringType();
 
 			final String msg = MessageFormat.format(
-					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithNoCandidateTargets,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithNoCandidateTargetTypes,
 					createLabel(declaringType));
 
 			return RefactoringStatus.createWarningStatus(msg);
@@ -362,7 +362,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			IType declaringType = getDeclaringType();
 
 			final String msg = MessageFormat.format(
-					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithMultipleCandidateTargets,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithMultipleCandidateTargetTypes,
 					JavaElementLabels.getTextLabel(declaringType, JavaElementLabels.ALL_FULLY_QUALIFIED));
 
 			return RefactoringStatus.createWarningStatus(msg);
@@ -396,7 +396,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.filter(t -> t != null && t.exists() && !t.isReadOnly() && !t.isBinary()).toArray(IType[]::new);
 	}
 
-	protected RefactoringStatus checkMethods(IProgressMonitor pm) throws JavaModelException {
+	protected RefactoringStatus checkMethodsToMove(IProgressMonitor pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 			Iterator<IMethod> it = getMethodsToMoveIterator();
@@ -468,9 +468,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				pm.worked(1);
 			}
 
-			if (!status.hasFatalError()) {
-				status.merge(checkMethodBodies(new SubProgressMonitor(pm, fMembersToMove.length)));
-			}
+			if (!status.hasFatalError())
+				status.merge(checkMethodsToMoveBodies(new SubProgressMonitor(pm, fMembersToMove.length)));
 
 			return status;
 		} finally {
@@ -487,7 +486,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.toArray(IMethod[]::new);
 	}
 
-	protected RefactoringStatus checkMethodBodies(IProgressMonitor pm) throws JavaModelException {
+	protected RefactoringStatus checkMethodsToMoveBodies(IProgressMonitor pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 			Iterator<IMethod> it = this.getMethodsToMoveIterator();
@@ -589,7 +588,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (monitor.isCanceled())
 				throw new OperationCanceledException();
 
-			status.merge(checkMethods(new SubProgressMonitor(monitor, 1)));
+			status.merge(checkMethodsToMove(new SubProgressMonitor(monitor, 1)));
+			if (status.hasFatalError())
+				return status;
 
 			status.merge(checkDestinationInterface(new SubProgressMonitor(monitor, 1)));
 			if (status.hasFatalError())
