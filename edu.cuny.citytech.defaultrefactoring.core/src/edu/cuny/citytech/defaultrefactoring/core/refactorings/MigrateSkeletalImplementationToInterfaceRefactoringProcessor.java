@@ -262,6 +262,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationTypeMustBePureInterface,
 					destinationInterface);
 
+		// Make sure it exists.
+		checkExistance(status, destinationInterface,
+				Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDoesNotExist);
+
+		// Make sure we can write to it.
+		checkWritabilitiy(status, destinationInterface,
+				Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceNotWritable);
+
+		// Make sure it doesn't have compilation errors.
+		checkStructure(status, destinationInterface);
+
 		// TODO: For now, no annotated target interfaces.
 		if (destinationInterface.getAnnotations().length != 0)
 			addWarning(status,
@@ -488,19 +499,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			while (it.hasNext()) {
 				IMethod method = it.next();
 
-				if (!method.exists()) {
-					addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodDoesNotExist,
-							method);
-				}
-				if (method.isBinary() || method.isReadOnly()) {
-					addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CantChangeMethod,
-							method);
-				}
-				if (!method.isStructureKnown()) {
-					addWarning(status,
-							Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CUContainsCompileErrors,
-							method.getCompilationUnit());
-				}
+				checkExistance(status, method,
+						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodDoesNotExist);
+
+				checkWritabilitiy(status, method,
+						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CantChangeMethod);
+
+				checkStructure(status, method);
+
 				if (method.isConstructor()) {
 					addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoConstructors,
 							method);
@@ -558,6 +564,25 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			return status;
 		} finally {
 			pm.done();
+		}
+	}
+
+	private void checkStructure(RefactoringStatus status, IMember member) throws JavaModelException {
+		if (!member.isStructureKnown()) {
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CUContainsCompileErrors,
+					member.getCompilationUnit());
+		}
+	}
+
+	private void checkWritabilitiy(RefactoringStatus status, IMember member, String message) {
+		if (member.isBinary() || member.isReadOnly()) {
+			addWarning(status, message, member);
+		}
+	}
+
+	private void checkExistance(RefactoringStatus status, IMember member, String message) {
+		if (!member.exists()) {
+			addWarning(status, message, member);
 		}
 	}
 

@@ -69,6 +69,8 @@ public class Messages extends NLS {
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceExtendsInterface;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDeclaresTypeParameters;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDeclaresMemberTypes;
+	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDoesNotExist;
+	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceNotWritable;
 
 	static {
 		// initialize resource bundle
