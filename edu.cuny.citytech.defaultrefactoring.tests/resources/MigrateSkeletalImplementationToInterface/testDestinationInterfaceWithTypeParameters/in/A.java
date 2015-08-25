@@ -1,9 +1,7 @@
 package p;
 
-interface I {
+interface I<T> {
 	void m();
-	class B {
-	}
 }
 
 abstract class A implements I {

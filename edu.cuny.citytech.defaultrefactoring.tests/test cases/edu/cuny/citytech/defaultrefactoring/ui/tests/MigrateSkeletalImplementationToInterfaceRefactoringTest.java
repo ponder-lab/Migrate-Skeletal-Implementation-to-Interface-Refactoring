@@ -216,4 +216,32 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testDefaultTargetMethod() throws Exception {
 		helperFail(new String[] {"m"}, new String[][] {new String[0]});
 	}
+
+	public void testDestinationInterfaceWithAnnotations() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testNonTopLevelDestinationInterface() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testNonTopLevelDestinationInterface2() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+	
+	public void testDestinationInterfaceWithFields() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testDestinationInterfaceThatExtendsInterface() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testDestinationInterfaceWithTypeParameters() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testDestinationInterfaceWithMemberTypes() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
 }

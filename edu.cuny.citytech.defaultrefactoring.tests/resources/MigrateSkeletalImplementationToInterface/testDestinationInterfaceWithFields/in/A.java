@@ -1,9 +1,8 @@
 package p;
 
 interface I {
+	int f = 0;
 	void m();
-	class B {
-	}
 }
 
 abstract class A implements I {

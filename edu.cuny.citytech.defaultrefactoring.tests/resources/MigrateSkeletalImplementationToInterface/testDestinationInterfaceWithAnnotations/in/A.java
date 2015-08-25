@@ -1,8 +1,7 @@
 package p;
 
 interface I {
-	void m();
-	class B {
+	default void m() {
 	}
 }
 

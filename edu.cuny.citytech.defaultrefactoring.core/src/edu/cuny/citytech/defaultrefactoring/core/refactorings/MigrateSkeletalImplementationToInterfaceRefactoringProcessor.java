@@ -261,6 +261,42 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationTypeMustBePureInterface,
 					destinationInterface);
 
+		// TODO: For now, no annotated target interfaces.
+		if (destinationInterface.getAnnotations().length != 0)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceHasAnnotations,
+					destinationInterface);
+
+		// TODO: For now, only top-level types.
+		if (destinationInterface.getDeclaringType() != null)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceIsNotTopLevel,
+					destinationInterface);
+
+		// TODO: For now, no fields.
+		if (destinationInterface.getFields().length != 0)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceDeclaresFields,
+					destinationInterface);
+
+		// TODO: For now, no super interfaces.
+		if (destinationInterface.getSuperInterfaceNames().length != 0)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceExtendsInterface,
+					destinationInterface);
+
+		// TODO: For now, no type parameters.
+		if (destinationInterface.getTypeParameters().length != 0)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDeclaresTypeParameters,
+					destinationInterface);
+
+		// TODO: For now, no member types.
+		if (destinationInterface.getTypes().length != 0)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDeclaresMemberTypes,
+					destinationInterface);
+
 		status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(new SubProgressMonitor(monitor, 1)));
 		status.merge(checkDestinationInterfaceTargetMethods(
 				Optional.of(new SubProgressMonitor(monitor, this.getTargetMethods().size()))));
