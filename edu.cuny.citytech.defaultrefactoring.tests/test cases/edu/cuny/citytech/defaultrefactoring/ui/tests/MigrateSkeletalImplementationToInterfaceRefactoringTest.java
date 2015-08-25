@@ -213,4 +213,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] {"m"}, new String[][] {new String[0]});
 	}
 
+	public void testDefaultTargetMethod() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
 }

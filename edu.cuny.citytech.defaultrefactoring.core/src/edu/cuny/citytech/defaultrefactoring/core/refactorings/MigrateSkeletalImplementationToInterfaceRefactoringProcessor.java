@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -169,7 +170,35 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected RefactoringStatus checkDestinationInterfaceMethods(IProgressMonitor monitor) throws JavaModelException {
+	protected RefactoringStatus checkDestinationInterfaceTargetMethods(IProgressMonitor monitor)
+			throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		// Ensure that target methods are not already default methods.
+		// For each method to move, add a warning if the associated target
+		// method is already default.
+		Iterator<IMethod> iterator = getTargetMethodIterator(Objects::nonNull);
+
+		while (iterator.hasNext()) {
+			final IMethod targetMethod = iterator.next();
+			final int targetMethodFlags = targetMethod.getFlags();
+
+			if (Flags.isDefaultMethod(targetMethodFlags))
+				addWarning(status,
+						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_TargetMethodIsAlreadyDefault,
+						targetMethod);
+		}
+
+		return status;
+	}
+
+	private Iterator<IMethod> getTargetMethodIterator(Predicate<? super IMethod> filterPredicate) {
+		return Stream.of(this.getMethodsToMove()).parallel().map(this::getTargetMethod).filter(filterPredicate)
+				.iterator();
+	}
+
+	protected RefactoringStatus checkDestinationInterfaceOnlyDeclaresTargetMethods(IProgressMonitor monitor)
+			throws JavaModelException {
 		final IType targetInterface = this.getDestinationInterface();
 		Assert.isNotNull(targetInterface);
 
@@ -183,18 +212,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		List<IMethod> destinationInterfaceMethodsList = Arrays.asList(targetInterface.getMethods());
 		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(destinationInterfaceMethodsList);
 
-		// ensure that all the methods to move have target methods in the target interface.
+		// ensure that all the methods to move have target methods in the target
+		// interface.
 		boolean allSourceMethodsHaveTargets;
 
 		// if they are different sizes, they can't be the same.
 		if (methodsToMoveSet.size() != destinationInterfaceMethodsSet.size())
 			allSourceMethodsHaveTargets = false;
 		else
-			// make sure there's a match for each method. 
-			allSourceMethodsHaveTargets = methodsToMoveSet
-				.parallelStream() // in parallel.
-				.map(this::getTargetMethod) // find the target method in the target interface.
-				.allMatch(Objects::nonNull); // make sure they are all there.
+			// make sure there's a match for each method.
+			allSourceMethodsHaveTargets = methodsToMoveSet.parallelStream() // in
+																			// parallel.
+					.map(this::getTargetMethod) // find the target method in the
+												// target interface.
+					.allMatch(Objects::nonNull); // make sure they are all
+													// there.
 
 		if (!allSourceMethodsHaveTargets)
 			addWarning(status,
@@ -221,7 +253,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationTypeMustBePureInterface,
 					destinationInterface);
 
-		status.merge(checkDestinationInterfaceMethods(new SubProgressMonitor(monitor, 1)));
+		status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(new SubProgressMonitor(monitor, 1)));
+		status.merge(checkDestinationInterfaceTargetMethods(new SubProgressMonitor(monitor, 1)));
 
 		return status;
 	}
@@ -756,15 +789,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private IMethod getTargetMethod(IMethod sourceMethod) {
 		// TODO: Should somehow cache this.
 		final IType targetInterface = this.getDestinationInterface();
-		
+
 		if (targetInterface == null)
 			return null; // not found.
 
 		IMethod[] methods = targetInterface.findMethods(sourceMethod);
-		
+
 		if (methods == null)
 			return null; // not found.
-		
+
 		Assert.isTrue(methods.length <= 1,
 				"Found multiple target methods for method: " + sourceMethod.getElementName());
 
