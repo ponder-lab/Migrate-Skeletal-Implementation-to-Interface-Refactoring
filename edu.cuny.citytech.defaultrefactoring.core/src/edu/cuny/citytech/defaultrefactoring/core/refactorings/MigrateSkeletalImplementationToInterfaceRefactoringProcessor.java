@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -498,7 +499,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (!method.isStructureKnown()) {
 					addWarning(status,
 							Messages.MigrateSkeletalImplementationToInferfaceRefactoring_CUContainsCompileErrors,
-							method);
+							method.getCompilationUnit());
 				}
 				if (method.isConstructor()) {
 					addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoConstructors,
@@ -605,15 +606,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private static void addWarning(RefactoringStatus status, String message, IMember member) {
-		if (member != null) { // workaround
+	private static void addWarning(RefactoringStatus status, String message, IJavaElement relatedElement) {
+		if (relatedElement != null) { // workaround
 								// https://bugs.eclipse.org/bugs/show_bug.cgi?id=475753.
-			String elementName = JavaElementLabels.getElementLabel(member, JavaElementLabels.ALL_FULLY_QUALIFIED);
+			String elementName = JavaElementLabels.getElementLabel(relatedElement,
+					JavaElementLabels.ALL_FULLY_QUALIFIED);
 			message = MessageFormat.format(message, elementName);
 		}
 
+		if (relatedElement instanceof IMember) {
+			IMember member = (IMember) relatedElement;
 		RefactoringStatusContext context = JavaStatusContext.create(member);
 		status.addWarning(message, context);
+		} else
+			status.addWarning(message);
 	}
 
 	private static void addError(RefactoringStatus status, String message, IMember member, IMember... more) {
