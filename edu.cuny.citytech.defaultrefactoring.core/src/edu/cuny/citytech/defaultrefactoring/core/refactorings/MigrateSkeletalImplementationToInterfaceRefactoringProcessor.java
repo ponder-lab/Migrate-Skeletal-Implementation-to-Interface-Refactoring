@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -170,9 +171,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected RefactoringStatus checkDestinationInterfaceTargetMethods(IProgressMonitor monitor)
+	protected RefactoringStatus checkDestinationInterfaceTargetMethods(Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
+
+		monitor.ifPresent(m -> m.subTask("Checking destination interface target methods..."));
 
 		// Ensure that target methods are not already default methods.
 		// For each method to move, add a warning if the associated target
@@ -187,14 +190,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				addWarning(status,
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_TargetMethodIsAlreadyDefault,
 						targetMethod);
+
+			monitor.ifPresent(m -> m.worked(1));
 		}
 
 		return status;
 	}
 
 	private Iterator<IMethod> getTargetMethodIterator(Predicate<? super IMethod> filterPredicate) {
-		return Stream.of(this.getMethodsToMove()).parallel().map(this::getTargetMethod).filter(filterPredicate)
-				.iterator();
+		return getTargetMethodStream(filterPredicate).iterator();
+	}
+
+	private Stream<IMethod> getTargetMethodStream(Predicate<? super IMethod> filterPredicate) {
+		return Stream.of(this.getMethodsToMove()).parallel().map(this::getTargetMethod).filter(filterPredicate);
 	}
 
 	protected RefactoringStatus checkDestinationInterfaceOnlyDeclaresTargetMethods(IProgressMonitor monitor)
@@ -254,9 +262,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					destinationInterface);
 
 		status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(new SubProgressMonitor(monitor, 1)));
-		status.merge(checkDestinationInterfaceTargetMethods(new SubProgressMonitor(monitor, 1)));
+		status.merge(checkDestinationInterfaceTargetMethods(
+				Optional.of(new SubProgressMonitor(monitor, this.getTargetMethods().size()))));
 
 		return status;
+	}
+
+	private Set<IMethod> getTargetMethods() {
+		return this.getTargetMethodStream(Objects::nonNull).collect(Collectors.toSet());
 	}
 
 	private void addWarning(RefactoringStatus status, String message) {
