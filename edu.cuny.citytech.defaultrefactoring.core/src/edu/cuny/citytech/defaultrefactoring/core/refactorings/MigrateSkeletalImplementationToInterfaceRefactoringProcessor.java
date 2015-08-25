@@ -4,9 +4,11 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,6 +55,7 @@ import org.eclipse.ltk.core.refactoring.GroupCategory;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
 import org.eclipse.ltk.core.refactoring.TextChange;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
 import org.eclipse.text.edits.TextEdit;
@@ -166,9 +169,64 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected RefactoringStatus checkDestinationInterface(IProgressMonitor monitor) {
-		// TODO #15, #19
-		return null;
+	protected RefactoringStatus checkDestinationInterfaceMethods(IProgressMonitor monitor) throws JavaModelException {
+		final IType targetInterface = this.getDestinationInterface();
+		Assert.isNotNull(targetInterface);
+
+		RefactoringStatus status = new RefactoringStatus();
+
+		// TODO: For now, the target interface must only contain the target
+		// method.
+		List<IMethod> methodsToMoveList = Arrays.asList(this.getMethodsToMove());
+		Set<IMethod> methodsToMoveSet = new HashSet<>(methodsToMoveList);
+
+		List<IMethod> destinationInterfaceMethodsList = Arrays.asList(targetInterface.getMethods());
+		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(destinationInterfaceMethodsList);
+
+		// ensure that the methods to move are the same as the ones in the
+		// interface.
+		boolean equals;
+
+		// if they are different sizes, they can't be the same.
+		if (methodsToMoveSet.size() != destinationInterfaceMethodsSet.size())
+			equals = false;
+		else
+			// make sure there's a match for each method. 
+			equals = methodsToMoveSet.parallelStream().map(targetInterface::findMethods).map(Optional::ofNullable)
+					.map(o -> o.map(a -> a.length)).mapToInt(o -> o.orElse(0)).allMatch(l -> l == 1);
+
+		if (!equals)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceMustOnlyDeclareTheMethodToMigrate,
+					destinationInterface);
+
+		return status;
+	}
+
+	protected RefactoringStatus checkDestinationInterface(IProgressMonitor monitor) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+		// TODO #19
+		final IType destinationInterface = this.getDestinationInterface();
+
+		// Can't be null.
+		if (destinationInterface == null) {
+			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoDestinationInterface);
+			return status;
+		}
+
+		// Must be an interface.
+		if (!isPureInterface(destinationInterface))
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationTypeMustBePureInterface,
+					destinationInterface);
+
+		status.merge(checkDestinationInterfaceMethods(new SubProgressMonitor(monitor, 1)));
+
+		return status;
+	}
+
+	private void addWarning(RefactoringStatus status, String message) {
+		addWarning(status, message, null);
 	}
 
 	@Override
@@ -466,8 +524,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private static void addWarning(RefactoringStatus status, String message, IMember member) {
+		if (member != null) { // workaround
+								// https://bugs.eclipse.org/bugs/show_bug.cgi?id=475753.
 		String elementName = JavaElementLabels.getElementLabel(member, JavaElementLabels.ALL_FULLY_QUALIFIED);
-		status.addWarning(MessageFormat.format(message, elementName), JavaStatusContext.create(member));
+			message = MessageFormat.format(message, elementName);
+		}
+
+		RefactoringStatusContext context = JavaStatusContext.create(member);
+		status.addWarning(message, context);
 	}
 
 	private static void addError(RefactoringStatus status, String message, IMember member, IMember... more) {
@@ -526,6 +590,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				throw new OperationCanceledException();
 
 			status.merge(checkMethods(new SubProgressMonitor(monitor, 1)));
+
+			status.merge(checkDestinationInterface(new SubProgressMonitor(monitor, 1)));
 			if (status.hasFatalError())
 				return status;
 
@@ -536,7 +602,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// getDeclaringType().getCompilationUnit()),
 			// getDestinationType(), fMembersToMove));
 
-			// TODO: More checks need to be done here #15.
 			// TODO: More checks, perhaps resembling those in
 			// org.eclipse.jdt.internal.corext.refactoring.structure.PullUpRefactoringProcessor.checkFinalConditions(IProgressMonitor,
 			// CheckConditionsContext).
@@ -754,13 +819,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public void setDestinationType(IType destinationInterface) throws JavaModelException {
 		Assert.isNotNull(destinationInterface);
-		// TODO: Is it possible to have a default method in an annotation?
-		// TODO: Test this?
-		Assert.isTrue(destinationInterface.isInterface() && !destinationInterface.isAnnotation(),
-				"Destination type must be a pure interface.");
 
 		// TODO: Cache type hierarchy?
 		this.destinationInterface = destinationInterface;
+	}
+
+	/**
+	 * Returns true if the given type is a pure interface, i.e., it is an
+	 * interface but not an annotation.
+	 * 
+	 * @param type
+	 *            The type to check.
+	 * @return True if the given type is a pure interface and false otherwise.
+	 * @throws JavaModelException
+	 */
+	private static boolean isPureInterface(IType type) throws JavaModelException {
+		return type != null && type.isInterface() && !type.isAnnotation();
 	}
 
 	@Override

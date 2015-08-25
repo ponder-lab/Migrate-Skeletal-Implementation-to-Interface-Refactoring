@@ -196,4 +196,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMultipleMethods() throws Exception {
 		helperFail(new String[] { "m", "n" }, new String[][] { new String[0], new String[0] });
 	}
+	
+	public void testTargetInterfaceWithMultipleMethods() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testTargetInterfaceWithNoMethods() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testPureTargetInterface() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+	
+	public void testTargetInterfaceWithNoTargetMethods() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
 }
