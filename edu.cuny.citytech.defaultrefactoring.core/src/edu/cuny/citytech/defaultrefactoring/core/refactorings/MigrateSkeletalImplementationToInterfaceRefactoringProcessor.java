@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -183,19 +183,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		List<IMethod> destinationInterfaceMethodsList = Arrays.asList(targetInterface.getMethods());
 		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(destinationInterfaceMethodsList);
 
-		// ensure that the methods to move are the same as the ones in the
-		// interface.
-		boolean equals;
+		// ensure that all the methods to move have target methods in the target interface.
+		boolean allSourceMethodsHaveTargets;
 
 		// if they are different sizes, they can't be the same.
 		if (methodsToMoveSet.size() != destinationInterfaceMethodsSet.size())
-			equals = false;
+			allSourceMethodsHaveTargets = false;
 		else
 			// make sure there's a match for each method. 
-			equals = methodsToMoveSet.parallelStream().map(targetInterface::findMethods).map(Optional::ofNullable)
-					.map(o -> o.map(a -> a.length)).mapToInt(o -> o.orElse(0)).allMatch(l -> l == 1);
+			allSourceMethodsHaveTargets = methodsToMoveSet
+				.parallelStream() // in parallel.
+				.map(this::getTargetMethod) // find the target method in the target interface.
+				.allMatch(Objects::nonNull); // make sure they are all there.
 
-		if (!equals)
+		if (!allSourceMethodsHaveTargets)
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceMustOnlyDeclareTheMethodToMigrate,
 					destinationInterface);
@@ -753,9 +754,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @return The target method that will be manipulated or null if not found.
 	 */
 	private IMethod getTargetMethod(IMethod sourceMethod) {
-		IMethod[] methods = this.getDestinationInterface().findMethods(sourceMethod);
+		// TODO: Should somehow cache this.
+		final IType targetInterface = this.getDestinationInterface();
+		
+		if (targetInterface == null)
+			return null; // not found.
+
+		IMethod[] methods = targetInterface.findMethods(sourceMethod);
+		
+		if (methods == null)
+			return null; // not found.
+		
 		Assert.isTrue(methods.length <= 1,
 				"Found multiple target methods for method: " + sourceMethod.getElementName());
+
 		if (methods.length == 1)
 			return methods[0];
 		else
