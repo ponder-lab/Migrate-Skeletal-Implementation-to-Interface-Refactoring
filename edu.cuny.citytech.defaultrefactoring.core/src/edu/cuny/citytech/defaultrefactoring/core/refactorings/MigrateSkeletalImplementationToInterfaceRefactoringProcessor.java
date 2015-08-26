@@ -267,7 +267,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					targetInterface);
 
 		// Make sure it exists.
-		checkExistance(status, targetInterface,
+		checkExistence(status, targetInterface,
 				Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDoesNotExist);
 
 		// Make sure we can write to it.
@@ -561,7 +561,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			while (it.hasNext()) {
 				IMethod method = it.next();
 
-				checkExistance(status, method,
+				checkExistence(status, method,
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodDoesNotExist);
 
 				checkWritabilitiy(status, method,
@@ -642,7 +642,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private void checkExistance(RefactoringStatus status, IMember member, String message) {
+	private void checkExistence(RefactoringStatus status, IMember member, String message) {
 		if (!member.exists()) {
 			addWarning(status, message, member);
 		}
