@@ -468,7 +468,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInStaticTypes, type);
 			}
 
-			status.merge(checkDeclaringSuperTypes(monitor));
+			status.merge(checkDeclaringSuperTypes(Optional.of(monitor)));
 		}
 
 		return status;
