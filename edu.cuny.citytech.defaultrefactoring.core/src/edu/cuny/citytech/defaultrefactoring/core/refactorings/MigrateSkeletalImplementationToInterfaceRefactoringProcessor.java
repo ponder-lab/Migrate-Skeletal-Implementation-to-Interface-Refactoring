@@ -946,8 +946,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	protected void setDestinationInterface(IType destinationInterface) throws JavaModelException {
 		Assert.isNotNull(destinationInterface);
-
-		// TODO: Cache type hierarchy?
 		this.destinationInterface = destinationInterface;
 	}
 
