@@ -538,6 +538,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *             upon Java model problems.
 	 */
 	public IType[] getCandidateTypes(final Optional<IProgressMonitor> monitor) throws JavaModelException {
+		// FIXME: This is wrong. Candidate destination interfaces should be per a particular method to be migrated #30.
 		try {
 			monitor.ifPresent(m -> m.subTask("Retrieving candidate types..."));
 			IType[] superInterfaces = getDeclaringTypeSuperInterfaces(monitor.map(m -> new SubProgressMonitor(m, 1)));
