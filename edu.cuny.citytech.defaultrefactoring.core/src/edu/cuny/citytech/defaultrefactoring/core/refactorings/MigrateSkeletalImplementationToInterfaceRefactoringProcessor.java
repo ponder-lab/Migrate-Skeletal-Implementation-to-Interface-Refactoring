@@ -1058,11 +1058,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	protected ITypeHierarchy getDestinationInterfaceHierarchy(Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
+			if (this.destinationInterfaceHierarchy == null) {
 			monitor.ifPresent(m -> m.subTask("Retrieving destination interface hierarchy..."));
-
-			if (this.destinationInterfaceHierarchy == null)
 				this.destinationInterfaceHierarchy = destinationInterface.newTypeHierarchy(fOwner,
-						monitor.orElse(new NullProgressMonitor()));
+						monitor.orElseGet(NullProgressMonitor::new));
+			}
 			return destinationInterfaceHierarchy;
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
