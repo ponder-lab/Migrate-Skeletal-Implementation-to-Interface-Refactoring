@@ -244,4 +244,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testDestinationInterfaceWithMemberTypes() throws Exception {
 		helperFail(new String[] {"m"}, new String[][] {new String[0]});
 	}
+
+	public void testMemberDestinationInterface() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testMemberDestinationInterface2() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
 }

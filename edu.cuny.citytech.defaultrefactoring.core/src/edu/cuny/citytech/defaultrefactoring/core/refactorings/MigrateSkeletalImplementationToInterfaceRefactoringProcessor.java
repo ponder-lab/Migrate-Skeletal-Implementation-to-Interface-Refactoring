@@ -312,6 +312,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDeclaresMemberTypes,
 					targetInterface);
 
+		// TODO: For now, no member interfaces.
+		if (targetInterface.isMember())
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceIsMember,
+					targetInterface);
+
 		status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(new SubProgressMonitor(monitor, 1)));
 		status.merge(checkDestinationInterfaceTargetMethods(
 				Optional.of(new SubProgressMonitor(monitor, this.getTargetMethods().size()))));
