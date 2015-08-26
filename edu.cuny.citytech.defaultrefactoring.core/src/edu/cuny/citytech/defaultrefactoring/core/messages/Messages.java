@@ -73,6 +73,7 @@ public class Messages extends NLS {
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceNotWritable;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceIsMember;
 	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHierarchyContainsInvalidClass;
+	public static String MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHierarchyContainsInvalidInterfaces;
 
 	static {
 		// initialize resource bundle

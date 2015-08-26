@@ -335,10 +335,31 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		final ITypeHierarchy hierarchy = this
 				.getDestinationInterfaceHierarchy(Optional.of(new SubProgressMonitor(monitor, 1)));
 
+		checkValidClasses(status, hierarchy);
+		checkValidInterfaces(status, hierarchy);
+
+		return status;
+	}
+
+	private void checkValidInterfaces(RefactoringStatus status, final ITypeHierarchy hierarchy) {
+		// TODO: For now, there should be only one interface, and that is the
+		// target interface.
+		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).count() == 1
+				&& Stream.of(hierarchy.getAllInterfaces()).allMatch(i -> i.equals(this.getDestinationInterface()));
+
+		if (!containsOnlyValidInterfaces)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHierarchyContainsInvalidInterfaces,
+					getDestinationInterface());
+	}
+
+	private void checkValidClasses(RefactoringStatus status, final ITypeHierarchy hierarchy) throws JavaModelException {
 		// TODO: For now, the only class in the hierarchy should be the
 		// declaring class of the source method and java.lang.Object.
 		List<IType> allClassesAsList = Arrays.asList(hierarchy.getAllClasses());
-		// TODO: All the methods to move may not be from the same type.
+
+		// TODO: All the methods to move may not be from the same type. This is
+		// in regards to getDeclaringType(), which only returns one type.
 		boolean containsOnlyValidClasses = allClassesAsList.size() == 2
 				&& allClassesAsList.contains(this.getDeclaringType())
 				&& allClassesAsList.contains(hierarchy.getType().getJavaProject().findType("java.lang.Object"));
@@ -347,8 +368,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHierarchyContainsInvalidClass,
 					getDestinationInterface());
-
-		return status;
 	}
 
 	private Set<IMethod> getTargetMethods() {
@@ -534,7 +553,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws JavaModelException {
 		try {
 			monitor.ifPresent(m -> m.subTask("Retrieving declaring type super interfaces..."));
-		IType declaringType = getDeclaringType();
+			IType declaringType = getDeclaringType();
 			return getDeclaringSuperTypeHierarchy(monitor.map(m -> new SubProgressMonitor(m, 1)))
 					.getAllSuperInterfaces(declaringType);
 		} finally {
@@ -930,17 +949,36 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	/**
-	 * Finds the target (interface) method declaration for the given source
-	 * method.
+	 * Finds the target (interface) method declaration in the destination
+	 * interface for the given source method.
+	 * 
+	 * TODO: Something is very wrong here. There can be multiple targets for a
+	 * given source method because it can be declared in multiple interfaces up
+	 * and down the hierarchy. What this method right now is really doing is
+	 * finding the target method for the given source method in the destination
+	 * interface. As such, we should be sure what the destination is prior to
+	 * this call.
 	 * 
 	 * @param sourceMethod
 	 *            The method that will be migrated to the target interface.
 	 * @return The target method that will be manipulated or null if not found.
 	 */
 	private IMethod getTargetMethod(IMethod sourceMethod) {
-		// TODO: Should somehow cache this.
 		final IType targetInterface = this.getDestinationInterface();
+		return getTargetMethod(sourceMethod, targetInterface);
+	}
 
+	/**
+	 * Finds the target (interface) method declaration in the given type for the
+	 * given source method.
+	 * 
+	 * @param sourceMethod
+	 *            The method that will be migrated to the target interface.
+	 * @param
+	 * @return The target method that will be manipulated or null if not found.
+	 */
+	private IMethod getTargetMethod(IMethod sourceMethod, IType targetInterface) {
+		// TODO: Should somehow cache this.
 		if (targetInterface == null)
 			return null; // not found.
 
@@ -1059,7 +1097,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws JavaModelException {
 		try {
 			if (this.destinationInterfaceHierarchy == null) {
-			monitor.ifPresent(m -> m.subTask("Retrieving destination interface hierarchy..."));
+				monitor.ifPresent(m -> m.subTask("Retrieving destination interface hierarchy..."));
 				this.destinationInterfaceHierarchy = destinationInterface.newTypeHierarchy(fOwner,
 						monitor.orElseGet(NullProgressMonitor::new));
 			}
