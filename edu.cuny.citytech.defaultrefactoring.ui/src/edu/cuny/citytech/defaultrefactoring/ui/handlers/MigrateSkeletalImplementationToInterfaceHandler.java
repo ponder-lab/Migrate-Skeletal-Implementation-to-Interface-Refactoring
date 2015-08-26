@@ -39,6 +39,10 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		IMethod[] methods = list.stream().filter(e -> e instanceof IMethod).toArray(length -> new IMethod[length]);
 		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject).toArray(length -> new IJavaProject[length]);
 
+		if(javaProjects.length > 0){
+			
+		}
+		
 		getIMethods(event, methods);
 
 		return null;
