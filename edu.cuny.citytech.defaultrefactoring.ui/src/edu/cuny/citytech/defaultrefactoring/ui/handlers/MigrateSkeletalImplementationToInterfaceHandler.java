@@ -11,6 +11,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
@@ -49,7 +50,10 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 						ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
 						for (ICompilationUnit iCompilationUnit : compilationUnits) {
 							//printing the iCompilationUnit,
-							System.out.println(iCompilationUnit);
+							IType[] allTypes = iCompilationUnit.getAllTypes(); 
+							for (IType iType : allTypes) {
+								System.out.println(iType);
+							}
 						}
 					}
 				} catch (JavaModelException e1) {
