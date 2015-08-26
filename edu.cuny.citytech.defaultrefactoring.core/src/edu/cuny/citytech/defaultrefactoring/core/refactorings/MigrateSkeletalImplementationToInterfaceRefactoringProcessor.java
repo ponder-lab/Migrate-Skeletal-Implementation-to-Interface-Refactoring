@@ -318,9 +318,33 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceIsMember,
 					targetInterface);
 
+		status.merge(checkDestinationInterfaceHierarchy(new SubProgressMonitor(monitor, 1)));
 		status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(new SubProgressMonitor(monitor, 1)));
 		status.merge(checkDestinationInterfaceTargetMethods(
 				Optional.of(new SubProgressMonitor(monitor, this.getTargetMethods().size()))));
+
+		return status;
+	}
+
+	protected RefactoringStatus checkDestinationInterfaceHierarchy(IProgressMonitor monitor) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+		monitor.subTask("Checking destination interface hierarchy...");
+
+		final ITypeHierarchy hierarchy = this
+				.getDestinationInterfaceHierarchy(Optional.of(new SubProgressMonitor(monitor, 1)));
+
+		// TODO: For now, the only class in the hierarchy should be the
+		// declaring class of the source method and java.lang.Object.
+		List<IType> allClassesAsList = Arrays.asList(hierarchy.getAllClasses());
+		// TODO: All the methods to move may not be from the same type.
+		boolean containsOnlyValidClasses = allClassesAsList.size() == 2
+				&& allClassesAsList.contains(this.getDeclaringType())
+				&& allClassesAsList.contains(hierarchy.getType().getJavaProject().findType("java.lang.Object"));
+
+		if (!containsOnlyValidClasses)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHierarchyContainsInvalidClass,
+					getDestinationInterface());
 
 		return status;
 	}
@@ -642,7 +666,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private static void addWarning(RefactoringStatus status, String message, IJavaElement relatedElement) {
 		if (relatedElement != null) { // workaround
-								// https://bugs.eclipse.org/bugs/show_bug.cgi?id=475753.
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=475753.
 			String elementName = JavaElementLabels.getElementLabel(relatedElement,
 					JavaElementLabels.ALL_FULLY_QUALIFIED);
 			message = MessageFormat.format(message, elementName);
@@ -650,8 +674,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		if (relatedElement instanceof IMember) {
 			IMember member = (IMember) relatedElement;
-		RefactoringStatusContext context = JavaStatusContext.create(member);
-		status.addWarning(message, context);
+			RefactoringStatusContext context = JavaStatusContext.create(member);
+			status.addWarning(message, context);
 		} else
 			status.addWarning(message);
 	}
