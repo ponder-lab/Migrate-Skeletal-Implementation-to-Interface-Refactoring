@@ -761,7 +761,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				IMethod sourceMethod = methodsToMoveIterator.next();
 				logInfo("Migrating method: "
 						+ JavaElementLabels.getElementLabel(sourceMethod, JavaElementLabels.ALL_FULLY_QUALIFIED)
-						+ " to interface: " + destinationInterface.getFullyQualifiedName());
+						+ " to interface: " + getDestinationInterface().getFullyQualifiedName());
 
 				CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
 
