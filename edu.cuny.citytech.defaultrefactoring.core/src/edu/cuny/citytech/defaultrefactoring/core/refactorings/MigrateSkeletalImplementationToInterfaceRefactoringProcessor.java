@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
@@ -83,6 +84,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * The destination interface.
 	 */
 	private IType destinationInterface;
+
+	private ITypeHierarchy destinationInterfaceHierarchy;
 
 	private Map<CompilationUnit, ASTRewrite> compilationUnitToASTRewriteMap = new HashMap<>();
 
@@ -967,5 +970,32 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			CompilationUnitRewrite rewrite, ICompilationUnit unit, CompilationUnit node, Set<String> replacements,
 			IProgressMonitor monitor) throws CoreException {
 		// TODO Auto-generated method stub
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor#
+	 * clearCaches()
+	 */
+	@Override
+	protected void clearCaches() {
+		super.clearCaches();
+		this.destinationInterfaceHierarchy = null;
+	}
+
+	protected ITypeHierarchy getDestinationInterfaceHierarchy(Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		try {
+			monitor.ifPresent(m -> m.subTask("Retrieving destination interface hierarchy..."));
+
+			if (this.destinationInterfaceHierarchy == null)
+				this.destinationInterfaceHierarchy = destinationInterface.newTypeHierarchy(fOwner,
+						monitor.orElse(new NullProgressMonitor()));
+			return destinationInterfaceHierarchy;
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
 	}
 }
