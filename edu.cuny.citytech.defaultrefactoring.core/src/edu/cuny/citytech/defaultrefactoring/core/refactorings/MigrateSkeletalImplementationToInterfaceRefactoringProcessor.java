@@ -105,11 +105,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 */
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
-			final CodeGenerationSettings settings, boolean layer, IProgressMonitor monitor) throws JavaModelException {
+			final CodeGenerationSettings settings, boolean layer, Optional<IProgressMonitor> monitor)
+					throws JavaModelException {
 		super(methods, settings, layer);
 
 		if (methods != null && methods.length > 0) {
-			IType[] candidateTypes = this.getCandidateTypes(monitor);
+			IType[] candidateTypes = this.getCandidateTypes(monitor.map(m -> new SubProgressMonitor(m, 1)));
 
 			if (candidateTypes != null && candidateTypes.length > 0) {
 				// TODO: For now, #23.
@@ -122,17 +123,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
-			final CodeGenerationSettings settings, IProgressMonitor monitor) throws JavaModelException {
+			final CodeGenerationSettings settings, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		this(methods, settings, false, monitor);
 	}
 
-	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(IProgressMonitor monitor)
+	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		this(null, null, false, monitor);
 	}
 
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor() throws JavaModelException {
-		this(null, null, false, new NullProgressMonitor());
+		this(null, null, false, Optional.empty());
 	}
 
 	/**
@@ -473,9 +474,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	protected RefactoringStatus checkDeclaringSuperTypes(final IProgressMonitor monitor) throws JavaModelException {
+	protected RefactoringStatus checkDeclaringSuperTypes(final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		final RefactoringStatus result = new RefactoringStatus();
-		IType[] interfaces = getCandidateTypes(monitor);
+		IType[] interfaces = getCandidateTypes(monitor.map(m -> new SubProgressMonitor(m, 1)));
 
 		if (interfaces.length == 0) {
 			IType declaringType = getDeclaringType();
@@ -516,12 +517,40 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 *             upon Java model problems.
 	 */
-	public IType[] getCandidateTypes(final IProgressMonitor monitor) throws JavaModelException {
-		IType declaringType = getDeclaringType();
-		IType[] superInterfaces = declaringType.newSupertypeHierarchy(monitor).getAllSuperInterfaces(declaringType);
+	public IType[] getCandidateTypes(final Optional<IProgressMonitor> monitor) throws JavaModelException {
+		try {
+			monitor.ifPresent(m -> m.subTask("Retrieving candidate types..."));
+			IType[] superInterfaces = getDeclaringTypeSuperInterfaces(monitor.map(m -> new SubProgressMonitor(m, 1)));
 
-		return Stream.of(superInterfaces).parallel()
-				.filter(t -> t != null && t.exists() && !t.isReadOnly() && !t.isBinary()).toArray(IType[]::new);
+			return Stream.of(superInterfaces).parallel().filter(Objects::nonNull).filter(IJavaElement::exists)
+					.filter(t -> !t.isReadOnly()).filter(t -> !t.isBinary()).toArray(IType[]::new);
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+	}
+
+	private IType[] getDeclaringTypeSuperInterfaces(final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		try {
+			monitor.ifPresent(m -> m.subTask("Retrieving declaring type super interfaces..."));
+		IType declaringType = getDeclaringType();
+			return getDeclaringSuperTypeHierarchy(monitor.map(m -> new SubProgressMonitor(m, 1)))
+					.getAllSuperInterfaces(declaringType);
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+	}
+
+	private ITypeHierarchy getDeclaringSuperTypeHierarchy(final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		try {
+			monitor.ifPresent(m -> m.subTask("Retrieving declaring super type hierarchy..."));
+			IType declaringType = this.getDeclaringType();
+			// TODO: Need to cache this.
+			return declaringType.newSupertypeHierarchy(monitor.orElseGet(NullProgressMonitor::new));
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
 	}
 
 	protected RefactoringStatus checkMethodsToMove(IProgressMonitor pm) throws JavaModelException {

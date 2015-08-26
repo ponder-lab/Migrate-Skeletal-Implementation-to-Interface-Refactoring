@@ -1,6 +1,7 @@
 package edu.cuny.citytech.defaultrefactoring.ui.handlers;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -42,8 +43,8 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			HandlerUtil.getActiveWorkbenchWindowChecked(event).getWorkbench().getProgressService().showInDialog(shell,
 					Job.create("Migrate skeletal implementation to interface", monitor -> {
 						try {
-							MigrateSkeletalImplementationToInterfaceRefactoringWizard.startRefactoring(methods,
-									shell, monitor);
+							MigrateSkeletalImplementationToInterfaceRefactoringWizard.startRefactoring(methods, shell,
+									Optional.of(monitor));
 							return Status.OK_STATUS;
 						} catch (JavaModelException e) {
 							JavaPlugin.log(e);

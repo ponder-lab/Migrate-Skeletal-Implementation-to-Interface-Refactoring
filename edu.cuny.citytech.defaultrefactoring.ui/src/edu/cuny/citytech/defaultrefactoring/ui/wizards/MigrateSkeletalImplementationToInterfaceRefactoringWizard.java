@@ -3,6 +3,8 @@
  */
 package edu.cuny.citytech.defaultrefactoring.ui.wizards;
 
+import java.util.Optional;
+
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
@@ -35,7 +37,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends R
 	protected void addUserInputPages() {
 	}
 
-	public static void startRefactoring(IMethod[] methods, Shell shell, IProgressMonitor monitor)
+	public static void startRefactoring(IMethod[] methods, Shell shell, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		// TODO: Will need to set the target type at some point but see #23.
 		Refactoring refactoring = Util.createRefactoring(methods, monitor);

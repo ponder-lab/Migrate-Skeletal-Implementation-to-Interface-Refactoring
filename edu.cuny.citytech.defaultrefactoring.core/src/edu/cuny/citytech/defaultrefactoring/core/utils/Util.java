@@ -3,9 +3,10 @@
  */
 package edu.cuny.citytech.defaultrefactoring.core.utils;
 
+import java.util.Optional;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
@@ -30,7 +31,7 @@ public final class Util {
 	private Util() {
 	}
 
-	public static Refactoring createRefactoring(IJavaProject project, IMethod[] methods, IProgressMonitor monitor)
+	public static Refactoring createRefactoring(IJavaProject project, IMethod[] methods, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(project);
 		MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor(
@@ -38,7 +39,7 @@ public final class Util {
 		return new ProcessorBasedRefactoring(processor);
 	}
 
-	public static Refactoring createRefactoring(IMethod[] methods, IProgressMonitor monitor) throws JavaModelException {
+	public static Refactoring createRefactoring(IMethod[] methods, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		IJavaProject project = null;
 
 		if (methods != null && methods.length > 0)
@@ -48,7 +49,7 @@ public final class Util {
 	}
 
 	public static Refactoring createRefactoring(IMethod[] methods) throws JavaModelException {
-		return createRefactoring(methods, new NullProgressMonitor());
+		return createRefactoring(methods, Optional.empty());
 	}
 
 	public static Refactoring createRefactoring() throws JavaModelException {
