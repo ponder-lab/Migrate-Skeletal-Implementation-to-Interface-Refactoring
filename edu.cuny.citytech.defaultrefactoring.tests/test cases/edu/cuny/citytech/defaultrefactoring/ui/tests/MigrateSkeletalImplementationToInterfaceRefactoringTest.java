@@ -272,4 +272,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testDestinationInterfaceHierarchyWithInvalidInterface3() throws Exception {
 		helperFail(new String[] {"m"}, new String[][] {new String[0]});
 	}
+
+	public void testMultipleDestinationInterfaces() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+
+	public void testMultipleDestinationInterfaces2() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
+	
+	public void testMultipleDestinationInterfaces3() throws Exception {
+		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+	}
 }
