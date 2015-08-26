@@ -1016,6 +1016,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 */
 	protected void setDestinationInterface(IType destinationInterface) throws JavaModelException {
+		// FIXME: Per #30, there really is no one destination interface. Each
+		// method can go to a different interface.
 		Assert.isNotNull(destinationInterface);
 		this.destinationInterface = destinationInterface;
 	}
