@@ -6,15 +6,26 @@
   </extension>
   <extension point="org.eclipse.ui.handlers">
     <handler class="edu.cuny.citytech.defaultrefactoring.ui.handlers.MigrateSkeletalImplementationToInterfaceHandler" commandId="org.eclipse.migrate.skeletal.implementation.to.interface.command">
-      <activeWhen>
-        <with variable="selection">
-          <iterate ifEmpty="false" operator="or">
-            <!-- [rk] TODO: We'll probably need a compilation unit here as well. #1 -->
-            <instanceof value="org.eclipse.jdt.core.IMethod"></instanceof>
-            <instanceof value="org.eclipse.jdt.core.IJavaProject"></instanceof>
-          </iterate>
-        </with>
-      </activeWhen>
+      <activeWhen> 
+	      <with variable="selection">
+	         <or> 
+		         <iterate
+	                ifEmpty="false"
+	                operator="or"> 
+		            <instanceof 
+		                  value="org.eclipse.jdt.core.IMethod"> 
+		            </instanceof> 
+		         </iterate> 
+		         <iterate
+	                ifEmpty="false"
+	                operator="or"> 
+		            <instanceof 
+		                  value="org.eclipse.jdt.core.IJavaProject"> 
+		            </instanceof> 
+		         </iterate>
+	         </or>
+	      </with> 
+        </activeWhen> 
     </handler>
   </extension>
   <extension point="org.eclipse.ui.menus">
