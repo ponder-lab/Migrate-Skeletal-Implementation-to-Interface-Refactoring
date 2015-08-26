@@ -113,7 +113,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (candidateTypes.length > 1)
 					logWarning("Encountered multiple candidate types (" + candidateTypes.length + ").");
 
-				this.setDestinationType(candidateTypes[0]);
+				this.setDestinationInterface(candidateTypes[0]);
 			}
 		}
 	}
@@ -944,7 +944,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *            The destination interface.
 	 * @throws JavaModelException
 	 */
-	protected void setDestinationType(IType destinationInterface) throws JavaModelException {
+	protected void setDestinationInterface(IType destinationInterface) throws JavaModelException {
 		Assert.isNotNull(destinationInterface);
 
 		// TODO: Cache type hierarchy?
