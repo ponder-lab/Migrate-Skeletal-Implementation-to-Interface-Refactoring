@@ -11,6 +11,7 @@
           <iterate ifEmpty="false" operator="or">
             <!-- [rk] TODO: We'll probably need a compilation unit here as well. #1 -->
             <instanceof value="org.eclipse.jdt.core.IMethod"></instanceof>
+            <instanceof value="org.eclipse.jdt.core.IJavaProject"></instanceof>
           </iterate>
         </with>
       </activeWhen>

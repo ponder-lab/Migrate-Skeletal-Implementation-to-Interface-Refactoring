@@ -7,6 +7,7 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -36,7 +37,14 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 		List<?> list = SelectionUtil.toList(currentSelection);
 		IMethod[] methods = list.stream().filter(e -> e instanceof IMethod).toArray(length -> new IMethod[length]);
+		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject).toArray(length -> new IJavaProject[length]);
 
+		getIMethods(event, methods);
+
+		return null;
+	}
+
+	private void getIMethods(ExecutionEvent event, IMethod[] methods) throws ExecutionException {
 		if (methods.length > 0) {
 			Shell shell = HandlerUtil.getActiveShellChecked(event);
 			HandlerUtil.getActiveWorkbenchWindowChecked(event).getWorkbench().getProgressService().showInDialog(shell,
@@ -54,7 +62,5 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 						}
 					}));
 		}
-
-		return null;
 	}
 }
