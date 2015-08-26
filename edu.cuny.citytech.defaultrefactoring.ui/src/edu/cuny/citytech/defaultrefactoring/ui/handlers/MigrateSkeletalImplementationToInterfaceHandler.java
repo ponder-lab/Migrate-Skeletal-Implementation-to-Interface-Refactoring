@@ -7,8 +7,10 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
@@ -40,7 +42,21 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject).toArray(length -> new IJavaProject[length]);
 
 		if(javaProjects.length > 0){
-			
+			for (IJavaProject iJavaProject : javaProjects) {
+				try {
+					IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
+					for (IPackageFragment iPackageFragment : packageFragments) {
+						ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
+						for (ICompilationUnit iCompilationUnit : compilationUnits) {
+							//printing the iCompilationUnit,
+							System.out.println(iCompilationUnit);
+						}
+					}
+				} catch (JavaModelException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
 		}
 		
 		getIMethods(event, methods);
