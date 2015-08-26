@@ -248,66 +248,66 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	protected RefactoringStatus checkDestinationInterface(IProgressMonitor monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 		// TODO #19
-		final IType destinationInterface = this.getDestinationInterface();
+		final IType targetInterface = this.getDestinationInterface();
 
 		// Can't be null.
-		if (destinationInterface == null) {
+		if (targetInterface == null) {
 			addWarning(status, Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoDestinationInterface);
 			return status;
 		}
 
 		// Must be an interface.
-		if (!isPureInterface(destinationInterface))
+		if (!isPureInterface(targetInterface))
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationTypeMustBePureInterface,
-					destinationInterface);
+					targetInterface);
 
 		// Make sure it exists.
-		checkExistance(status, destinationInterface,
+		checkExistance(status, targetInterface,
 				Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDoesNotExist);
 
 		// Make sure we can write to it.
-		checkWritabilitiy(status, destinationInterface,
+		checkWritabilitiy(status, targetInterface,
 				Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceNotWritable);
 
 		// Make sure it doesn't have compilation errors.
-		checkStructure(status, destinationInterface);
+		checkStructure(status, targetInterface);
 
 		// TODO: For now, no annotated target interfaces.
-		if (destinationInterface.getAnnotations().length != 0)
+		if (targetInterface.getAnnotations().length != 0)
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceHasAnnotations,
-					destinationInterface);
+					targetInterface);
 
 		// TODO: For now, only top-level types.
-		if (destinationInterface.getDeclaringType() != null)
+		if (targetInterface.getDeclaringType() != null)
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceIsNotTopLevel,
-					destinationInterface);
+					targetInterface);
 
 		// TODO: For now, no fields.
-		if (destinationInterface.getFields().length != 0)
+		if (targetInterface.getFields().length != 0)
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceDeclaresFields,
-					destinationInterface);
+					targetInterface);
 
 		// TODO: For now, no super interfaces.
-		if (destinationInterface.getSuperInterfaceNames().length != 0)
+		if (targetInterface.getSuperInterfaceNames().length != 0)
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInteraceExtendsInterface,
-					destinationInterface);
+					targetInterface);
 
 		// TODO: For now, no type parameters.
-		if (destinationInterface.getTypeParameters().length != 0)
+		if (targetInterface.getTypeParameters().length != 0)
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDeclaresTypeParameters,
-					destinationInterface);
+					targetInterface);
 
 		// TODO: For now, no member types.
-		if (destinationInterface.getTypes().length != 0)
+		if (targetInterface.getTypes().length != 0)
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceDeclaresMemberTypes,
-					destinationInterface);
+					targetInterface);
 
 		status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(new SubProgressMonitor(monitor, 1)));
 		status.merge(checkDestinationInterfaceTargetMethods(
