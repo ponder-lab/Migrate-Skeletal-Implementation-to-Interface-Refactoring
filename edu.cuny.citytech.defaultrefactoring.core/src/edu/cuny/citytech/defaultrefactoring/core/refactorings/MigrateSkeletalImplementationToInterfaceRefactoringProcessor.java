@@ -240,7 +240,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (!allSourceMethodsHaveTargets)
 			addWarning(status,
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceMustOnlyDeclareTheMethodToMigrate,
-					destinationInterface);
+					targetInterface);
 
 		return status;
 	}
