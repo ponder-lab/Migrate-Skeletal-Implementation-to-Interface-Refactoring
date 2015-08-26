@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -367,7 +368,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			if (type.isAnonymous()) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInAnonymousTypes, type);
 			}
 			// TODO: This is being checked by the super implementation but need
@@ -381,60 +382,60 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// }
 			if (type.isLambda()) {
 				// TODO for now.
-				return createFatalError(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInLambdas,
+				return createWarning(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInLambdas,
 						type);
 			}
 			if (type.isLocal()) {
 				// TODO for now.
-				return createFatalError(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInLocals,
+				return createWarning(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInLocals,
 						type);
 			}
 			if (type.isMember()) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInMemberTypes, type);
 			}
 			if (!type.isClass()) {
 				// TODO for now.
-				return createFatalError(
-						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodsOnlyInClasses, type);
+				return createWarning(Messages.MigrateSkeletalImplementationToInferfaceRefactoring_MethodsOnlyInClasses,
+						type);
 			}
 			if (type.getAnnotations().length != 0) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInAnnotatedTypes, type);
 			}
 			if (type.getFields().length != 0) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithFields, type);
 			}
 			if (type.getInitializers().length != 0) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithInitializers,
 						type);
 			}
 			if (type.getMethods().length > 1) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithMoreThanOneMethod,
 						type);
 			}
 			if (type.getTypeParameters().length != 0) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithTypeParameters,
 						type);
 			}
 			if (type.getTypes().length != 0) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithType, type);
 			}
 			if (type.getSuperclassName() != null) {
 				// TODO for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesWithSuperType,
 						type);
 			}
@@ -444,14 +445,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// it is probably possible to still perform the refactoring
 				// without this condition but I believe that this is
 				// the particular pattern we are targeting.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesThatDontImplementInterfaces,
 						type);
 			}
 			if (type.getSuperInterfaceNames().length > 1) {
 				// TODO for now. Let's only deal with a single interface as that
 				// is part of the targeted pattern.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInTypesThatExtendMultipleInterfaces,
 						type);
 			}
@@ -459,12 +460,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// TODO for now. This follows the target pattern. Maybe we can
 				// relax this but that would require checking for
 				// instantiations.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInConcreteTypes, type);
 			}
 			if (Flags.isStatic(type.getFlags())) {
 				// TODO no static types for now.
-				return createFatalError(
+				return createWarning(
 						Messages.MigrateSkeletalImplementationToInferfaceRefactoring_NoMethodsInStaticTypes, type);
 			}
 
@@ -721,10 +722,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		status.addError(MessageFormat.format(message, collect.toArray()), JavaStatusContext.create(member));
 	}
 
-	private static RefactoringStatus createFatalError(String message, IType type) {
+	protected static RefactoringStatus createWarning(String message, IType type) {
+		return createRefactoringStatus(message, type, RefactoringStatus::createWarningStatus);
+	}
+
+	protected static RefactoringStatus createFatalError(String message, IType type) {
+		return createRefactoringStatus(message, type, RefactoringStatus::createFatalErrorStatus);
+	}
+
+	private static RefactoringStatus createRefactoringStatus(String message, IType type,
+			BiFunction<String, RefactoringStatusContext, RefactoringStatus> function) {
 		String elementName = createLabel(type);
-		return RefactoringStatus.createFatalErrorStatus(MessageFormat.format(message, elementName),
-				JavaStatusContext.create(type));
+		return function.apply(MessageFormat.format(message, elementName), JavaStatusContext.create(type));
 	}
 
 	/**
