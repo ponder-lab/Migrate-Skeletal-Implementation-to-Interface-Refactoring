@@ -48,10 +48,8 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							return Status.OK_STATUS;
 						} catch (JavaModelException e) {
 							JavaPlugin.log(e);
-							return new Status(
-									Status.ERROR, MigrateSkeletalImplementationToInterfaceRefactoringPlugin
-											.getDefault().getBundle().getSymbolicName(),
-									"Failed to start refactoring.");
+							return new Status(Status.ERROR, MigrateSkeletalImplementationToInterfaceRefactoringPlugin
+									.getDefault().getBundle().getSymbolicName(), "Failed to start refactoring.");
 						}
 					}));
 		}
