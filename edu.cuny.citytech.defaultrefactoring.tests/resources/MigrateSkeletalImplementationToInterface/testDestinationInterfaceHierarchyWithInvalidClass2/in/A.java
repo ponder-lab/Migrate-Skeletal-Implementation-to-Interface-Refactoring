@@ -4,10 +4,10 @@ interface I {
 	void m();
 }
 
-abstract class A implements I {
-	public void m() {
-	}
+class B {
 }
 
-class B extends A {
+abstract class A extends B implements I {
+	public void m() {
+	}
 }
