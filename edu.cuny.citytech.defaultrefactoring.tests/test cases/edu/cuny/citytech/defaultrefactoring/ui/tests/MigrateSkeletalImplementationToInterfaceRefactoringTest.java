@@ -196,96 +196,104 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMultipleMethods() throws Exception {
 		helperFail(new String[] { "m", "n" }, new String[][] { new String[0], new String[0] });
 	}
-	
+
 	public void testTargetInterfaceWithMultipleMethods() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testTargetInterfaceWithNoMethods() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testPureTargetInterface() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testTargetInterfaceWithNoTargetMethods() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDefaultTargetMethod() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceWithAnnotations() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testNonTopLevelDestinationInterface() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testNonTopLevelDestinationInterface2() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testDestinationInterfaceWithFields() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceThatExtendsInterface() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceWithTypeParameters() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceWithMemberTypes() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMemberDestinationInterface() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMemberDestinationInterface2() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass2() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass3() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceHierarchyWithInvalidClass4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testDestinationInterfaceHierarchyWithInvalidClass5() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface2() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface3() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMultipleDestinationInterfaces() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMultipleDestinationInterfaces2() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMultipleDestinationInterfaces3() throws Exception {
-		helperFail(new String[] {"m"}, new String[][] {new String[0]});
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
