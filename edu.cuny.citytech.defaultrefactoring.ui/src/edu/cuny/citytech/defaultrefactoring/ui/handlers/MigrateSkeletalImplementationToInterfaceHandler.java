@@ -52,7 +52,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							//printing the iCompilationUnit,
 							IType[] allTypes = iCompilationUnit.getAllTypes(); 
 							for (IType iType : allTypes) {
-								System.out.println(iType);
+								System.out.println(iType.isClass());
 							}
 						}
 					}
