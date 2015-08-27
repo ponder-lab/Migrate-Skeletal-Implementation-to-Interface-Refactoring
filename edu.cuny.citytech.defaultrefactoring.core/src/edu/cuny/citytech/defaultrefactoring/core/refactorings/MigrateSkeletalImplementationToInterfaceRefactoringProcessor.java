@@ -360,7 +360,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void checkValidInterfaces(RefactoringStatus status, final ITypeHierarchy hierarchy) {
-		// TODO: For now, there should be only one interface, and that is the
+		// TODO: For now, there should be only one interface in the hierarchy,
+		// and that is the
 		// target interface.
 		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).count() == 1
 				&& Stream.of(hierarchy.getAllInterfaces()).allMatch(i -> i.equals(this.getDestinationInterface()));
@@ -556,7 +557,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *             upon Java model problems.
 	 */
 	public IType[] getCandidateTypes(final Optional<IProgressMonitor> monitor) throws JavaModelException {
-		// FIXME: This is wrong. Candidate destination interfaces should be per a particular method to be migrated #30.
+		// FIXME: This is wrong. Candidate destination interfaces should be per
+		// a particular method to be migrated #30.
 		try {
 			monitor.ifPresent(m -> m.subTask("Retrieving candidate types..."));
 			IType[] superInterfaces = getDeclaringTypeSuperInterfaces(monitor.map(m -> new SubProgressMonitor(m, 1)));
