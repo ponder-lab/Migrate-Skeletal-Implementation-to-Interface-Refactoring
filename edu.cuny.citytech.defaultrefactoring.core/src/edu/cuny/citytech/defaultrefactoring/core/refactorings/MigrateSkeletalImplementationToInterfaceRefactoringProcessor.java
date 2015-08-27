@@ -513,7 +513,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	protected RefactoringStatus checkDeclaringSuperTypes(final Optional<IProgressMonitor> monitor) throws JavaModelException {
+	protected RefactoringStatus checkDeclaringSuperTypes(final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		final RefactoringStatus result = new RefactoringStatus();
 		IType[] interfaces = getCandidateTypes(monitor.map(m -> new SubProgressMonitor(m, 1)));
 
