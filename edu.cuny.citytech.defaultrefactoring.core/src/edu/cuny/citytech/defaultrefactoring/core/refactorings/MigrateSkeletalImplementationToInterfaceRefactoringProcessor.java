@@ -337,8 +337,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		checkValidClasses(status, hierarchy);
 		checkValidInterfaces(status, hierarchy);
+		checkValidSubtypes(status, hierarchy);
+
+		// TODO: For now, no super interfaces.
+		if (hierarchy.getAllSuperInterfaces(getDestinationInterface()).length > 0)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHierarchyContainsSuperInterface,
+					getDestinationInterface());
 
 		return status;
+	}
+
+	private void checkValidSubtypes(RefactoringStatus status, final ITypeHierarchy hierarchy) {
+		// TODO: For now, no subtypes except the declaring type.
+		// FIXME: Really, it should match the declaring type of the method to be
+		// migrated.
+		if (!Stream.of(hierarchy.getAllSubtypes(getDestinationInterface())).distinct()
+				.allMatch(s -> s.equals(getDeclaringType())))
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHierarchyContainsSubtype,
+					getDestinationInterface());
 	}
 
 	private void checkValidInterfaces(RefactoringStatus status, final ITypeHierarchy hierarchy) {
