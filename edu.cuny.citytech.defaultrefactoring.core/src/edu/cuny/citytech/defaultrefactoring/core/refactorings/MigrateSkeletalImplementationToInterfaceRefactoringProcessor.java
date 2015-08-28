@@ -110,14 +110,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		super(methods, settings, layer);
 
 		if (methods != null && methods.length > 0) {
-			IType[] candidateTypes = this.getCandidateTypes(monitor.map(m -> new SubProgressMonitor(m, 1)));
+			IType[] candidates = this.getCandidateDestinationInterfaces(monitor.map(m -> new SubProgressMonitor(m, 1)));
 
-			if (candidateTypes != null && candidateTypes.length > 0) {
+			if (candidates != null && candidates.length > 0) {
 				// TODO: For now, #23.
-				if (candidateTypes.length > 1)
-					logWarning("Encountered multiple candidate types (" + candidateTypes.length + ").");
+				if (candidates.length > 1)
+					logWarning("Encountered multiple candidate types (" + candidates.length + ").");
 
-				this.setDestinationInterface(candidateTypes[0]);
+				this.setDestinationInterface(candidates[0]);
 			}
 		}
 	}
@@ -158,6 +158,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			} else {
 				final RefactoringStatus status = new RefactoringStatus();
 				status.merge(checkDeclaringType(new SubProgressMonitor(pm, 1)));
+				status.merge(checkCandidateDestinationInterfaces(Optional.of(new SubProgressMonitor(pm, 1))));
 
 				if (status.hasFatalError())
 					return status;
@@ -490,7 +491,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	protected RefactoringStatus checkCandidateDestinationInterfaces(final Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		final RefactoringStatus result = new RefactoringStatus();
-		IType[] interfaces = getCandidateTypes(monitor.map(m -> new SubProgressMonitor(m, 1)));
+		IType[] interfaces = getCandidateDestinationInterfaces(monitor.map(m -> new SubProgressMonitor(m, 1)));
 
 		if (interfaces.length == 0) {
 			IType declaringType = getDeclaringType();
@@ -529,7 +530,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 *             upon Java model problems.
 	 */
-	public IType[] getCandidateTypes(final Optional<IProgressMonitor> monitor) throws JavaModelException {
+	public IType[] getCandidateDestinationInterfaces(final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		// FIXME: This is wrong. Candidate destination interfaces should be per
 		// a particular method to be migrated #30.
 		try {
