@@ -345,6 +345,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHierarchyContainsSuperInterface,
 					getDestinationInterface());
 
+		// TODO: For now, no extending interfaces.
+		if (hierarchy.getExtendingInterfaces(getDestinationInterface()).length > 0)
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHasExtendingInterface,
+					getDestinationInterface());
+
+		// TODO: For now, the destination interface can only be implemented by
+		// the declaring class.
+		if (!Stream.of(hierarchy.getImplementingClasses(getDestinationInterface())).parallel().distinct()
+				.allMatch(c -> c.equals(getDeclaringType())))
+			addWarning(status,
+					Messages.MigrateSkeletalImplementationToInferfaceRefactoring_DestinationInterfaceHasInvalidImplementingClass,
+					getDestinationInterface());
+
 		return status;
 	}
 
