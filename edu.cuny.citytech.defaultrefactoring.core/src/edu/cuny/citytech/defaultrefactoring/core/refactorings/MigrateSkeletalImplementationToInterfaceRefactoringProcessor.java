@@ -713,6 +713,28 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.toArray(IMethod[]::new);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor#
+	 * getDeclaringType()
+	 */
+	@Override
+	public IType getDeclaringType() {
+		IType declaringType = super.getDeclaringType();
+
+		try {
+			if (!declaringType.isClass())
+				throw new IllegalStateException("Declaring type: " + declaringType + " must be a class.");
+		} catch (JavaModelException e) {
+			JavaPlugin.log(e);
+			throw new RuntimeException(e);
+		}
+
+		return declaringType;
+	}
+
 	protected RefactoringStatus checkMethodsToMoveBodies(IProgressMonitor pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
