@@ -79,6 +79,7 @@ public class Messages extends NLS {
 	public static String DestinationInterfaceHierarchyContainsSupertype;
 	public static String DestinationInterfaceHasExtendingInterface;
 	public static String DestinationInterfaceHasInvalidImplementingClass;
+	public static String DeclaringTypeHierarchyContainsInvalidClass;
 
 	static {
 		// initialize resource bundle

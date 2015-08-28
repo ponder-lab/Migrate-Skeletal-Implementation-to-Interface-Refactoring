@@ -310,7 +310,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		final ITypeHierarchy hierarchy = this
 				.getDestinationInterfaceHierarchy(Optional.of(new SubProgressMonitor(monitor, 1)));
 
-		checkValidClasses(status, hierarchy);
+		checkValidClasses(status, hierarchy, Messages.DestinationInterfaceHierarchyContainsInvalidClass);
 		checkValidInterfaces(status, hierarchy);
 		checkValidSubtypes(status, hierarchy);
 
@@ -352,7 +352,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					getDestinationInterface());
 	}
 
-	private void checkValidClasses(RefactoringStatus status, final ITypeHierarchy hierarchy) throws JavaModelException {
+	private void checkValidClasses(RefactoringStatus status, final ITypeHierarchy hierarchy, String errorMessage)
+			throws JavaModelException {
 		// TODO: For now, the only class in the hierarchy should be the
 		// declaring class of the source method and java.lang.Object.
 		List<IType> allClassesAsList = Arrays.asList(hierarchy.getAllClasses());
@@ -363,8 +364,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				&& allClassesAsList.contains(this.getDeclaringType())
 				&& allClassesAsList.contains(hierarchy.getType().getJavaProject().findType("java.lang.Object"));
 
-		if (!containsOnlyValidClasses)
-			addWarning(status, Messages.DestinationInterfaceHierarchyContainsInvalidClass, getDestinationInterface());
+		if (!containsOnlyValidClasses) {
+			addWarning(status, errorMessage, hierarchy.getType());
+		}
 	}
 
 	private Set<IMethod> getTargetMethods() {
@@ -463,13 +465,29 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				return createWarning(Messages.NoMethodsInStaticTypes, type);
 			}
 
-			status.merge(checkDeclaringSuperTypes(Optional.of(monitor)));
+			status.merge(checkDeclaringTypeHierarchy(Optional.of(monitor)));
 		}
 
 		return status;
 	}
 
-	protected RefactoringStatus checkDeclaringSuperTypes(final Optional<IProgressMonitor> monitor)
+	protected RefactoringStatus checkDeclaringTypeHierarchy(Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		try {
+			RefactoringStatus status = new RefactoringStatus();
+			monitor.ifPresent(m -> m.subTask("Checking declaring type hierarchy..."));
+
+			final ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(monitor);
+			
+			checkValidClasses(status, hierarchy, Messages.DeclaringTypeHierarchyContainsInvalidClass);
+
+			return status;
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+	}
+
+	protected RefactoringStatus checkCandidateDestinationInterfaces(final Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		final RefactoringStatus result = new RefactoringStatus();
 		IType[] interfaces = getCandidateTypes(monitor.map(m -> new SubProgressMonitor(m, 1)));
@@ -532,6 +550,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			IType declaringType = getDeclaringType();
 			return getDeclaringSuperTypeHierarchy(monitor.map(m -> new SubProgressMonitor(m, 1)))
 					.getAllSuperInterfaces(declaringType);
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+	}
+
+	private ITypeHierarchy getDeclaringTypeHierarchy(final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		try {
+			monitor.ifPresent(m -> m.subTask("Retrieving declaring type hierarchy..."));
+			IType declaringType = this.getDeclaringType();
+			// TODO: Need to cache this.
+			return declaringType.newTypeHierarchy(this.fOwner, monitor.orElseGet(NullProgressMonitor::new));
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
