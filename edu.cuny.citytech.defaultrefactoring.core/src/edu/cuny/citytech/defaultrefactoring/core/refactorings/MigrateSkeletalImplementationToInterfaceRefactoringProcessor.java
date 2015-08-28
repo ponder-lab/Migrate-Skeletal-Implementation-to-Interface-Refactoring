@@ -575,7 +575,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			monitor.ifPresent(m -> m.subTask("Retrieving declaring super type hierarchy..."));
 			IType declaringType = this.getDeclaringType();
 			// TODO: Need to cache this.
-			return declaringType.newSupertypeHierarchy(monitor.orElseGet(NullProgressMonitor::new));
+			return declaringType.newSupertypeHierarchy(this.fOwner, monitor.orElseGet(NullProgressMonitor::new));
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
