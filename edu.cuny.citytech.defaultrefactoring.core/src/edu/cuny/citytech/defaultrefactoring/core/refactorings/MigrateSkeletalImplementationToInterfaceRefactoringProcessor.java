@@ -490,9 +490,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (!Stream.of(hierarchy.getAllSuperclasses(getDeclaringType())).parallel().distinct()
 					.allMatch(t -> t.equals(object)))
 				addWarning(status, Messages.DeclaringTypeContainsInvalidSupertype, getDeclaringType());
-			
-			// TODO: At least for now, all types in the hierarchy should be classes.
-			Stream.of(hierarchy.getAllTypes()).parallel().allMatch(IType::isClass);
 
 			return status;
 		} finally {
