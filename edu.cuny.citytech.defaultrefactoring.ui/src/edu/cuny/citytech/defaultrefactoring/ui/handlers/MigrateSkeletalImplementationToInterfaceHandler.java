@@ -44,15 +44,17 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 		if(javaProjects.length > 0){
 			for (IJavaProject iJavaProject : javaProjects) {
+				System.out.println("Project Name "+iJavaProject.getElementName());
 				try {
 					IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
 					for (IPackageFragment iPackageFragment : packageFragments) {
+						System.out.println("Package "+iPackageFragment.getElementName());
 						ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
 						for (ICompilationUnit iCompilationUnit : compilationUnits) {
 							//printing the iCompilationUnit,
 							IType[] allTypes = iCompilationUnit.getAllTypes(); 
 							for (IType iType : allTypes) {
-								System.out.println(iType.isClass());
+								System.out.println(" Is it a class: "+iType.isClass());
 							}
 						}
 					}
