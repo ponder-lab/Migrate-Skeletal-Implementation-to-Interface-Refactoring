@@ -80,6 +80,9 @@ public class Messages extends NLS {
 	public static String DestinationInterfaceHasExtendingInterface;
 	public static String DestinationInterfaceHasInvalidImplementingClass;
 	public static String DeclaringTypeHierarchyContainsInvalidClass;
+	public static String DeclaringTypeHierarchyContainsInvalidInterface;
+	public static String DeclaringTypeContainsSubtype;
+	public static String DeclaringTypeContainsInvalidSupertype;
 
 	static {
 		// initialize resource bundle

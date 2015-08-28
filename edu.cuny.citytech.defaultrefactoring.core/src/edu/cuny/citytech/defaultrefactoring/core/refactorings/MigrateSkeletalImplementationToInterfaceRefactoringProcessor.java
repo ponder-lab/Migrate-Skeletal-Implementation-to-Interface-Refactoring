@@ -312,7 +312,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.getDestinationInterfaceHierarchy(Optional.of(new SubProgressMonitor(monitor, 1)));
 
 		checkValidClasses(status, hierarchy, Messages.DestinationInterfaceHierarchyContainsInvalidClass);
-		checkValidInterfaces(status, hierarchy);
+		checkValidInterfaces(status, hierarchy, Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces);
 		checkValidSubtypes(status, hierarchy);
 
 		// TODO: For now, no super interfaces.
@@ -341,16 +341,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			addWarning(status, Messages.DestinationInterfaceHierarchyContainsSubtype, getDestinationInterface());
 	}
 
-	private void checkValidInterfaces(RefactoringStatus status, final ITypeHierarchy hierarchy) {
+	private void checkValidInterfaces(RefactoringStatus status, final ITypeHierarchy hierarchy, String errorMessage) {
 		// TODO: For now, there should be only one interface in the hierarchy,
-		// and that is the
-		// target interface.
-		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).count() == 1
-				&& Stream.of(hierarchy.getAllInterfaces()).allMatch(i -> i.equals(this.getDestinationInterface()));
+		// and that is the target interface.
+		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).parallel().distinct()
+				.allMatch(i -> i.equals(this.getDestinationInterface()));
 
 		if (!containsOnlyValidInterfaces)
-			addWarning(status, Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces,
-					getDestinationInterface());
+			addWarning(status, errorMessage, hierarchy.getType());
 	}
 
 	private void checkValidClasses(RefactoringStatus status, final ITypeHierarchy hierarchy, String errorMessage)
@@ -479,8 +477,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			monitor.ifPresent(m -> m.subTask("Checking declaring type hierarchy..."));
 
 			final ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(monitor);
-			
+
 			checkValidClasses(status, hierarchy, Messages.DeclaringTypeHierarchyContainsInvalidClass);
+			checkValidInterfaces(status, hierarchy, Messages.DeclaringTypeHierarchyContainsInvalidInterface);
+
+			// TODO: For now, the declaring type should have no subtypes.
+			if (hierarchy.getAllSubtypes(getDeclaringType()).length != 0)
+				addWarning(status, Messages.DeclaringTypeContainsSubtype, getDeclaringType());
+
+			// TODO: For now, only java.lang.Object as the super class.
+			final IType object = hierarchy.getType().getJavaProject().findType("java.lang.Object");
+			if (!Stream.of(hierarchy.getAllSuperclasses(getDeclaringType())).parallel().distinct()
+					.allMatch(t -> t.equals(object)))
+				addWarning(status, Messages.DeclaringTypeContainsInvalidSupertype, getDeclaringType());
+			
+			// TODO: At least for now, all types in the hierarchy should be classes.
+			Stream.of(hierarchy.getAllTypes()).parallel().allMatch(IType::isClass);
 
 			return status;
 		} finally {
