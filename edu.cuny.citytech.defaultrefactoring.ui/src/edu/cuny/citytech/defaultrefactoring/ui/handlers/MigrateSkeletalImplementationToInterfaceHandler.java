@@ -1,5 +1,7 @@
 package edu.cuny.citytech.defaultrefactoring.ui.handlers;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 
 import org.eclipse.core.commands.AbstractHandler;
@@ -40,35 +42,46 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 		List<?> list = SelectionUtil.toList(currentSelection);
 		IMethod[] methods = list.stream().filter(e -> e instanceof IMethod).toArray(length -> new IMethod[length]);
-		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject).toArray(length -> new IJavaProject[length]);
+		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject)
+				.toArray(length -> new IJavaProject[length]);
 
-		if(javaProjects.length > 0){
+		if (javaProjects.length > 0) {
 			for (IJavaProject iJavaProject : javaProjects) {
-				System.out.println("Project Name: "+iJavaProject.getElementName());
+				System.out.println("Project Name: " + iJavaProject.getElementName());
 				try {
+					
+					FileWriter writer = new FileWriter("InterfaceTest.cvs");
+					
+					writer.append( "this is test");
+					
 					IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
 					for (IPackageFragment iPackageFragment : packageFragments) {
-						System.out.println("Package: "+iPackageFragment.getElementName());
+						System.out.println("Package: " + iPackageFragment.getElementName());
 						ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
 						for (ICompilationUnit iCompilationUnit : compilationUnits) {
-							//printing the iCompilationUnit,
-							System.out.println("CompilationUnit: "+iCompilationUnit.getElementName());
-							IType[] allTypes = iCompilationUnit.getAllTypes(); 
+							// printing the iCompilationUnit,
+							System.out.println("CompilationUnit: " + iCompilationUnit.getElementName());
+							IType[] allTypes = iCompilationUnit.getAllTypes();
 							for (IType iType : allTypes) {
-								System.out.println("Java Type: "+iType.getElementName());
-								System.out.println(" Is it a class: "+iType.isClass());
-								System.out.println("Is interface: "+iType.isInterface() );
-								
+								System.out.println("Java Type: " + iType.getElementName());
+								System.out.println(" Is it a class: " + iType.isClass());
+								System.out.println(" Is interface: " + iType.isInterface());
+
 							}
 						}
 					}
+					writer.flush();
+					writer.close();
 				} catch (JavaModelException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
 		}
-		
+
 		getIMethods(event, methods);
 
 		return null;
@@ -80,15 +93,13 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			HandlerUtil.getActiveWorkbenchWindowChecked(event).getWorkbench().getProgressService().showInDialog(shell,
 					Job.create("Migrate skeletal implementation to interface", monitor -> {
 						try {
-							MigrateSkeletalImplementationToInterfaceRefactoringWizard.startRefactoring(methods,
-									shell, monitor);
+							MigrateSkeletalImplementationToInterfaceRefactoringWizard.startRefactoring(methods, shell,
+									monitor);
 							return Status.OK_STATUS;
 						} catch (JavaModelException e) {
 							JavaPlugin.log(e);
-							return new Status(
-									Status.ERROR, MigrateSkeletalImplementationToInterfaceRefactoringPlugin
-											.getDefault().getBundle().getSymbolicName(),
-									"Failed to start refactoring.");
+							return new Status(Status.ERROR, MigrateSkeletalImplementationToInterfaceRefactoringPlugin
+									.getDefault().getBundle().getSymbolicName(), "Failed to start refactoring.");
 						}
 					}));
 		}
