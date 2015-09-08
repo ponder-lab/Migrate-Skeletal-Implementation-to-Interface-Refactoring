@@ -4,6 +4,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -45,33 +47,33 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject)
 				.toArray(length -> new IJavaProject[length]);
 
-		if (javaProjects.length > 0) {
+		CSVFormat format = CSVFormat.EXCEL.withHeader("Project Name", "Package", "CompilationUnit", "Java Type",
+				" Is it a class", "Is interface");
+		try (FileWriter writer = new FileWriter("InterfaceTest.csv")) {
+			try (CSVPrinter printer = format.print(writer)) {
+
 			for (IJavaProject iJavaProject : javaProjects) {
-				System.out.println("Project Name: " + iJavaProject.getElementName());
 				try {
-					
-					FileWriter writer = new FileWriter("InterfaceTest.cvs");
-					
-					writer.append( "this is test");
-					
 					IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
 					for (IPackageFragment iPackageFragment : packageFragments) {
-						System.out.println("Package: " + iPackageFragment.getElementName());
 						ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
 						for (ICompilationUnit iCompilationUnit : compilationUnits) {
 							// printing the iCompilationUnit,
-							System.out.println("CompilationUnit: " + iCompilationUnit.getElementName());
 							IType[] allTypes = iCompilationUnit.getAllTypes();
 							for (IType iType : allTypes) {
-								System.out.println("Java Type: " + iType.getElementName());
-								System.out.println(" Is it a class: " + iType.isClass());
-								System.out.println(" Is interface: " + iType.isInterface());
-
+								// print the info about the type.
+								printer.print(iJavaProject.getElementName());
+								printer.print(iPackageFragment.getElementName());
+								printer.print(iCompilationUnit.getElementName());
+								printer.print(iType.getElementName());
+								printer.print(iType.isClass());
+								printer.print(iType.isInterface());
+								System.out.println("Files has been imported");
+								// next row (done with this type).
+								printer.println();
 							}
 						}
 					}
-					writer.flush();
-					writer.close();
 				} catch (JavaModelException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -84,6 +86,10 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 		getIMethods(event, methods);
 
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		return null;
 	}
 
