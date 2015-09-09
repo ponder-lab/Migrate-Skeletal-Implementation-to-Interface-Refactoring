@@ -1,5 +1,6 @@
 package edu.cuny.citytech.defaultrefactoring.ui.handlers;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -52,44 +53,43 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		try (FileWriter writer = new FileWriter("InterfaceTest.csv")) {
 			try (CSVPrinter printer = format.print(writer)) {
 
-			for (IJavaProject iJavaProject : javaProjects) {
-				try {
-					IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
-					for (IPackageFragment iPackageFragment : packageFragments) {
-						ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
-						for (ICompilationUnit iCompilationUnit : compilationUnits) {
-							// printing the iCompilationUnit,
-							IType[] allTypes = iCompilationUnit.getAllTypes();
-							for (IType iType : allTypes) {
-								// print the info about the type.
-								printer.print(iJavaProject.getElementName());
-								printer.print(iPackageFragment.getElementName());
-								printer.print(iCompilationUnit.getElementName());
-								printer.print(iType.getElementName());
-								printer.print(iType.isClass());
-								printer.print(iType.isInterface());
-								System.out.println("Files has been imported");
-								// next row (done with this type).
-								printer.println();
+				for (IJavaProject iJavaProject : javaProjects) {
+					try {
+						IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
+						for (IPackageFragment iPackageFragment : packageFragments) {
+							ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
+							for (ICompilationUnit iCompilationUnit : compilationUnits) {
+								// printing the iCompilationUnit,
+								IType[] allTypes = iCompilationUnit.getAllTypes();
+								for (IType iType : allTypes) {
+									// print the info about the type.
+									printer.print(iJavaProject.getElementName());
+									printer.print(iPackageFragment.getElementName());
+									printer.print(iCompilationUnit.getElementName());
+									printer.print(iType.getElementName());
+									printer.print(iType.isClass());
+									printer.print(iType.isInterface());
+									// next row (done with this type).
+									printer.println();
+									System.out.println("Files has been imported");
+								}
 							}
 						}
+					} catch (JavaModelException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
 					}
-				} catch (JavaModelException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
 				}
 			}
-		}
-
-		getIMethods(event, methods);
 
 		} catch (IOException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
+		getIMethods(event, methods);
 		return null;
 	}
 
