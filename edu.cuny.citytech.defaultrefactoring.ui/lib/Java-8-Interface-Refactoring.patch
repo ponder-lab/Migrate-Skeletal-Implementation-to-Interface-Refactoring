@@ -1,0 +1,43 @@
+diff --git a/edu.cuny.citytech.defaultrefactoring.ui/META-INF/MANIFEST.MF b/edu.cuny.citytech.defaultrefactoring.ui/META-INF/MANIFEST.MF
+index 82b9a98..cfddb97 100644
+--- a/edu.cuny.citytech.defaultrefactoring.ui/META-INF/MANIFEST.MF
++++ b/edu.cuny.citytech.defaultrefactoring.ui/META-INF/MANIFEST.MF
+@@ -16,11 +16,9 @@
+  edu.cuny.citytech.refactoring.common.ui;bundle-version="1.1.0",
+  edu.cuny.citytech.refactoring.common.core;bundle-version="1.1.0"
+ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+-Bundle-ClassPath: .
+-Export-Package: edu,
+- edu.cuny,
+- edu.cuny.citytech,
+- edu.cuny.citytech.defaultrefactoring.ui.handlers,
++Bundle-ClassPath: .,
++ lib/commons-csv-1.1.jar
++Export-Package: edu.cuny.citytech.defaultrefactoring.ui.handlers,
+  edu.cuny.citytech.defaultrefactoring.ui.messages,
+  edu.cuny.citytech.defaultrefactoring.ui.plugins,
+  edu.cuny.citytech.defaultrefactoring.ui.wizards
+diff --git a/edu.cuny.citytech.defaultrefactoring.ui/build.properties b/edu.cuny.citytech.defaultrefactoring.ui/build.properties
+index b64c1cb..589f434 100644
+--- a/edu.cuny.citytech.defaultrefactoring.ui/build.properties
++++ b/edu.cuny.citytech.defaultrefactoring.ui/build.properties
+@@ -4,6 +4,7 @@
+                .,\
+                bundle.properties,\
+                icons/,\
+-               target/classes/
++               target/classes/,\
++               lib/commons-csv-1.1.jar
+ src.includes = bundle.properties,\
+                icons/
+diff --git a/edu.cuny.citytech.defaultrefactoring.ui/src/edu/cuny/citytech/defaultrefactoring/ui/handlers/MigrateSkeletalImplementationToInterfaceHandler.java b/edu.cuny.citytech.defaultrefactoring.ui/src/edu/cuny/citytech/defaultrefactoring/ui/handlers/MigrateSkeletalImplementationToInterfaceHandler.java
+index c4b9f5e..b6a830d 100644
+--- a/edu.cuny.citytech.defaultrefactoring.ui/src/edu/cuny/citytech/defaultrefactoring/ui/handlers/MigrateSkeletalImplementationToInterfaceHandler.java
++++ b/edu.cuny.citytech.defaultrefactoring.ui/src/edu/cuny/citytech/defaultrefactoring/ui/handlers/MigrateSkeletalImplementationToInterfaceHandler.java
+@@ -1,6 +1,5 @@
+ package edu.cuny.citytech.defaultrefactoring.ui.handlers;
+ 
+-import java.io.File;
+ import java.io.FileWriter;
+ import java.io.IOException;
+ import java.util.List;
