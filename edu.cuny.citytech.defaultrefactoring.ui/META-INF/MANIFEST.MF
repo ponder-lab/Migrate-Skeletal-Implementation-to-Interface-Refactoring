@@ -17,10 +17,7 @@ Require-Bundle: org.eclipse.ui,
  edu.cuny.citytech.refactoring.common.core;bundle-version="1.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: .
-Export-Package: edu,
- edu.cuny,
- edu.cuny.citytech,
- edu.cuny.citytech.defaultrefactoring.ui.handlers,
+Export-Package: edu.cuny.citytech.defaultrefactoring.ui.handlers,
  edu.cuny.citytech.defaultrefactoring.ui.messages,
  edu.cuny.citytech.defaultrefactoring.ui.plugins,
  edu.cuny.citytech.defaultrefactoring.ui.wizards
