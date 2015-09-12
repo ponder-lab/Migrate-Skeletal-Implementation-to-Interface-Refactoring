@@ -56,6 +56,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 				writer.append(cvsHeader[i]);
 			}
 			writer.append('\n');
+			writer.append('\n');
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
