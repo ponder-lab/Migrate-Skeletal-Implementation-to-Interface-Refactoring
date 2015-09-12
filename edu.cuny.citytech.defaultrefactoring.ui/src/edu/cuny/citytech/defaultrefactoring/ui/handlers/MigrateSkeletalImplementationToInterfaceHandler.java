@@ -1,12 +1,9 @@
 package edu.cuny.citytech.defaultrefactoring.ui.handlers;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -48,46 +45,52 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject)
 				.toArray(length -> new IJavaProject[length]);
 
-		CSVFormat format = CSVFormat.EXCEL.withHeader("Project Name", "Package", "CompilationUnit", "Java Type",
-				" Is it a class", "Is interface");
-		try (FileWriter writer = new FileWriter("InterfaceTest.csv")) {
-			try (CSVPrinter printer = format.print(writer)) {
+		try {
+			FileWriter writer = new FileWriter("iiiiiiiiiiiiiiiinterface.csv");
 
-				for (IJavaProject iJavaProject : javaProjects) {
-					try {
-						IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
-						for (IPackageFragment iPackageFragment : packageFragments) {
-							ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
-							for (ICompilationUnit iCompilationUnit : compilationUnits) {
-								// printing the iCompilationUnit,
-								IType[] allTypes = iCompilationUnit.getAllTypes();
-								for (IType iType : allTypes) {
-									// print the info about the type.
-									printer.print(iJavaProject.getElementName());
-									printer.print(iPackageFragment.getElementName());
-									printer.print(iCompilationUnit.getElementName());
-									printer.print(iType.getElementName());
-									printer.print(iType.isClass());
-									printer.print(iType.isInterface());
-									// next row (done with this type).
-									printer.println();
-									System.out.println("Files has been imported");
-								}
-							}
+			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Java Type", ",",
+					"Is it a class", ",", "Is interface" };
+
+			for (int i = 0; i < cvsHeader.length; i++) {
+				System.out.println(cvsHeader[i]);
+				writer.append(cvsHeader[i]);
+			}
+			writer.append('\n');
+
+			for (IJavaProject iJavaProject : javaProjects) {
+				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
+				for (IPackageFragment iPackageFragment : packageFragments) {
+					ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
+					for (ICompilationUnit iCompilationUnit : compilationUnits) {
+						// printing the iCompilationUnit,
+						IType[] allTypes = iCompilationUnit.getAllTypes();
+						for (IType iType : allTypes) {
+							// print the info about the type.
+							writer.append(iJavaProject.getElementName());
+							writer.append(',');
+							writer.append(iPackageFragment.getElementName());
+							writer.append(',');
+							writer.append(iCompilationUnit.getElementName());
+							writer.append(',');
+							writer.append(iType.getElementName());
+							writer.append(',');
+							writer.append(iType.isClass()+"");
+							writer.append(',');
+							writer.append(iType.isInterface()+"");
+							
+							// // next row (done with this type).
+							writer.append('\n');
+							System.out.println(iType.getElementName());
+							System.out.println("Files has been imported");
 						}
-					} catch (JavaModelException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
 					}
 				}
 			}
-
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+			//closing the files after done writing  
+			writer.flush();
+			writer.close();
+		} catch (JavaModelException | IOException fileException) {
+			fileException.printStackTrace();
 		}
 		getIMethods(event, methods);
 		return null;
