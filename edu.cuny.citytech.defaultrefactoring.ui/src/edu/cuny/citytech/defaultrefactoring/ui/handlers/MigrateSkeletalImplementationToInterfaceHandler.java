@@ -46,7 +46,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 				.toArray(length -> new IJavaProject[length]);
 
 		try {
-			FileWriter writer = new FileWriter("iiiiiiiiiiiiiiiinterface.csv");
+			FileWriter writer = new FileWriter("InterfaceDefaultRefactoringTest.csv");
 
 			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Java Type", ",",
 					"Is it a class", ",", "Is interface" };
