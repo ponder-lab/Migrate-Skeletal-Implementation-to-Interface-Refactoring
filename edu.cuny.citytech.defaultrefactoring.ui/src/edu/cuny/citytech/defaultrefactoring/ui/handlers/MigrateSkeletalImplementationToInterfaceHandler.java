@@ -59,7 +59,6 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 				writer.append(cvsHeader[i]);
 			}
 			writer.append('\n');
-			writer.append('\n');
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -85,7 +84,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							// // next row (done with this type).
 							writer.append('\n');
 							
-							//adding to class and interface
+							//adding to class and interface -taking off the arrigation 
 							if(iType.isClass()){
 								isClassCount++;
 							}
