@@ -46,14 +46,11 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 				.toArray(length -> new IJavaProject[length]);
 
 		try {
-			//count how many class and how many interface in a project
-			int isClassCount = 0;
-			int isInterfaceCount = 0;
 			
 			FileWriter writer = new FileWriter("InterfaceDefaultRefactoringTest.csv");
 
-			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Java Type", ",",
-					"Is it a class", ",", "Is interface" };
+			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type", ",",
+					"IsClass", ",", "IsInterface"," IsAbstract" };
 
 			for (int i = 0; i < cvsHeader.length; i++) {
 				writer.append(cvsHeader[i]);
@@ -84,26 +81,10 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							// // next row (done with this type).
 							writer.append('\n');
 							
-							//adding to class and interface -taking off the arrigation 
-							if(iType.isClass()){
-								isClassCount++;
-							}
-							if(iType.isInterface()){
-								isInterfaceCount++;
-							}
 						}
 					}
 				}
 			}
-			//adding the class and interface count to csv file
-			writer.append('\n');
-			writer.append("Total Class Count: ");
-			writer.append(',');
-			writer.append(isClassCount+"");
-			writer.append('\n');
-			writer.append("Total Interface Count: ");
-			writer.append(',');
-			writer.append(isInterfaceCount+"");
 			
 			//closing the files after done writing  
 			writer.flush();
