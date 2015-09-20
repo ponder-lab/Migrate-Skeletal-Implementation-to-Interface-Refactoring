@@ -9,6 +9,7 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
@@ -50,7 +51,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			FileWriter writer = new FileWriter("InterfaceDefaultRefactoringTest.csv");
 
 			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type", ",",
-					"IsClass", ",", "IsInterface"," IsAbstract" };
+					"IsClass", ",", "IsInterface",","," IsAbstract",",","InterfaceExtended" };
 
 			for (int i = 0; i < cvsHeader.length; i++) {
 				writer.append(cvsHeader[i]);
@@ -77,6 +78,9 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							writer.append(iType.isClass()+"");
 							writer.append(',');
 							writer.append(iType.isInterface()+"");
+							writer.append(',');
+							writer.append(Flags.isAbstract(iType.getFlags())+"");
+							writer.append(',');
 							
 							// // next row (done with this type).
 							writer.append('\n');
