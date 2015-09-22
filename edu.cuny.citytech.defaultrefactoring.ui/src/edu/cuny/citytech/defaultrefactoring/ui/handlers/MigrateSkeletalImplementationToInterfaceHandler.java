@@ -7,6 +7,7 @@ import java.util.List;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.Flags;
@@ -15,6 +16,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
@@ -47,11 +49,11 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 				.toArray(length -> new IJavaProject[length]);
 
 		try {
-			
+
 			FileWriter writer = new FileWriter("InterfaceDefaultRefactoringTest.csv");
 
-			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type", ",",
-					"IsClass", ",", "IsInterface",","," IsAbstract",",","InterfaceExtended" };
+			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type", ",", "IsClass",
+					",", "IsInterface", ",", " IsAbstract", ",", "ExtendedInterface" };
 
 			for (int i = 0; i < cvsHeader.length; i++) {
 				writer.append(cvsHeader[i]);
@@ -75,22 +77,30 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							writer.append(',');
 							writer.append(iType.getElementName());
 							writer.append(',');
-							writer.append(iType.isClass()+"");
+							writer.append(iType.isClass() + "");
 							writer.append(',');
-							writer.append(iType.isInterface()+"");
+							writer.append(iType.isInterface() + "");
 							writer.append(',');
-							writer.append(Flags.isAbstract(iType.getFlags())+"");
+							writer.append(Flags.isAbstract(iType.getFlags()) + "");
 							writer.append(',');
-							
-							// // next row (done with this type).
+							// getting all the implemented interface
+							ITypeHierarchy typeHierarchie = iType.newTypeHierarchy(new NullProgressMonitor());
+							IType[] interfaceType = typeHierarchie.getAllSuperInterfaces(iType);
+							int interfaceCount  = 0;
+							for (IType InterfaceIType : interfaceType) {
+								interfaceCount++;
+							}
+							writer.append(interfaceCount+" ");
+
+							// next row (done with this type).
 							writer.append('\n');
-							
+
 						}
 					}
 				}
 			}
-			
-			//closing the files after done writing  
+
+			// closing the files after done writing
 			writer.flush();
 			writer.close();
 		} catch (JavaModelException | IOException fileException) {
