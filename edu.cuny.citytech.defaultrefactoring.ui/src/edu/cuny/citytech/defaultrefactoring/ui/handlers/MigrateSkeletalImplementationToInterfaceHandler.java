@@ -52,8 +52,8 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 			FileWriter writer = new FileWriter("InterfaceDefaultRefactoringTest.csv");
 
-			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type", ",", "IsClass",
-					",", "IsInterface", ",", " IsAbstract", ",", "ExtendedInterface" };
+			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type Name", ",", "IsClass",
+					",", "IsInterface", ",", " IsAbstract", ",", "Interfaces Extended" };
 
 			for (int i = 0; i < cvsHeader.length; i++) {
 				writer.append(cvsHeader[i]);
