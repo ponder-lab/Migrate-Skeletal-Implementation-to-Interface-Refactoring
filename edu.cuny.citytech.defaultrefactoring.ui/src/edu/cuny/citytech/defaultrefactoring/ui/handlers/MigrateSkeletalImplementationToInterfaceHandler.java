@@ -50,10 +50,10 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 		try {
 
-			FileWriter writer = new FileWriter("InterfaceDefaultRefactoringTest.csv");
+			FileWriter writer = new FileWriter("SkeletalImplementation.csv");
 
 			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type Name", ",", "IsClass",
-					",", "IsInterface", ",", " IsAbstract", ",", "Interfaces Extended" };
+					",", "IsInterface", ",", " IsAbstract", ",", "Interfaces Extended",",","number of extenders" };
 
 			for (int i = 0; i < cvsHeader.length; i++) {
 				writer.append(cvsHeader[i]);
@@ -86,11 +86,18 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							// getting all the implemented interface
 							ITypeHierarchy typeHierarchie = iType.newTypeHierarchy(new NullProgressMonitor());
 							IType[] interfaceType = typeHierarchie.getAllSuperInterfaces(iType);
+							IType[] superClass = typeHierarchie.getAllSuperclasses(iType);
 							int interfaceCount  = 0;
+							int superClassCount = 0;
 							for (IType InterfaceIType : interfaceType) {
 								interfaceCount++;
 							}
+							for (IType sclass : superClass) {
+								superClassCount++;
+							}
 							writer.append(interfaceCount+" ");
+							writer.append(',');
+							writer.append(superClassCount+" ");
 
 							// next row (done with this type).
 							writer.append('\n');
