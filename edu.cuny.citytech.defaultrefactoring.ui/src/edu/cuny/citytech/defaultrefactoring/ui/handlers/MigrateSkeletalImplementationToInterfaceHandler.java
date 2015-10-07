@@ -52,8 +52,9 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 			FileWriter writer = new FileWriter("SkeletalImplementation.csv");
 
-			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type Name", ",", "IsClass",
-					",", "IsInterface", ",", " IsAbstract", ",", "Interfaces Extended",",","number of extenders" };
+			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type Name", ",",
+					"IsClass", ",", "IsInterface", ",", " IsAbstract", ",", "Interfaces Extended", ",",
+					"number of extenders", ",", "Interface Name" };
 
 			for (int i = 0; i < cvsHeader.length; i++) {
 				writer.append(cvsHeader[i]);
@@ -87,17 +88,26 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							ITypeHierarchy typeHierarchie = iType.newTypeHierarchy(new NullProgressMonitor());
 							IType[] interfaceType = typeHierarchie.getAllSuperInterfaces(iType);
 							IType[] superClass = typeHierarchie.getAllSuperclasses(iType);
-							int interfaceCount  = 0;
+							int interfaceCount = 0;
 							int superClassCount = 0;
 							for (IType InterfaceIType : interfaceType) {
+								InterfaceIType.getFullyQualifiedName();
 								interfaceCount++;
 							}
 							for (IType sclass : superClass) {
 								superClassCount++;
 							}
-							writer.append(interfaceCount+" ");
+							writer.append(interfaceCount + " ");
 							writer.append(',');
-							writer.append(superClassCount+" ");
+							writer.append(superClassCount + " ");
+
+							if (interfaceCount <= 1) {
+								for (IType iTypes : interfaceType) {
+									writer.append(',');
+									writer.append(iTypes.getFullyQualifiedName() + " ");
+								}
+
+							}
 
 							// next row (done with this type).
 							writer.append('\n');
