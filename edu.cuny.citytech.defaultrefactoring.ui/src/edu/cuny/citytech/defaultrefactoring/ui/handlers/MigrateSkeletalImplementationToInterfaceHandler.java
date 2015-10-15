@@ -50,16 +50,25 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 		try {
 
-			FileWriter writer = new FileWriter("SkeletalImplementation.csv");
+			// opening 5 separate files
+			FileWriter typesWriter = new FileWriter("types.csv");
+			FileWriter classesWriter = new FileWriter("classes.csv");
+			FileWriter abstract_classesWriter = new FileWriter("abstract_classes.csv");
+			FileWriter interfacesWriter = new FileWriter("interfaces.csv");
+			FileWriter classes_implementing_interfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
 
-			String[] cvsHeader = { "Project Name", ",", "Package", ",", "CompilationUnit", ",", "Type Name", ",",
-					"IsClass", ",", "IsInterface", ",", " IsAbstract", ",", "Interfaces Extended", ",",
-					"number of extenders", ",", "Interface Name" };
+			// getting the csv file header
+			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
+			String[] classesHeader = { "Fully Qualified Name" };
+			String[] abstract_classesHeder = { "Fully Qualified Name" };
+			String[] interfacesHeder = { "Fully Qualified Name" };
+			String[] classes_implementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
 
-			for (int i = 0; i < cvsHeader.length; i++) {
-				writer.append(cvsHeader[i]);
-			}
-			writer.append('\n');
+			csvHeader(typesWriter, typesHeader);
+			csvHeader(classesWriter, classesHeader);
+			csvHeader(abstract_classesWriter, abstract_classesHeder);
+			csvHeader(interfacesWriter, interfacesHeder);
+			csvHeader(classes_implementing_interfacesWriter, classes_implementing_interfacesHeder);
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -69,25 +78,40 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 						// printing the iCompilationUnit,
 						IType[] allTypes = iCompilationUnit.getAllTypes();
 						for (IType iType : allTypes) {
-							// print the info about the type.
-							writer.append(iJavaProject.getElementName());
-							writer.append(',');
-							writer.append(iPackageFragment.getElementName());
-							writer.append(',');
-							writer.append(iCompilationUnit.getElementName());
-							writer.append(',');
-							writer.append(iType.getElementName());
-							writer.append(',');
-							writer.append(iType.isClass() + "");
-							writer.append(',');
-							writer.append(iType.isInterface() + "");
-							writer.append(',');
-							writer.append(Flags.isAbstract(iType.getFlags()) + "");
-							writer.append(',');
+
+							String className = iCompilationUnit.getElementName();
+							String packageName = iPackageFragment.getElementName();
+							String interfaceName = " ";
+
+							// getting the types name.
+							typesWriter.append(iJavaProject.getElementName());
+							typesWriter.append(',');
+							typesWriter.append(className);
+							typesWriter.append(',');
+							typesWriter.append(packageName + className);
+							typesWriter.append(',');
+							typesWriter.append('\n');
+
+							// getting the class name that are not abstract and
+							// not include enum
+
+							if (iType.isClass() && !(iType.isEnum())) {
+								classesWriter.append(packageName + className);
+								classesWriter.append(',');
+								classesWriter.append('\n');
+							}
+							// checking if the class is abstract
+							if (Flags.isAbstract(iType.getFlags())) {
+								abstract_classesWriter.append(packageName + className);
+								abstract_classesWriter.append(',');
+								abstract_classesWriter.append('\n');
+							}
+
 							// getting all the implemented interface
 							ITypeHierarchy typeHierarchie = iType.newTypeHierarchy(new NullProgressMonitor());
 							IType[] interfaceType = typeHierarchie.getAllSuperInterfaces(iType);
 							IType[] superClass = typeHierarchie.getAllSuperclasses(iType);
+
 							int interfaceCount = 0;
 							int superClassCount = 0;
 							for (IType InterfaceIType : interfaceType) {
@@ -97,34 +121,72 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							for (IType sclass : superClass) {
 								superClassCount++;
 							}
-							writer.append(interfaceCount + " ");
-							writer.append(',');
-							writer.append(superClassCount + " ");
 
-							if (interfaceCount <= 1) {
+							// getting all the interface full qualified name
+							if (iType.isInterface()) {
+							
 								for (IType iTypes : interfaceType) {
-									writer.append(',');
-									writer.append(iTypes.getFullyQualifiedName() + " ");
+									// typesWriter.append(',');
+									interfaceName = iTypes.getFullyQualifiedName() + " ";
+									interfacesWriter.append(interfaceName);
+									interfacesWriter.append('\n');
+									if(superClassCount > 1){
+																			}
+								}
+
+							}	
+							if (interfaceCount >= 1) {
+								for (IType iTypes : interfaceType) {
+									classes_implementing_interfacesWriter.append(className);
+									classes_implementing_interfacesWriter.append(",");
+									classes_implementing_interfacesWriter.append(iTypes.getFullyQualifiedName() + " ");
+									classes_implementing_interfacesWriter.append(",");
+									classes_implementing_interfacesWriter.append('\n');
 								}
 
 							}
-
-							// next row (done with this type).
-							writer.append('\n');
-
 						}
 					}
 				}
 			}
 
-			// closing the files after done writing
-			writer.flush();
-			writer.close();
+			// closing the files writer after done writing
+			fileClose(typesWriter);
+			fileClose(classesWriter);
+			fileClose(abstract_classesWriter);
+			fileClose(interfacesWriter);
+			fileClose(classes_implementing_interfacesWriter);
+
 		} catch (JavaModelException | IOException fileException) {
 			fileException.printStackTrace();
 		}
 		getIMethods(event, methods);
 		return null;
+	}
+
+	/**
+	 * this method is close file writer file
+	 * 
+	 * @param typesWriter
+	 * @throws IOException
+	 */
+	protected void fileClose(FileWriter typesWriter) throws IOException {
+		typesWriter.flush();
+		typesWriter.close();
+	}
+
+	/**
+	 * this method create header for the csv file
+	 * 
+	 * @param typesWriter
+	 * @param typesHeader
+	 * @throws IOException
+	 */
+	protected void csvHeader(FileWriter typesWriter, String[] typesHeader) throws IOException {
+		for (int i = 0; i < typesHeader.length; i++) {
+			typesWriter.append(typesHeader[i]);
+		}
+		typesWriter.append('\n');
 	}
 
 	private void getIMethods(ExecutionEvent event, IMethod[] methods) throws ExecutionException {
