@@ -79,67 +79,54 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 						IType[] allTypes = iCompilationUnit.getAllTypes();
 						for (IType iType : allTypes) {
 
-							String className = iCompilationUnit.getElementName();
-							String packageName = iPackageFragment.getElementName();
-							String interfaceName = " ";
+							String typeFullyQualifiedName = iType.getFullyQualifiedName();
 
 							// getting the types name.
 							typesWriter.append(iJavaProject.getElementName());
 							typesWriter.append(',');
-							typesWriter.append(className);
+							typesWriter.append(iCompilationUnit.getElementName());
 							typesWriter.append(',');
-							typesWriter.append(packageName + className);
+							typesWriter.append(typeFullyQualifiedName);
 							typesWriter.append('\n');
 
 							// getting the class name that are not abstract and
 							// not include enum
 
 							if (iType.isClass() && !(iType.isEnum())) {
-								classesWriter.append(packageName + className);
+								classesWriter.append(typeFullyQualifiedName);
 								classesWriter.append('\n');
+								
+								// checking if the class is abstract
+								if (Flags.isAbstract(iType.getFlags())) {
+									abstract_classesWriter.append(typeFullyQualifiedName);
+									abstract_classesWriter.append('\n');
+								}
 							}
-							// checking if the class is abstract
-							if (Flags.isAbstract(iType.getFlags())) {
-								abstract_classesWriter.append(packageName + className);
-								abstract_classesWriter.append('\n');
-							}
-
+							
 							// getting all the implemented interface
 							ITypeHierarchy typeHierarchie = iType.newTypeHierarchy(new NullProgressMonitor());
-							IType[] interfaceType = typeHierarchie.getAllSuperInterfaces(iType);
-							IType[] superClass = typeHierarchie.getAllSuperclasses(iType);
-
-							int interfaceCount = 0;
-							int superClassCount = 0;
-							for (IType InterfaceIType : interfaceType) {
-								InterfaceIType.getFullyQualifiedName();
-								interfaceCount++;
-							}
-							for (IType sclass : superClass) {
-								superClassCount++;
-							}
+							IType[] allSuperInterfaces = typeHierarchie.getAllSuperInterfaces(iType);
 
 							// getting all the interface full qualified name
 							if (iType.isInterface()) {
-							
-								for (IType iTypes : interfaceType) {
-									// typesWriter.append(',');
-									interfaceName = iTypes.getFullyQualifiedName() + " ";
-									interfacesWriter.append(interfaceName);
+								// write this interface.
+								interfacesWriter.append(typeFullyQualifiedName);
+								interfacesWriter.append('\n');
+								
+								// write its super interfaces.
+								for (IType superInterface : allSuperInterfaces) {
+									interfacesWriter.append(superInterface.getFullyQualifiedName());
 									interfacesWriter.append('\n');
-									if(superClassCount > 1){
-																			}
 								}
-
-							}	
-							if (interfaceCount >= 1) {
-								for (IType iTypes : interfaceType) {
-									classes_implementing_interfacesWriter.append(className);
+							}
+							
+							if (iType.isClass() && !(iType.isEnum()) && allSuperInterfaces.length >= 1) {
+								for (IType superInterface : allSuperInterfaces) {
+									classes_implementing_interfacesWriter.append(typeFullyQualifiedName);
 									classes_implementing_interfacesWriter.append(",");
-									classes_implementing_interfacesWriter.append(iTypes.getFullyQualifiedName() + " ");
+									classes_implementing_interfacesWriter.append(superInterface.getFullyQualifiedName() + " ");
 									classes_implementing_interfacesWriter.append('\n');
 								}
-
 							}
 						}
 					}
