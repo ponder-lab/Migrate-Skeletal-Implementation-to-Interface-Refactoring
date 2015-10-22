@@ -89,7 +89,6 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							typesWriter.append(className);
 							typesWriter.append(',');
 							typesWriter.append(packageName + className);
-							typesWriter.append(',');
 							typesWriter.append('\n');
 
 							// getting the class name that are not abstract and
@@ -97,13 +96,11 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 							if (iType.isClass() && !(iType.isEnum())) {
 								classesWriter.append(packageName + className);
-								classesWriter.append(',');
 								classesWriter.append('\n');
 							}
 							// checking if the class is abstract
 							if (Flags.isAbstract(iType.getFlags())) {
 								abstract_classesWriter.append(packageName + className);
-								abstract_classesWriter.append(',');
 								abstract_classesWriter.append('\n');
 							}
 
@@ -140,7 +137,6 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 									classes_implementing_interfacesWriter.append(className);
 									classes_implementing_interfacesWriter.append(",");
 									classes_implementing_interfacesWriter.append(iTypes.getFullyQualifiedName() + " ");
-									classes_implementing_interfacesWriter.append(",");
 									classes_implementing_interfacesWriter.append('\n');
 								}
 
