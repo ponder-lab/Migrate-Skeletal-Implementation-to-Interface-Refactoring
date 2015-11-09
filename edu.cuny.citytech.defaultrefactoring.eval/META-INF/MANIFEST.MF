@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: %Bundle-Name
+Bundle-SymbolicName: edu.cuny.citytech.defaultrefactoring.eval;singleton:=true
+Bundle-Version: 1.0.0
+Bundle-Activator: edu.cuny.citytech.defaultrefactoring.ui.plugins.EvaluateMigrationOfSkeletalImplementationToInterfaceRefactoringPlugin
+Bundle-Vendor: %Bundle-Vendor
+Bundle-Localization: bundle
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.jdt.ui,
+ org.eclipse.jdt.core
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ClassPath: .
