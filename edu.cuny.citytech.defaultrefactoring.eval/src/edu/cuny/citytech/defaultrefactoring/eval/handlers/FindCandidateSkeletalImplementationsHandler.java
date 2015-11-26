@@ -50,6 +50,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			FileWriter abstract_classesWriter = new FileWriter("abstract_classes.csv");
 			FileWriter interfacesWriter = new FileWriter("interfaces.csv");
 			FileWriter classes_implementing_interfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
+			FileWriter classesExtendingClassesWriter = new FileWriter("classes_extending_classes.csv");
 
 			// getting the csv file header
 			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
@@ -57,12 +58,14 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			String[] abstract_classesHeder = { "Fully Qualified Name" };
 			String[] interfacesHeder = { "Fully Qualified Name" };
 			String[] classes_implementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
+			String[] classesExtendingClassesHeader = { "Source Class FQN", ",", "Target Class FQN" };
 
 			csvHeader(typesWriter, typesHeader);
 			csvHeader(classesWriter, classesHeader);
 			csvHeader(abstract_classesWriter, abstract_classesHeder);
 			csvHeader(interfacesWriter, interfacesHeder);
 			csvHeader(classes_implementing_interfacesWriter, classes_implementing_interfacesHeder);
+			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -80,16 +83,31 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 							if (type.isClass() && !(type.isEnum())) {
 								classesWriter.append(type.getFullyQualifiedName());
 								classesWriter.append('\n');
-								
+
 								// checking if the class is abstract
 								if (Flags.isAbstract(type.getFlags())) {
 									abstract_classesWriter.append(type.getFullyQualifiedName());
 									abstract_classesWriter.append('\n');
 								}
 							}
-							
-							// getting all the implemented interface
+
 							ITypeHierarchy typeHierarchy = type.newTypeHierarchy(new NullProgressMonitor());
+
+							// get all super classes of this type.
+							for (IType superClass : typeHierarchy.getAllSuperclasses(type))
+								if (superClass.isClass()) { // just to be sure.
+									// write out the super class to the types
+									// file.
+									writeType(typesWriter, superClass);
+
+									// write out the relation.
+									classesExtendingClassesWriter.append(type.getFullyQualifiedName());
+									classesExtendingClassesWriter.append(",");
+									classesExtendingClassesWriter.append(superClass.getFullyQualifiedName());
+									classesExtendingClassesWriter.append("\n");
+								}
+
+							// getting all the implemented interface
 							IType[] allSuperInterfaces = typeHierarchy.getAllSuperInterfaces(type);
 
 							// getting all the interface full qualified name
@@ -98,7 +116,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 								interfacesWriter.append(type.getFullyQualifiedName());
 								interfacesWriter.append('\n');
 							}
-							
+
 							if (type.isClass() && !(type.isEnum()) && allSuperInterfaces.length >= 1) {
 								for (IType superInterface : allSuperInterfaces) {
 									writeType(typesWriter, superInterface);
@@ -123,6 +141,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			abstract_classesWriter.close();
 			interfacesWriter.close();
 			classes_implementing_interfacesWriter.close();
+			classesExtendingClassesWriter.close();
 		} catch (JavaModelException | IOException fileException) {
 			JavaPlugin.log(fileException);
 		}
