@@ -56,6 +56,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			FileWriter abstract_classesWriter = new FileWriter("abstract_classes.csv");
 			FileWriter interfacesWriter = new FileWriter("interfaces.csv");
 			FileWriter classes_implementing_interfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
+			FileWriter classes_extend = new FileWriter("classes_extend.csv");
 
 			// getting the csv file header
 			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
@@ -63,12 +64,14 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			String[] abstract_classesHeder = { "Fully Qualified Name" };
 			String[] interfacesHeder = { "Fully Qualified Name" };
 			String[] classes_implementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
+			String[] classes_extend_header = { "Class Name", ",", "Extendted Class" };
 
 			csvHeader(typesWriter, typesHeader);
 			csvHeader(classesWriter, classesHeader);
 			csvHeader(abstract_classesWriter, abstract_classesHeder);
 			csvHeader(interfacesWriter, interfacesHeder);
 			csvHeader(classes_implementing_interfacesWriter, classes_implementing_interfacesHeder);
+			csvHeader(classes_extend,classes_extend_header);
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -139,6 +142,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			fileClose(abstract_classesWriter);
 			fileClose(interfacesWriter);
 			fileClose(classes_implementing_interfacesWriter);
+			fileClose(classes_extend);
 
 		} catch (JavaModelException | IOException fileException) {
 			fileException.printStackTrace();
