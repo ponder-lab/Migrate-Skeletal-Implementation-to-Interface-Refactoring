@@ -99,6 +99,14 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 								classesWriter.append(typeFullyQualifiedName);
 								classesWriter.append('\n');
 								
+								//getting the class name and the extended class
+								classes_extend.append(typeFullyQualifiedName);
+								classes_extend.append(",");
+								//if the extend type is not interface then append to our csv
+							    classes_extend.append(iType.getSuperclassName());
+							    classes_extend.append("\n");
+								
+								
 								// checking if the class is abstract
 								if (Flags.isAbstract(iType.getFlags())) {
 									abstract_classesWriter.append(typeFullyQualifiedName);
