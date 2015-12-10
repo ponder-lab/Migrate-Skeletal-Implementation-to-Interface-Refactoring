@@ -56,7 +56,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			FileWriter abstract_classesWriter = new FileWriter("abstract_classes.csv");
 			FileWriter interfacesWriter = new FileWriter("interfaces.csv");
 			FileWriter classes_implementing_interfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
-			FileWriter classes_extend = new FileWriter("classes_extend.csv");
+			FileWriter classes_extending_classes = new FileWriter("classes_extending_classes.csv");
 
 			// getting the csv file header
 			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
@@ -64,14 +64,14 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			String[] abstract_classesHeder = { "Fully Qualified Name" };
 			String[] interfacesHeder = { "Fully Qualified Name" };
 			String[] classes_implementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
-			String[] classes_extend_header = { "Class Name", ",", "Extendted Class" };
+			String[] classes_extending_classes_header = { "Source Class FQN", ",", "Target Class FQN" };
 
 			csvHeader(typesWriter, typesHeader);
 			csvHeader(classesWriter, classesHeader);
 			csvHeader(abstract_classesWriter, abstract_classesHeder);
 			csvHeader(interfacesWriter, interfacesHeder);
 			csvHeader(classes_implementing_interfacesWriter, classes_implementing_interfacesHeder);
-			csvHeader(classes_extend,classes_extend_header);
+			csvHeader(classes_extending_classes, classes_extending_classes_header);
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -83,6 +83,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 						for (IType iType : allTypes) {
 
 							String typeFullyQualifiedName = iType.getFullyQualifiedName();
+							ITypeHierarchy typeHierarchie = iType.newTypeHierarchy(new NullProgressMonitor());
 
 							// getting the types name.
 							typesWriter.append(iJavaProject.getElementName());
@@ -98,44 +99,50 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							if (iType.isClass() && !(iType.isEnum())) {
 								classesWriter.append(typeFullyQualifiedName);
 								classesWriter.append('\n');
-								
-								//getting the class name and the extended class
-								classes_extend.append(typeFullyQualifiedName);
-								classes_extend.append(",");
-								//if the extend type is not interface then append to our csv
-							    classes_extend.append(iType.getSuperclassName());
-							    classes_extend.append("\n");
-								
-								
+
 								// checking if the class is abstract
 								if (Flags.isAbstract(iType.getFlags())) {
 									abstract_classesWriter.append(typeFullyQualifiedName);
 									abstract_classesWriter.append('\n');
 								}
 							}
-							
+
+							// FQN class name and extended FQN class name
+							IType[] allSuperClasses = typeHierarchie.getAllSuperclasses(iType);
+
+							for (IType classIType : allSuperClasses) {
+
+								// getting the class name and the extended class
+								classes_extending_classes.append(typeFullyQualifiedName);
+								classes_extending_classes.append(",");
+								classes_extending_classes.append(classIType.getFullyQualifiedName());
+								classes_extending_classes.append("\n");
+							}
+
 							// getting all the implemented interface
-							ITypeHierarchy typeHierarchie = iType.newTypeHierarchy(new NullProgressMonitor());
 							IType[] allSuperInterfaces = typeHierarchie.getAllSuperInterfaces(iType);
+							typeHierarchie.getAllSuperclasses(iType); // todo
+																		// work
 
 							// getting all the interface full qualified name
 							if (iType.isInterface()) {
 								// write this interface.
 								interfacesWriter.append(typeFullyQualifiedName);
 								interfacesWriter.append('\n');
-								
+
 								// write its super interfaces.
 								for (IType superInterface : allSuperInterfaces) {
 									interfacesWriter.append(superInterface.getFullyQualifiedName());
 									interfacesWriter.append('\n');
 								}
 							}
-							
+
 							if (iType.isClass() && !(iType.isEnum()) && allSuperInterfaces.length >= 1) {
 								for (IType superInterface : allSuperInterfaces) {
 									classes_implementing_interfacesWriter.append(typeFullyQualifiedName);
 									classes_implementing_interfacesWriter.append(",");
-									classes_implementing_interfacesWriter.append(superInterface.getFullyQualifiedName() + " ");
+									classes_implementing_interfacesWriter
+											.append(superInterface.getFullyQualifiedName() + " ");
 									classes_implementing_interfacesWriter.append('\n');
 								}
 							}
@@ -150,7 +157,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			fileClose(abstract_classesWriter);
 			fileClose(interfacesWriter);
 			fileClose(classes_implementing_interfacesWriter);
-			fileClose(classes_extend);
+			fileClose(classes_extending_classes);
 
 		} catch (JavaModelException | IOException fileException) {
 			fileException.printStackTrace();
