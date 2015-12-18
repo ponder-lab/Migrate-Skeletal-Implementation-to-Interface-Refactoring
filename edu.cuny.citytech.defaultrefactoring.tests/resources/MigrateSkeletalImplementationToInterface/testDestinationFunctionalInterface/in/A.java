@@ -1,5 +1,6 @@
 package p;
 
+@FunctionalInterface
 interface I {
 	void m();
 }

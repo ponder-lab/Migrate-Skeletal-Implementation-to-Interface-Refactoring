@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
@@ -80,6 +81,8 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
  */
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends HierarchyProcessor {
+
+	private static final String FUNCTIONAL_INTERFACE_ANNOTATION_NAME = "FunctionalInterface";
 
 	/**
 	 * The destination interface.
@@ -272,6 +275,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (targetInterface.getAnnotations().length != 0)
 			addWarning(status, Messages.DestinationInterfaceHasAnnotations, targetInterface);
 
+		// #35: The target interface should not be a @FunctionalInterface.
+		if (isInterfaceFunctional(targetInterface))
+			addWarning(status, Messages.DestinationInterfaceIsFunctional, targetInterface);
+
 		// TODO: For now, only top-level types.
 		if (targetInterface.getDeclaringType() != null)
 			addWarning(status, Messages.DestinationInterfaceIsNotTopLevel, targetInterface);
@@ -302,6 +309,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				Optional.of(new SubProgressMonitor(monitor, this.getTargetMethods().size()))));
 
 		return status;
+	}
+
+	private static boolean isInterfaceFunctional(final IType anInterface) throws JavaModelException {
+		return Stream.of(anInterface.getAnnotations()).parallel().map(IAnnotation::getElementName)
+				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
 
 	protected RefactoringStatus checkDestinationInterfaceHierarchy(IProgressMonitor monitor) throws JavaModelException {

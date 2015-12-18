@@ -232,6 +232,31 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testDestinationInterfaceWithFields() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	/**
+	 * The destination interface should not be marked as an @FunctionalInterface
+	 * since we only convert abstract methods to default methods and it is
+	 * not allowed for a valid @FunctionalInterface to loose an abstract method. 
+	 */
+	public void testDestinationFunctionalInterface() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	/**
+	 * Same as {@link MigrateSkeletalImplementationToInterfaceRefactoringTest#testDestinationFunctionalInterface()}
+	 * but with non-abstract methods also included in the interface.
+	 */
+	public void testDestinationFunctionalInterfaceWithNonAbstractMethods() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	/**
+	 * Same as {@link MigrateSkeletalImplementationToInterfaceRefactoringTest#testDestinationFunctionalInterface()}
+	 * but with non-abstract methods also included in the interface.
+	 */
+	public void testDestinationFunctionalInterfaceWithNonAbstractMethods2() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testDestinationInterfaceThatExtendsInterface() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
