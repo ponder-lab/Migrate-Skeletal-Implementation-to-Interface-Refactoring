@@ -312,6 +312,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private static boolean isInterfaceFunctional(final IType anInterface) throws JavaModelException {
+		//TODO: #37.
 		return Stream.of(anInterface.getAnnotations()).parallel().map(IAnnotation::getElementName)
 				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
