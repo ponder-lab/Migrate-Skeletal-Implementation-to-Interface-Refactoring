@@ -28,6 +28,7 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -312,7 +313,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private static boolean isInterfaceFunctional(final IType anInterface) throws JavaModelException {
-		//TODO: #37.
+		// TODO: #37.
 		return Stream.of(anInterface.getAnnotations()).parallel().map(IAnnotation::getElementName)
 				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
@@ -637,6 +638,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// TODO for now.
 					addWarning(status, Messages.NoMethodsThatThrowExceptions, method);
 				}
+
+				status.merge(checkParameters(method));
+
 				if (!method.getReturnType().equals(Signature.SIG_VOID)) {
 					// return type must be void.
 					// TODO for now.
@@ -656,6 +660,45 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			pm.done();
 		}
+	}
+
+	/**
+	 * Check that the annotations in the parameters are consistent between the
+	 * source and target.
+	 * 
+	 * @param method
+	 *            The method to check.
+	 * @return {@link RefactoringStatus} indicating the result of the check.
+	 * @throws JavaModelException
+	 */
+	private RefactoringStatus checkParameters(IMethod method) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+		IMethod targetMethod = this.getTargetMethod(method);
+
+		// for each parameter.
+		for (int i = 0; i < method.getParameters().length; i++) {
+			ILocalVariable sourceParameter = method.getParameters()[i];
+
+			// get the corresponding target parameter.
+			ILocalVariable targetParameter = targetMethod.getParameters()[i];
+
+			IAnnotation[] sourceParameterAnnotations = sourceParameter.getAnnotations();
+
+			// get the corresponding target parameter annotations.
+			IAnnotation[] targetParameterAnnotations = targetParameter.getAnnotations();
+
+			// ensure they match.
+			String[] sourceParameterAnnotationNames = Stream.of(sourceParameterAnnotations).parallel()
+					.map(IAnnotation::getElementName).toArray(String[]::new);
+			String[] targetParameterAnnotationNames = Stream.of(targetParameterAnnotations).parallel()
+					.map(IAnnotation::getElementName).toArray(String[]::new);
+
+			if (!Arrays.equals(sourceParameterAnnotationNames, targetParameterAnnotationNames))
+				addWarning(status, Messages.MethodContainsInconsistentParameterAnnotations,
+						method.getCompilationUnit());
+		}
+
+		return status;
 	}
 
 	private void checkStructure(RefactoringStatus status, IMember member) throws JavaModelException {

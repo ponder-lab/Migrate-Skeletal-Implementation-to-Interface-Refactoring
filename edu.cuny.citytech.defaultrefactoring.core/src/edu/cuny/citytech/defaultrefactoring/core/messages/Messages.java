@@ -84,6 +84,7 @@ public class Messages extends NLS {
 	public static String DeclaringTypeContainsSubtype;
 	public static String DeclaringTypeContainsInvalidSupertype;
 	public static String DestinationInterfaceIsFunctional;
+	public static String MethodContainsInconsistentParameterAnnotations;
 
 	static {
 		// initialize resource bundle
