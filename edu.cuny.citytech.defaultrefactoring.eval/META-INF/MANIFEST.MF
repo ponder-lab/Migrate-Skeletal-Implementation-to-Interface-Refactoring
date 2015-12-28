@@ -12,3 +12,9 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.core
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: .
+Export-Package: edu,
+ edu.cuny,
+ edu.cuny.citytech,
+ edu.cuny.citytech.defaultrefactoring.eval.handlers,
+ edu.cuny.citytech.defaultrefactoring.eval.messages,
+ edu.cuny.citytech.defaultrefactoring.ui.plugins
