@@ -174,7 +174,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodWithParameters() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
+		helperPass(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
 	}
 
 	public void testMethodWithReturnType() throws Exception {

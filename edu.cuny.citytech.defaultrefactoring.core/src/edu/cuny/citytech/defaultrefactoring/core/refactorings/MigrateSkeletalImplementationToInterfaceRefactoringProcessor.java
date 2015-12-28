@@ -612,9 +612,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				IMethod method = it.next();
 
 				checkExistence(status, method, Messages.MethodDoesNotExist);
-
 				checkWritabilitiy(status, method, Messages.CantChangeMethod);
-
 				checkStructure(status, method);
 
 				if (method.isConstructor()) {
@@ -638,10 +636,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (method.getExceptionTypes().length != 0) {
 					// TODO for now.
 					addWarning(status, Messages.NoMethodsThatThrowExceptions, method);
-				}
-				if (method.getParameters().length != 0) {
-					// TODO for now.
-					addWarning(status, Messages.NoMethodsWithParameters, method);
 				}
 				if (!method.getReturnType().equals(Signature.SIG_VOID)) {
 					// return type must be void.
