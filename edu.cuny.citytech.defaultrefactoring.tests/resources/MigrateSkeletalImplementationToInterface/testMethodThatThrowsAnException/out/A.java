@@ -1,7 +1,7 @@
 package p;
 
 interface I {
-	void m() throws Exception {
+	default void m() throws Exception {
 	}
 }
 
