@@ -643,7 +643,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				if (!method.getReturnType().equals(Signature.SIG_VOID)) {
 					// return type must be void.
-					// TODO for now.
+					// TODO for now. Can't remove this until we allow at least one statement.
 					addWarning(status, Messages.NoMethodsWithReturnTypes, method);
 				}
 				pm.worked(1);
@@ -661,6 +661,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * Check that the annotations in the parameters are consistent between the
 	 * source and target.
+	 * 
+	 * FIXME: What if the annotation type is not available in the target?
 	 * 
 	 * @param method
 	 *            The method to check.
