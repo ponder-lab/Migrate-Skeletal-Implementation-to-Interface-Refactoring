@@ -634,10 +634,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// TODO for now.
 					addWarning(status, Messages.NoLambdaMethods, method);
 				}
-				if (method.getExceptionTypes().length != 0) {
-					// TODO for now.
-					addWarning(status, Messages.NoMethodsThatThrowExceptions, method);
-				}
 
 				status.merge(checkParameters(method));
 
