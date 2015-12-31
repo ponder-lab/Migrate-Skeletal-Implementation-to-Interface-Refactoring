@@ -912,6 +912,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// Change the target method to default.
 				convertToDefault(targetMethodDeclaration, destinationRewrite);
 
+				// if the source method is strictfp.
+				if (Flags.isStrictfp(sourceMethod.getFlags()))
+					//change the target method to strictfp.
+					convertToStrictFP(targetMethodDeclaration, destinationRewrite);
+
 				// Remove the source method.
 				ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
 				removeMethod(sourceMethodDeclaration, sourceRewrite);
@@ -985,7 +990,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void convertToDefault(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
-		Modifier modifier = rewrite.getAST().newModifier(ModifierKeyword.DEFAULT_KEYWORD);
+		addModifierKeyword(methodDeclaration, ModifierKeyword.DEFAULT_KEYWORD, rewrite);
+	}
+
+	private void convertToStrictFP(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
+		addModifierKeyword(methodDeclaration, ModifierKeyword.STRICTFP_KEYWORD, rewrite);
+	}
+
+	private void addModifierKeyword(MethodDeclaration methodDeclaration, ModifierKeyword modifierKeyword,
+			ASTRewrite rewrite) {
+		Modifier modifier = rewrite.getAST().newModifier(modifierKeyword);
 		ListRewrite listRewrite = rewrite.getListRewrite(methodDeclaration, methodDeclaration.getModifiersProperty());
 		listRewrite.insertLast(modifier, null);
 	}
