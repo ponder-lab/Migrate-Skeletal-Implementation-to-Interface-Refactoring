@@ -624,7 +624,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addWarning(status, Messages.NoAnnotations, method);
 				}
 				if (Flags.isStatic(method.getFlags())) {
-					// TODO for now.
 					addWarning(status, Messages.NoStaticMethods, method);
 				}
 				if (JdtFlags.isNative(method)) {
