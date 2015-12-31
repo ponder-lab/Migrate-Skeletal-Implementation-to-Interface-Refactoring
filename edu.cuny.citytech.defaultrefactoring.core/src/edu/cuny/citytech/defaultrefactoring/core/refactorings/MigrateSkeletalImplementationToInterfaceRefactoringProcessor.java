@@ -646,10 +646,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// TODO for now.
 					addWarning(status, Messages.NoMethodsWithReturnTypes, method);
 				}
-				if (method.getTypeParameters().length != 0) {
-					// TODO for now but this will be an important one.
-					addWarning(status, Messages.NoMethodsWithTypeParameters, method);
-				}
 				pm.worked(1);
 			}
 
