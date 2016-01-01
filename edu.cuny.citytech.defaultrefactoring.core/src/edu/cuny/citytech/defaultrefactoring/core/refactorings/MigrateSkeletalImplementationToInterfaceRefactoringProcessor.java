@@ -919,7 +919,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				// Change the target method to default.
 				convertToDefault(targetMethodDeclaration, destinationRewrite);
-
+				
 				// TODO: Do we need to worry about preserving ordering of the modifiers?
 				// if the source method is strictfp.
 				if (Flags.isStrictfp(sourceMethod.getFlags()))
