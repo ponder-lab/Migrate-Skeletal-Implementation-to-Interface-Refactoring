@@ -97,6 +97,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	/**
+	 * Synchronized methods aren't allowed in interfaces. 
+	 */
+	public void testSynchronizedMethod() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testStrictFPMethod() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}

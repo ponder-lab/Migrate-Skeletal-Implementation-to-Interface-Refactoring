@@ -623,6 +623,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// TODO for now.
 					addWarning(status, Messages.NoAnnotations, method);
 				}
+				// synchronized methods aren't allowed in interfaces (even
+				// if they're default).
+				if (Flags.isSynchronized(method.getFlags())) {
+					addWarning(status, Messages.NoSynchronizedMethods, method);
+				}
 				if (Flags.isStatic(method.getFlags())) {
 					addWarning(status, Messages.NoStaticMethods, method);
 				}
