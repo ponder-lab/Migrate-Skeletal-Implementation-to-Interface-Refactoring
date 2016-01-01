@@ -637,7 +637,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addWarning(status, Messages.NoNativeMethods, method);
 				}
 				if (method.isLambdaMethod()) {
-					// TODO for now.
 					addWarning(status, Messages.NoLambdaMethods, method);
 				}
 
