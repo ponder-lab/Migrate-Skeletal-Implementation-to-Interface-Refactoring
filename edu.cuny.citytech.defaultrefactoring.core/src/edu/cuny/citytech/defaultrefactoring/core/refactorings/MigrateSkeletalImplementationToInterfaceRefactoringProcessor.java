@@ -645,7 +645,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				if (!method.getReturnType().equals(Signature.SIG_VOID)) {
 					// return type must be void.
-					// TODO for now. Can't remove this until we allow at least one statement.
+					// TODO for now. Can't remove this until we allow at least
+					// one statement.
 					addWarning(status, Messages.NoMethodsWithReturnTypes, method);
 				}
 				pm.worked(1);
@@ -917,6 +918,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// Change the target method to default.
 				convertToDefault(targetMethodDeclaration, destinationRewrite);
 
+				// TODO: Do we need to worry about preserving ordering of the modifiers?
 				// if the source method is strictfp.
 				if (Flags.isStrictfp(sourceMethod.getFlags()))
 					//change the target method to strictfp.
