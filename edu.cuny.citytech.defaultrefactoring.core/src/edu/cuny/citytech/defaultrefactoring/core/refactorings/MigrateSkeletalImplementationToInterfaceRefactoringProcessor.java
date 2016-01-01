@@ -845,6 +845,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			status.merge(checkMethodsToMove(new SubProgressMonitor(monitor, 1)));
 			if (status.hasFatalError())
 				return status;
+			if (monitor.isCanceled())
+				throw new OperationCanceledException();
 
 			status.merge(checkDestinationInterface(new SubProgressMonitor(monitor, 1)));
 			if (status.hasFatalError())
