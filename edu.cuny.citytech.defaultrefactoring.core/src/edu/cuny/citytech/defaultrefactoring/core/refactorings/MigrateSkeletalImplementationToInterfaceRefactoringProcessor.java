@@ -631,6 +631,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (Flags.isStatic(method.getFlags())) {
 					addWarning(status, Messages.NoStaticMethods, method);
 				}
+				if (Flags.isAbstract(method.getFlags())) {
+					addWarning(status, Messages.NoAbstractMethods, method);
+				}
 				// native methods don't have bodies. As such, they can't
 				// be skeletal implementors.
 				if (JdtFlags.isNative(method)) {

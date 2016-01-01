@@ -28,6 +28,7 @@ public class Messages extends NLS {
 	public static String NoConstructors;
 	public static String NoAnnotations;
 	public static String NoStaticMethods;
+	public static String NoAbstractMethods;
 	public static String NoMethodsInInterfaces;
 	public static String NoMethodsInAnonymousTypes;
 	public static String NoMethodsInEnums;
