@@ -634,6 +634,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (Flags.isAbstract(method.getFlags())) {
 					addWarning(status, Messages.NoAbstractMethods, method);
 				}
+				// final methods aren't allowed in interfaces.
+				if (Flags.isFinal(method.getFlags())) {
+					addWarning(status, Messages.NoFinalMethods, method);
+				}
 				// native methods don't have bodies. As such, they can't
 				// be skeletal implementors.
 				if (JdtFlags.isNative(method)) {

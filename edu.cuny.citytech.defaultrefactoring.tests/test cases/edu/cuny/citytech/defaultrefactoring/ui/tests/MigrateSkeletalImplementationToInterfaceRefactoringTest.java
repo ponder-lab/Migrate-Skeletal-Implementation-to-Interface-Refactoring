@@ -101,6 +101,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 	
+	public void testFinalMethod() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
 	/**
 	 * Synchronized methods aren't allowed in interfaces. 
 	 */
