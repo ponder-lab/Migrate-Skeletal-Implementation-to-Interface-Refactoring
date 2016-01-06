@@ -691,7 +691,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *            The source method.
 	 * @return The corresponding {@link RefactoringStatus}.
 	 * @throws JavaModelException
-	 *             If there is trouble retreiving exception types from
+	 *             If there is trouble retrieving exception types from
 	 *             sourceMethod.
 	 */
 	private RefactoringStatus checkExceptions(IMethod sourceMethod) throws JavaModelException {
