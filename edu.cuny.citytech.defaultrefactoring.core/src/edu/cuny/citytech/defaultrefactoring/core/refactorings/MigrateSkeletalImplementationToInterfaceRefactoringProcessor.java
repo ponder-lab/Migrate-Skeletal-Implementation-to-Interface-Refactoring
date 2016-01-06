@@ -979,7 +979,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				
 				// TODO: Do we need to worry about preserving ordering of the modifiers?
 				// if the source method is strictfp.
-				if (Flags.isStrictfp(sourceMethod.getFlags()) || Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
+				if ((Flags.isStrictfp(sourceMethod.getFlags())
+						|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
+						&& !Flags.isStrictfp(targetMethod.getFlags()))
 					//change the target method to strictfp.
 					convertToStrictFP(targetMethodDeclaration, destinationRewrite);
 
