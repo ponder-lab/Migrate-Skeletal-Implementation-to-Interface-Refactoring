@@ -402,7 +402,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void addWarning(RefactoringStatus status, String message) {
-		addWarning(status, message);
+		addWarning(status, message, new IJavaElement[] {});
 	}
 
 	@Override
