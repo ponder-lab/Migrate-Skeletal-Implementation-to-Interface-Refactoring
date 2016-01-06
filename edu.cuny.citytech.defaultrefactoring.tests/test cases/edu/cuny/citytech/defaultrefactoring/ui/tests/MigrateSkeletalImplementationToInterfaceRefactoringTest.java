@@ -116,6 +116,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testStrictFPMethod2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testLambdaMethod() throws Exception {
 		helperFailLambdaMethod("A", "x) -> {}");
 	}
