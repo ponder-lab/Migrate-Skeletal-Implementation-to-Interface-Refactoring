@@ -402,7 +402,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void addWarning(RefactoringStatus status, String message) {
-		addWarning(status, message, null);
+		addWarning(status, message);
 	}
 
 	@Override
@@ -787,20 +787,23 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private static void addWarning(RefactoringStatus status, String message, IJavaElement relatedElement) {
-		if (relatedElement != null) { // workaround
-			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=475753.
-			String elementName = JavaElementLabels.getElementLabel(relatedElement,
-					JavaElementLabels.ALL_FULLY_QUALIFIED);
-			message = MessageFormat.format(message, elementName);
-		}
+	private static void addWarning(RefactoringStatus status, String message, IJavaElement... relatedElementCollection) {
+		message = formatMessage(message, relatedElementCollection);
 
-		if (relatedElement instanceof IMember) {
-			IMember member = (IMember) relatedElement;
+		// add the first element as the context if appropriate.
+		if (relatedElementCollection.length > 0 && relatedElementCollection[0] instanceof IMember) {
+			IMember member = (IMember) relatedElementCollection[0];
 			RefactoringStatusContext context = JavaStatusContext.create(member);
 			status.addWarning(message, context);
-		} else
+		} else // otherwise, just add the message.
 			status.addWarning(message);
+	}
+
+	private static String formatMessage(String message, IJavaElement... relatedElementCollection) {
+		Object[] elementNames = Arrays.stream(relatedElementCollection).parallel().filter(Objects::nonNull)
+				.map(re -> JavaElementLabels.getElementLabel(re, JavaElementLabels.ALL_FULLY_QUALIFIED)).toArray();
+		message = MessageFormat.format(message, elementNames);
+		return message;
 	}
 
 	private static void addError(RefactoringStatus status, String message, IMember member, IMember... more) {
