@@ -556,7 +556,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * difference here between this refactoring and pull up is that we can have
 	 * a much more complex type hierarchy due to multiple interface inheritance
 	 * in Java.
-	 * 
+	 * <p>
 	 * TODO: It should be possible to pull up a method into an interface (i.e.,
 	 * "Pull Up Method To Interface") that is not implemented explicitly. For
 	 * example, there may be a skeletal implementation class that implements all
