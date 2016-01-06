@@ -89,6 +89,7 @@ public class Messages extends NLS {
 	public static String NoSynchronizedMethods;
 	public static String NoFinalMethods;
 	public static String DestinationInterfaceIsStrictFP;
+	public static String ExceptionTypeMismatch;
 
 	static {
 		// initialize resource bundle

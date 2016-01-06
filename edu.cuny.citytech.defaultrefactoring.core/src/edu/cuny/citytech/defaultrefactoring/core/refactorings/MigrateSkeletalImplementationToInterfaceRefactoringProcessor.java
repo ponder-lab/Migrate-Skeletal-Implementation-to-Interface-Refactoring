@@ -662,6 +662,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addWarning(status, Messages.NoLambdaMethods, method);
 				}
 
+				status.merge(checkExceptions(method));
 				status.merge(checkParameters(method));
 
 				if (!method.getReturnType().equals(Signature.SIG_VOID)) {
@@ -680,6 +681,35 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			pm.done();
 		}
+	}
+
+	/**
+	 * #44: Ensure that exception types between the source and target methods
+	 * match.
+	 * 
+	 * @param sourceMethod
+	 *            The source method.
+	 * @return The corresponding {@link RefactoringStatus}.
+	 * @throws JavaModelException
+	 *             If there is trouble retreiving exception types from
+	 *             sourceMethod.
+	 */
+	private RefactoringStatus checkExceptions(IMethod sourceMethod) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		Set<String> sourceMethodExceptionTypeSet = getExceptionTypeSet(sourceMethod);
+
+		IMethod targetMethod = this.getTargetMethod(sourceMethod);
+		Set<String> targetMethodExceptionTypeSet = getExceptionTypeSet(targetMethod);
+
+		if (!sourceMethodExceptionTypeSet.equals(targetMethodExceptionTypeSet))
+			addWarning(status, Messages.ExceptionTypeMismatch, sourceMethod, targetMethod);
+
+		return status;
+	}
+
+	private static Set<String> getExceptionTypeSet(IMethod method) throws JavaModelException {
+		return Stream.of(method.getExceptionTypes()).parallel().collect(Collectors.toSet());
 	}
 
 	/**
