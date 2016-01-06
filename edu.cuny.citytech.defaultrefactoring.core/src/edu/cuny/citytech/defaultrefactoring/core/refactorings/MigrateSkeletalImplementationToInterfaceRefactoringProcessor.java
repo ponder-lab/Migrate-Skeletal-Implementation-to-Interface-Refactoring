@@ -304,12 +304,27 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (targetInterface.isMember())
 			addWarning(status, Messages.DestinationInterfaceIsMember, targetInterface);
 
+		// #42: Can't be strictfp if all the methods to be migrated aren't also
+		// strictfp.
+		if (Flags.isStrictfp(targetInterface.getFlags()) && !allMethodsToMoveInTypeAreStrictFP(this.getDeclaringType()))
+			addWarning(status, Messages.DestinationInterfaceIsStrictFP, targetInterface);
+
 		status.merge(checkDestinationInterfaceHierarchy(new SubProgressMonitor(monitor, 1)));
 		status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(new SubProgressMonitor(monitor, 1)));
 		status.merge(checkDestinationInterfaceTargetMethods(
 				Optional.of(new SubProgressMonitor(monitor, this.getTargetMethods().size()))));
 
 		return status;
+	}
+
+	private boolean allMethodsToMoveInTypeAreStrictFP(IType type) throws JavaModelException {
+		for (Iterator<IMethod> iterator = this.getMethodsToMoveIterator(); iterator.hasNext();) {
+			IMethod method = iterator.next();
+			if (method.getDeclaringType().equals(type) && !Flags.isStrictfp(method.getFlags()))
+				return false;
+		}
+
+		return true;
 	}
 
 	private static boolean isInterfaceFunctional(final IType anInterface) throws JavaModelException {
@@ -731,8 +746,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	protected IMethod[] getMethodsToMove() {
-		return Stream.of(fMembersToMove).parallel().filter(m -> m instanceof IMethod).map(m -> (IMethod) m)
-				.toArray(IMethod[]::new);
+		return getMethodsToMoveStream().toArray(IMethod[]::new);
+	}
+
+	private Stream<IMethod> getMethodsToMoveStream() {
+		return Stream.of(fMembersToMove).parallel().filter(m -> m instanceof IMethod).map(m -> (IMethod) m);
 	}
 
 	protected RefactoringStatus checkMethodsToMoveBodies(IProgressMonitor pm) throws JavaModelException {

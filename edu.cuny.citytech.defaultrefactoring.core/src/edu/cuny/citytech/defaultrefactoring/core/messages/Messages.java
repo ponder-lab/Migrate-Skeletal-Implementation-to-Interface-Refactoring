@@ -88,6 +88,7 @@ public class Messages extends NLS {
 	public static String MethodContainsInconsistentParameterAnnotations;
 	public static String NoSynchronizedMethods;
 	public static String NoFinalMethods;
+	public static String DestinationInterfaceIsStrictFP;
 
 	static {
 		// initialize resource bundle
