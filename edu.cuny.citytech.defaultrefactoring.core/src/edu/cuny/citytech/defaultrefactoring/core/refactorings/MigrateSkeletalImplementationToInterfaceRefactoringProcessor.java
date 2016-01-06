@@ -697,13 +697,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private RefactoringStatus checkExceptions(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
+		IMethod targetMethod = this.getTargetMethod(sourceMethod);
+
+		if (targetMethod != null) {
 		Set<String> sourceMethodExceptionTypeSet = getExceptionTypeSet(sourceMethod);
 
-		IMethod targetMethod = this.getTargetMethod(sourceMethod);
 		Set<String> targetMethodExceptionTypeSet = getExceptionTypeSet(targetMethod);
 
 		if (!sourceMethodExceptionTypeSet.equals(targetMethodExceptionTypeSet))
 			addWarning(status, Messages.ExceptionTypeMismatch, sourceMethod, targetMethod);
+		}
 
 		return status;
 	}
