@@ -748,6 +748,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			String[] targetParameterAnnotationNames = Stream.of(targetParameterAnnotations).parallel()
 					.map(IAnnotation::getElementName).toArray(String[]::new);
 
+			// FIXME: Bug here. What if the annotations have different parameter
+			// values?
+
 			if (!Arrays.equals(sourceParameterAnnotationNames, targetParameterAnnotationNames))
 				addWarning(status, Messages.MethodContainsInconsistentParameterAnnotations,
 						method.getCompilationUnit());
