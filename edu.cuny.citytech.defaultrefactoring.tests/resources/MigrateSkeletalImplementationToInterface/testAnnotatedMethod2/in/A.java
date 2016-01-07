@@ -1,9 +1,7 @@
 package p;
 
-import javax.annotation.Resource;
-
 interface I {
-	@Resource
+	@Deprecated
 	void m();
 }
 

@@ -3,6 +3,7 @@ package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -30,6 +31,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
@@ -634,10 +636,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (method.isConstructor()) {
 					addWarning(status, Messages.NoConstructors, method);
 				}
-				if (method.getAnnotations().length > 0) {
-					// TODO for now.
-					addWarning(status, Messages.NoAnnotations, method);
-				}
+
+				status.merge(checkAnnotations(method));
+
 				// synchronized methods aren't allowed in interfaces (even
 				// if they're default).
 				if (Flags.isSynchronized(method.getFlags())) {
@@ -681,6 +682,58 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			pm.done();
 		}
+	}
+
+	/**
+	 * Annotations between source and target methods must be consistent. Related
+	 * to #45.
+	 * 
+	 * @param sourceMethod
+	 *            The method to check annotations.
+	 * @return The resulting {@link RefactoringStatus}.
+	 * @throws JavaModelException
+	 *             If the {@link IAnnotation}s cannot be retrieved.
+	 */
+	private RefactoringStatus checkAnnotations(IMethod sourceMethod) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		IMethod targetMethod = this.getTargetMethod(sourceMethod);
+
+		if (targetMethod != null) {
+			Set<String> sourceMethodAnnotationElementNames = getAnnotationElementNames(sourceMethod);
+			Set<String> targetAnnotationElementNames = getAnnotationElementNames(targetMethod);
+
+			if (!sourceMethodAnnotationElementNames.equals(targetAnnotationElementNames))
+				addWarning(status, Messages.AnnotationMismatch, sourceMethod, targetMethod);
+			else { // otherwise, we have the same annotations names. Check the
+					// values.
+				for (IAnnotation sourceAnnotation : sourceMethod.getAnnotations()) {
+					IMemberValuePair[] sourcePairs = sourceAnnotation.getMemberValuePairs();
+
+					IAnnotation targetAnnotation = targetMethod.getAnnotation(sourceAnnotation.getElementName());
+					IMemberValuePair[] targetPairs = targetAnnotation.getMemberValuePairs();
+
+					// sanity check.
+					Assert.isTrue(sourcePairs.length == targetPairs.length, "Source and target pairs differ.");
+
+					Arrays.parallelSort(sourcePairs, Comparator.comparing(IMemberValuePair::getMemberName));
+					Arrays.parallelSort(targetPairs, Comparator.comparing(IMemberValuePair::getMemberName));
+
+					for (int i = 0; i < sourcePairs.length; i++)
+						if (!sourcePairs[i].getMemberName().equals(targetPairs[i].getMemberName())
+								|| sourcePairs[i].getValueKind() != targetPairs[i].getValueKind()
+								|| !(sourcePairs[i].getValue().equals(targetPairs[i].getValue())))
+							addWarning(status, Messages.AnnotationMismatch, sourceMethod, targetMethod);
+				}
+			}
+		}
+
+		return status;
+	}
+
+	private Set<String> getAnnotationElementNames(IMethod method) throws JavaModelException {
+		return Arrays.stream(method.getAnnotations()).parallel().map(IAnnotation::getElementName)
+				.collect(Collectors.toSet());
 	}
 
 	/**
