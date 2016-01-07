@@ -26,6 +26,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -695,22 +696,34 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *             If the {@link IAnnotation}s cannot be retrieved.
 	 */
 	private RefactoringStatus checkAnnotations(IMethod sourceMethod) throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-
 		IMethod targetMethod = this.getTargetMethod(sourceMethod);
 
-		if (targetMethod != null) {
-			Set<String> sourceMethodAnnotationElementNames = getAnnotationElementNames(sourceMethod);
-			Set<String> targetAnnotationElementNames = getAnnotationElementNames(targetMethod);
+		if (targetMethod != null && !checkAnnotations(sourceMethod, targetMethod).isOK())
+			return RefactoringStatus.createWarningStatus(
+					formatMessage(Messages.AnnotationMismatch, sourceMethod, targetMethod),
+					JavaStatusContext.create(sourceMethod));
+
+		return new RefactoringStatus(); // OK.
+	}
+
+	private RefactoringStatus checkAnnotations(IAnnotatable source, IAnnotatable target) throws JavaModelException {
+		Set<String> sourceMethodAnnotationElementNames = getAnnotationElementNames(source);
+		Set<String> targetAnnotationElementNames = getAnnotationElementNames(target);
 
 			if (!sourceMethodAnnotationElementNames.equals(targetAnnotationElementNames))
-				addWarning(status, Messages.AnnotationMismatch, sourceMethod, targetMethod);
+			return RefactoringStatus.createErrorStatus(Messages.AnnotationNameMismatch, new RefactoringStatusContext() {
+
+				@Override
+				public Object getCorrespondingElement() {
+					return source;
+				}
+			});
 			else { // otherwise, we have the same annotations names. Check the
 					// values.
-				for (IAnnotation sourceAnnotation : sourceMethod.getAnnotations()) {
+			for (IAnnotation sourceAnnotation : source.getAnnotations()) {
 					IMemberValuePair[] sourcePairs = sourceAnnotation.getMemberValuePairs();
 
-					IAnnotation targetAnnotation = targetMethod.getAnnotation(sourceAnnotation.getElementName());
+				IAnnotation targetAnnotation = target.getAnnotation(sourceAnnotation.getElementName());
 					IMemberValuePair[] targetPairs = targetAnnotation.getMemberValuePairs();
 
 					// sanity check.
@@ -723,16 +736,25 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						if (!sourcePairs[i].getMemberName().equals(targetPairs[i].getMemberName())
 								|| sourcePairs[i].getValueKind() != targetPairs[i].getValueKind()
 								|| !(sourcePairs[i].getValue().equals(targetPairs[i].getValue())))
-							addWarning(status, Messages.AnnotationMismatch, sourceMethod, targetMethod);
+						return RefactoringStatus.createErrorStatus(
+								formatMessage(Messages.AnnotationValueMismatch, sourceAnnotation, targetAnnotation),
+								JavaStatusContext.create(findEnclosingMember(sourceAnnotation)));
 				}
 			}
+		return new RefactoringStatus(); // OK.
 		}
 
-		return status;
+	private static IMember findEnclosingMember(IJavaElement element) {
+		if (element == null)
+			return null;
+		else if (element instanceof IMember)
+			return (IMember) element;
+		else
+			return findEnclosingMember(element.getParent());
 	}
 
-	private Set<String> getAnnotationElementNames(IMethod method) throws JavaModelException {
-		return Arrays.stream(method.getAnnotations()).parallel().map(IAnnotation::getElementName)
+	private Set<String> getAnnotationElementNames(IAnnotatable annotatable) throws JavaModelException {
+		return Arrays.stream(annotatable.getAnnotations()).parallel().map(IAnnotation::getElementName)
 				.collect(Collectors.toSet());
 	}
 
@@ -773,42 +795,28 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * 
 	 * FIXME: What if the annotation type is not available in the target?
 	 * 
-	 * @param method
+	 * @param sourceMethod
 	 *            The method to check.
 	 * @return {@link RefactoringStatus} indicating the result of the check.
 	 * @throws JavaModelException
 	 */
-	private RefactoringStatus checkParameters(IMethod method) throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-		IMethod targetMethod = this.getTargetMethod(method);
+	private RefactoringStatus checkParameters(IMethod sourceMethod) throws JavaModelException {
+		IMethod targetMethod = this.getTargetMethod(sourceMethod);
 
 		// for each parameter.
-		for (int i = 0; i < method.getParameters().length; i++) {
-			ILocalVariable sourceParameter = method.getParameters()[i];
+		for (int i = 0; i < sourceMethod.getParameters().length; i++) {
+			ILocalVariable sourceParameter = sourceMethod.getParameters()[i];
 
 			// get the corresponding target parameter.
 			ILocalVariable targetParameter = targetMethod.getParameters()[i];
 
-			IAnnotation[] sourceParameterAnnotations = sourceParameter.getAnnotations();
-
-			// get the corresponding target parameter annotations.
-			IAnnotation[] targetParameterAnnotations = targetParameter.getAnnotations();
-
-			// ensure they match.
-			String[] sourceParameterAnnotationNames = Stream.of(sourceParameterAnnotations).parallel()
-					.map(IAnnotation::getElementName).toArray(String[]::new);
-			String[] targetParameterAnnotationNames = Stream.of(targetParameterAnnotations).parallel()
-					.map(IAnnotation::getElementName).toArray(String[]::new);
-
-			// FIXME: Bug here. What if the annotations have different parameter
-			// values?
-
-			if (!Arrays.equals(sourceParameterAnnotationNames, targetParameterAnnotationNames))
-				addWarning(status, Messages.MethodContainsInconsistentParameterAnnotations,
-						method.getCompilationUnit());
+			if (!checkAnnotations(sourceParameter, targetParameter).isOK())
+				return RefactoringStatus
+						.createWarningStatus(formatMessage(Messages.MethodContainsInconsistentParameterAnnotations,
+								sourceMethod, targetMethod), JavaStatusContext.create(sourceMethod));
 		}
 
-		return status;
+		return new RefactoringStatus(); // OK.
 	}
 
 	private void checkStructure(RefactoringStatus status, IMember member) throws JavaModelException {

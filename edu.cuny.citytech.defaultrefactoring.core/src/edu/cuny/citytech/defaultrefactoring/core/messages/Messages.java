@@ -91,6 +91,8 @@ public class Messages extends NLS {
 	public static String DestinationInterfaceIsStrictFP;
 	public static String ExceptionTypeMismatch;
 	public static String AnnotationMismatch;
+	public static String AnnotationNameMismatch;
+	public static String AnnotationValueMismatch;
 
 	static {
 		// initialize resource bundle
