@@ -754,7 +754,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		if (targetMethod != null) {
 		Set<String> sourceMethodExceptionTypeSet = getExceptionTypeSet(sourceMethod);
-
 		Set<String> targetMethodExceptionTypeSet = getExceptionTypeSet(targetMethod);
 
 		if (!sourceMethodExceptionTypeSet.equals(targetMethodExceptionTypeSet))
