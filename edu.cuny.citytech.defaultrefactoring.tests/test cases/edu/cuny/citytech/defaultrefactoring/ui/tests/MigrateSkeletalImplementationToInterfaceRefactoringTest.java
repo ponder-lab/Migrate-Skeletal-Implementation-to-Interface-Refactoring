@@ -252,6 +252,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
 	}
 
+	public void testMethodWithAnnotatedParameters6() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
+	}
+
+	public void testMethodWithAnnotatedParameters7() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT, Signature.SIG_INT } });
+	}
+
+	public void testMethodWithAnnotatedParameters8() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
+	}
+
+	public void testMethodWithAnnotatedParameters9() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
+	}
+
+	public void testMethodWithAnnotatedParameters10() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
+	}
+
 	/**
 	 * Mismatched annotated parameters.
 	 */
