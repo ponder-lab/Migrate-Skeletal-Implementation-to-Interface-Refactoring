@@ -19,12 +19,6 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import edu.cuny.citytech.defaultrefactoring.ui.plugins.MigrateSkeletalImplementationToInterfaceRefactoringPlugin;
 import edu.cuny.citytech.defaultrefactoring.ui.wizards.MigrateSkeletalImplementationToInterfaceRefactoringWizard;
 
-/**
- * Our sample handler extends AbstractHandler, an IHandler base class.
- * 
- * @see org.eclipse.core.commands.IHandler
- * @see org.eclipse.core.commands.AbstractHandler
- */
 public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHandler {
 
 	/**
