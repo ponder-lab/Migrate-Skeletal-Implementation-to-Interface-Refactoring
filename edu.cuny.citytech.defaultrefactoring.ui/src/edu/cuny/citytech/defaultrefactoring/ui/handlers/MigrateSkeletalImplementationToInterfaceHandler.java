@@ -42,5 +42,7 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 						}
 		}
 		return null;
+		// TODO: What do we do if there was no input? Do we display some
+		// message?
 	}
 }
