@@ -15,6 +15,7 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 import org.eclipse.swt.widgets.Shell;
 
+import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 
 /**
@@ -26,6 +27,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends R
 
 	public MigrateSkeletalImplementationToInterfaceRefactoringWizard(Refactoring refactoring) {
 		super(refactoring, RefactoringWizard.DIALOG_BASED_USER_INTERFACE);
+		this.setWindowTitle(Messages.Name);
 	}
 
 	/*
