@@ -74,9 +74,9 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 				throw new ExecutionException("Failed to start refactoring", e);
 			}
 		}
-		return null;
 		// TODO: What do we do if there was no input? Do we display some
 		// message?
+		return null;
 	}
 
 	private void extractMethodsFromJavaProject(Set<IMethod> methodSet, IJavaProject jProj) throws JavaModelException {
