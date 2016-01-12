@@ -707,10 +707,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAnnotations(IAnnotatable source, IAnnotatable target) throws JavaModelException {
-		Set<String> sourceMethodAnnotationElementNames = getAnnotationElementNames(source);
+		// a set of annotations from the source method.
+		Set<IAnnotation> sourceAnnotationSet = new HashSet<>(Arrays.asList(source.getAnnotations()));
+
+		// remove any annotations to not consider.
+		removeSpecialAnnotations(sourceAnnotationSet);
+
+		// a set of source method annotation names.
+		Set<String> sourceMethodAnnotationElementNames = sourceAnnotationSet.parallelStream()
+				.map(IAnnotation::getElementName).collect(Collectors.toSet());
+
+		// a set of target method annotation names.
 		Set<String> targetAnnotationElementNames = getAnnotationElementNames(target);
 
-			if (!sourceMethodAnnotationElementNames.equals(targetAnnotationElementNames))
+		// if the source method annotation names don't match the target method
+		// annotation names.
+		if (!sourceMethodAnnotationElementNames.equals(targetAnnotationElementNames))
 			return RefactoringStatus.createErrorStatus(Messages.AnnotationNameMismatch, new RefactoringStatusContext() {
 
 				@Override
@@ -718,31 +730,44 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					return source;
 				}
 			});
-			else { // otherwise, we have the same annotations names. Check the
-					// values.
-			for (IAnnotation sourceAnnotation : source.getAnnotations()) {
-					IMemberValuePair[] sourcePairs = sourceAnnotation.getMemberValuePairs();
+		else { // otherwise, we have the same annotations names. Check the
+				// values.
+			for (IAnnotation sourceAnnotation : sourceAnnotationSet) {
+				IMemberValuePair[] sourcePairs = sourceAnnotation.getMemberValuePairs();
 
 				IAnnotation targetAnnotation = target.getAnnotation(sourceAnnotation.getElementName());
-					IMemberValuePair[] targetPairs = targetAnnotation.getMemberValuePairs();
+				IMemberValuePair[] targetPairs = targetAnnotation.getMemberValuePairs();
 
-					// sanity check.
-					Assert.isTrue(sourcePairs.length == targetPairs.length, "Source and target pairs differ.");
+				// sanity check.
+				Assert.isTrue(sourcePairs.length == targetPairs.length, "Source and target pairs differ.");
 
-					Arrays.parallelSort(sourcePairs, Comparator.comparing(IMemberValuePair::getMemberName));
-					Arrays.parallelSort(targetPairs, Comparator.comparing(IMemberValuePair::getMemberName));
+				Arrays.parallelSort(sourcePairs, Comparator.comparing(IMemberValuePair::getMemberName));
+				Arrays.parallelSort(targetPairs, Comparator.comparing(IMemberValuePair::getMemberName));
 
-					for (int i = 0; i < sourcePairs.length; i++)
-						if (!sourcePairs[i].getMemberName().equals(targetPairs[i].getMemberName())
-								|| sourcePairs[i].getValueKind() != targetPairs[i].getValueKind()
-								|| !(sourcePairs[i].getValue().equals(targetPairs[i].getValue())))
+				for (int i = 0; i < sourcePairs.length; i++)
+					if (!sourcePairs[i].getMemberName().equals(targetPairs[i].getMemberName())
+							|| sourcePairs[i].getValueKind() != targetPairs[i].getValueKind()
+							|| !(sourcePairs[i].getValue().equals(targetPairs[i].getValue())))
 						return RefactoringStatus.createErrorStatus(
 								formatMessage(Messages.AnnotationValueMismatch, sourceAnnotation, targetAnnotation),
 								JavaStatusContext.create(findEnclosingMember(sourceAnnotation)));
-				}
 			}
-		return new RefactoringStatus(); // OK.
 		}
+		return new RefactoringStatus(); // OK.
+	}
+
+	/**
+	 * Remove any annotations that we don't want considered.
+	 * 
+	 * @param annotationSet
+	 *            The set of annotations to work with.
+	 */
+	protected void removeSpecialAnnotations(Set<IAnnotation> annotationSet) {
+		// Special case: don't consider the @Override annotation in the source
+		// (the target will never have this) #67.
+		annotationSet.removeIf(a -> a.getElementName().equals(Override.class.getName()));
+		annotationSet.removeIf(a -> a.getElementName().equals(Override.class.getSimpleName()));
+	}
 
 	private static IMember findEnclosingMember(IJavaElement element) {
 		if (element == null)
