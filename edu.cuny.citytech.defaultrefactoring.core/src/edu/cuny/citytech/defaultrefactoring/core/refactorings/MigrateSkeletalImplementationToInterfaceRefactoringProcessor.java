@@ -66,6 +66,7 @@ import org.eclipse.ltk.core.refactoring.GroupCategorySet;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.TextChange;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
 import org.eclipse.text.edits.TextEdit;
@@ -198,7 +199,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final int targetMethodFlags = targetMethod.getFlags();
 
 			if (Flags.isDefaultMethod(targetMethodFlags))
-				addWarning(status, Messages.TargetMethodIsAlreadyDefault, targetMethod);
+				addError(status, Messages.TargetMethodIsAlreadyDefault, targetMethod);
 
 			monitor.ifPresent(m -> m.worked(1));
 		}
@@ -246,7 +247,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 													// there.
 
 		if (!allSourceMethodsHaveTargets)
-			addWarning(status, Messages.DestinationInterfaceMustOnlyDeclareTheMethodToMigrate, targetInterface);
+			addError(status, Messages.DestinationInterfaceMustOnlyDeclareTheMethodToMigrate, targetInterface);
 
 		return status;
 	}
@@ -258,13 +259,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		// Can't be null.
 		if (targetInterface == null) {
-			addWarning(status, Messages.NoDestinationInterface);
+			addError(status, Messages.NoDestinationInterface);
 			return status;
 		}
 
 		// Must be an interface.
 		if (!isPureInterface(targetInterface))
-			addWarning(status, Messages.DestinationTypeMustBePureInterface, targetInterface);
+			addError(status, Messages.DestinationTypeMustBePureInterface, targetInterface);
 
 		// Make sure it exists.
 		checkExistence(status, targetInterface, Messages.DestinationInterfaceDoesNotExist);
@@ -277,40 +278,40 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		// TODO: For now, no annotated target interfaces.
 		if (targetInterface.getAnnotations().length != 0)
-			addWarning(status, Messages.DestinationInterfaceHasAnnotations, targetInterface);
+			addError(status, Messages.DestinationInterfaceHasAnnotations, targetInterface);
 
 		// #35: The target interface should not be a @FunctionalInterface.
 		if (isInterfaceFunctional(targetInterface))
-			addWarning(status, Messages.DestinationInterfaceIsFunctional, targetInterface);
+			addError(status, Messages.DestinationInterfaceIsFunctional, targetInterface);
 
 		// TODO: For now, only top-level types.
 		if (targetInterface.getDeclaringType() != null)
-			addWarning(status, Messages.DestinationInterfaceIsNotTopLevel, targetInterface);
+			addError(status, Messages.DestinationInterfaceIsNotTopLevel, targetInterface);
 
 		// TODO: For now, no fields.
 		if (targetInterface.getFields().length != 0)
-			addWarning(status, Messages.DestinationInterfaceDeclaresFields, targetInterface);
+			addError(status, Messages.DestinationInterfaceDeclaresFields, targetInterface);
 
 		// TODO: For now, no super interfaces.
 		if (targetInterface.getSuperInterfaceNames().length != 0)
-			addWarning(status, Messages.DestinationInterfaceExtendsInterface, targetInterface);
+			addError(status, Messages.DestinationInterfaceExtendsInterface, targetInterface);
 
 		// TODO: For now, no type parameters.
 		if (targetInterface.getTypeParameters().length != 0)
-			addWarning(status, Messages.DestinationInterfaceDeclaresTypeParameters, targetInterface);
+			addError(status, Messages.DestinationInterfaceDeclaresTypeParameters, targetInterface);
 
 		// TODO: For now, no member types.
 		if (targetInterface.getTypes().length != 0)
-			addWarning(status, Messages.DestinationInterfaceDeclaresMemberTypes, targetInterface);
+			addError(status, Messages.DestinationInterfaceDeclaresMemberTypes, targetInterface);
 
 		// TODO: For now, no member interfaces.
 		if (targetInterface.isMember())
-			addWarning(status, Messages.DestinationInterfaceIsMember, targetInterface);
+			addError(status, Messages.DestinationInterfaceIsMember, targetInterface);
 
 		// #42: Can't be strictfp if all the methods to be migrated aren't also
 		// strictfp.
 		if (Flags.isStrictfp(targetInterface.getFlags()) && !allMethodsToMoveInTypeAreStrictFP(this.getDeclaringType()))
-			addWarning(status, Messages.DestinationInterfaceIsStrictFP, targetInterface);
+			addError(status, Messages.DestinationInterfaceIsStrictFP, targetInterface);
 
 		status.merge(checkDestinationInterfaceHierarchy(new SubProgressMonitor(monitor, 1)));
 		status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(new SubProgressMonitor(monitor, 1)));
@@ -349,17 +350,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		// TODO: For now, no super interfaces.
 		if (hierarchy.getAllSuperInterfaces(getDestinationInterface()).length > 0)
-			addWarning(status, Messages.DestinationInterfaceHierarchyContainsSuperInterface, getDestinationInterface());
+			addError(status, Messages.DestinationInterfaceHierarchyContainsSuperInterface, getDestinationInterface());
 
 		// TODO: For now, no extending interfaces.
 		if (hierarchy.getExtendingInterfaces(getDestinationInterface()).length > 0)
-			addWarning(status, Messages.DestinationInterfaceHasExtendingInterface, getDestinationInterface());
+			addError(status, Messages.DestinationInterfaceHasExtendingInterface, getDestinationInterface());
 
 		// TODO: For now, the destination interface can only be implemented by
 		// the declaring class.
 		if (!Stream.of(hierarchy.getImplementingClasses(getDestinationInterface())).parallel().distinct()
 				.allMatch(c -> c.equals(getDeclaringType())))
-			addWarning(status, Messages.DestinationInterfaceHasInvalidImplementingClass, getDestinationInterface());
+			addError(status, Messages.DestinationInterfaceHasInvalidImplementingClass, getDestinationInterface());
 
 		return status;
 	}
@@ -370,7 +371,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		// migrated.
 		if (!Stream.of(hierarchy.getAllSubtypes(getDestinationInterface())).distinct()
 				.allMatch(s -> s.equals(getDeclaringType())))
-			addWarning(status, Messages.DestinationInterfaceHierarchyContainsSubtype, getDestinationInterface());
+			addError(status, Messages.DestinationInterfaceHierarchyContainsSubtype, getDestinationInterface());
 	}
 
 	private void checkValidInterfaces(RefactoringStatus status, final ITypeHierarchy hierarchy, String errorMessage) {
@@ -380,7 +381,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.allMatch(i -> i.equals(this.getDestinationInterface()));
 
 		if (!containsOnlyValidInterfaces)
-			addWarning(status, errorMessage, hierarchy.getType());
+			addError(status, errorMessage, hierarchy.getType());
 	}
 
 	private void checkValidClasses(RefactoringStatus status, final ITypeHierarchy hierarchy, String errorMessage)
@@ -396,7 +397,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				&& allClassesAsList.contains(hierarchy.getType().getJavaProject().findType("java.lang.Object"));
 
 		if (!containsOnlyValidClasses) {
-			addWarning(status, errorMessage, hierarchy.getType());
+			addError(status, errorMessage, hierarchy.getType());
 		}
 	}
 
@@ -404,6 +405,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return this.getTargetMethodStream(Objects::nonNull).collect(Collectors.toSet());
 	}
 
+	@SuppressWarnings("unused")
 	private void addWarning(RefactoringStatus status, String message) {
 		addWarning(status, message, new IJavaElement[] {});
 	}
@@ -417,60 +419,60 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			if (type.isAnonymous()) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInAnonymousTypes, type);
+				return createError(Messages.NoMethodsInAnonymousTypes, type);
 			}
 			// TODO: This is being checked by the super implementation but need
 			// to revisit. It might be okay to have an enum. In that case, we
 			// can't call the super method.
 			// if (type.isEnum()) {
 			// // TODO for now.
-			// addWarning(status,
+			// addError(status,
 			// Messages.NoMethodsInEnums,
 			// method);
 			// }
 			if (type.isLambda()) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInLambdas, type);
+				return createError(Messages.NoMethodsInLambdas, type);
 			}
 			if (type.isLocal()) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInLocals, type);
+				return createError(Messages.NoMethodsInLocals, type);
 			}
 			if (type.isMember()) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInMemberTypes, type);
+				return createError(Messages.NoMethodsInMemberTypes, type);
 			}
 			if (!type.isClass()) {
 				// TODO for now.
-				return createWarning(Messages.MethodsOnlyInClasses, type);
+				return createError(Messages.MethodsOnlyInClasses, type);
 			}
 			if (type.getAnnotations().length != 0) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInAnnotatedTypes, type);
+				return createError(Messages.NoMethodsInAnnotatedTypes, type);
 			}
 			if (type.getFields().length != 0) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInTypesWithFields, type);
+				return createError(Messages.NoMethodsInTypesWithFields, type);
 			}
 			if (type.getInitializers().length != 0) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInTypesWithInitializers, type);
+				return createError(Messages.NoMethodsInTypesWithInitializers, type);
 			}
 			if (type.getMethods().length > 1) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInTypesWithMoreThanOneMethod, type);
+				return createError(Messages.NoMethodsInTypesWithMoreThanOneMethod, type);
 			}
 			if (type.getTypeParameters().length != 0) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInTypesWithTypeParameters, type);
+				return createError(Messages.NoMethodsInTypesWithTypeParameters, type);
 			}
 			if (type.getTypes().length != 0) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInTypesWithType, type);
+				return createError(Messages.NoMethodsInTypesWithType, type);
 			}
 			if (type.getSuperclassName() != null) {
 				// TODO for now.
-				return createWarning(Messages.NoMethodsInTypesWithSuperType, type);
+				return createError(Messages.NoMethodsInTypesWithSuperType, type);
 			}
 			if (type.getSuperInterfaceNames().length == 0) {
 				// enclosing type must implement an interface, at least for now,
@@ -478,22 +480,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// it is probably possible to still perform the refactoring
 				// without this condition but I believe that this is
 				// the particular pattern we are targeting.
-				return createWarning(Messages.NoMethodsInTypesThatDontImplementInterfaces, type);
+				return createError(Messages.NoMethodsInTypesThatDontImplementInterfaces, type);
 			}
 			if (type.getSuperInterfaceNames().length > 1) {
 				// TODO for now. Let's only deal with a single interface as that
 				// is part of the targeted pattern.
-				return createWarning(Messages.NoMethodsInTypesThatExtendMultipleInterfaces, type);
+				return createError(Messages.NoMethodsInTypesThatExtendMultipleInterfaces, type);
 			}
 			if (!Flags.isAbstract(type.getFlags())) {
 				// TODO for now. This follows the target pattern. Maybe we can
 				// relax this but that would require checking for
 				// instantiations.
-				return createWarning(Messages.NoMethodsInConcreteTypes, type);
+				return createError(Messages.NoMethodsInConcreteTypes, type);
 			}
 			if (Flags.isStatic(type.getFlags())) {
 				// TODO no static types for now.
-				return createWarning(Messages.NoMethodsInStaticTypes, type);
+				return createError(Messages.NoMethodsInStaticTypes, type);
 			}
 
 			status.merge(checkDeclaringTypeHierarchy(Optional.of(monitor)));
@@ -515,13 +517,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			// TODO: For now, the declaring type should have no subtypes.
 			if (hierarchy.getAllSubtypes(getDeclaringType()).length != 0)
-				addWarning(status, Messages.DeclaringTypeContainsSubtype, getDeclaringType());
+				addError(status, Messages.DeclaringTypeContainsSubtype, getDeclaringType());
 
 			// TODO: For now, only java.lang.Object as the super class.
 			final IType object = hierarchy.getType().getJavaProject().findType("java.lang.Object");
 			if (!Stream.of(hierarchy.getAllSuperclasses(getDeclaringType())).parallel().distinct()
 					.allMatch(t -> t.equals(object)))
-				addWarning(status, Messages.DeclaringTypeContainsInvalidSupertype, getDeclaringType());
+				addError(status, Messages.DeclaringTypeContainsInvalidSupertype, getDeclaringType());
 
 			return status;
 		} finally {
@@ -540,7 +542,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final String msg = MessageFormat.format(Messages.NoMethodsInTypesWithNoCandidateTargetTypes,
 					createLabel(declaringType));
 
-			return RefactoringStatus.createWarningStatus(msg);
+			return RefactoringStatus.createErrorStatus(msg);
 		} else if (interfaces.length > 1) {
 			// TODO For now, let's make sure there's only one candidate type.
 			IType declaringType = getDeclaringType();
@@ -548,7 +550,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final String msg = MessageFormat.format(Messages.NoMethodsInTypesWithMultipleCandidateTargetTypes,
 					JavaElementLabels.getTextLabel(declaringType, JavaElementLabels.ALL_FULLY_QUALIFIED));
 
-			return RefactoringStatus.createWarningStatus(msg);
+			return RefactoringStatus.createErrorStatus(msg);
 		}
 
 		return result;
@@ -635,7 +637,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				checkStructure(status, method);
 
 				if (method.isConstructor()) {
-					addWarning(status, Messages.NoConstructors, method);
+					addError(status, Messages.NoConstructors, method);
 				}
 
 				status.merge(checkAnnotations(method));
@@ -643,25 +645,25 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// synchronized methods aren't allowed in interfaces (even
 				// if they're default).
 				if (Flags.isSynchronized(method.getFlags())) {
-					addWarning(status, Messages.NoSynchronizedMethods, method);
+					addError(status, Messages.NoSynchronizedMethods, method);
 				}
 				if (Flags.isStatic(method.getFlags())) {
-					addWarning(status, Messages.NoStaticMethods, method);
+					addError(status, Messages.NoStaticMethods, method);
 				}
 				if (Flags.isAbstract(method.getFlags())) {
-					addWarning(status, Messages.NoAbstractMethods, method);
+					addError(status, Messages.NoAbstractMethods, method);
 				}
 				// final methods aren't allowed in interfaces.
 				if (Flags.isFinal(method.getFlags())) {
-					addWarning(status, Messages.NoFinalMethods, method);
+					addError(status, Messages.NoFinalMethods, method);
 				}
 				// native methods don't have bodies. As such, they can't
 				// be skeletal implementors.
 				if (JdtFlags.isNative(method)) {
-					addWarning(status, Messages.NoNativeMethods, method);
+					addError(status, Messages.NoNativeMethods, method);
 				}
 				if (method.isLambdaMethod()) {
-					addWarning(status, Messages.NoLambdaMethods, method);
+					addError(status, Messages.NoLambdaMethods, method);
 				}
 
 				status.merge(checkExceptions(method));
@@ -671,7 +673,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// return type must be void.
 					// TODO for now. Can't remove this until we allow at least
 					// one statement.
-					addWarning(status, Messages.NoMethodsWithReturnTypes, method);
+					addError(status, Messages.NoMethodsWithReturnTypes, method);
 				}
 				pm.worked(1);
 			}
@@ -699,7 +701,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		IMethod targetMethod = this.getTargetMethod(sourceMethod);
 
 		if (targetMethod != null && !checkAnnotations(sourceMethod, targetMethod).isOK())
-			return RefactoringStatus.createWarningStatus(
+			return RefactoringStatus.createErrorStatus(
 					formatMessage(Messages.AnnotationMismatch, sourceMethod, targetMethod),
 					JavaStatusContext.create(sourceMethod));
 
@@ -804,7 +806,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		Set<String> targetMethodExceptionTypeSet = getExceptionTypeSet(targetMethod);
 
 		if (!sourceMethodExceptionTypeSet.equals(targetMethodExceptionTypeSet))
-			addWarning(status, Messages.ExceptionTypeMismatch, sourceMethod, targetMethod);
+				addError(status, Messages.ExceptionTypeMismatch, sourceMethod, targetMethod);
 		}
 
 		return status;
@@ -837,7 +839,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			if (!checkAnnotations(sourceParameter, targetParameter).isOK())
 				return RefactoringStatus
-						.createWarningStatus(formatMessage(Messages.MethodContainsInconsistentParameterAnnotations,
+						.createErrorStatus(formatMessage(Messages.MethodContainsInconsistentParameterAnnotations,
 								sourceMethod, targetMethod), JavaStatusContext.create(sourceMethod));
 		}
 
@@ -846,19 +848,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private void checkStructure(RefactoringStatus status, IMember member) throws JavaModelException {
 		if (!member.isStructureKnown()) {
-			addWarning(status, Messages.CUContainsCompileErrors, member.getCompilationUnit());
+			addError(status, Messages.CUContainsCompileErrors, member.getCompilationUnit());
 		}
 	}
 
 	private void checkWritabilitiy(RefactoringStatus status, IMember member, String message) {
 		if (member.isBinary() || member.isReadOnly()) {
-			addWarning(status, message, member);
+			addError(status, message, member);
 		}
 	}
 
 	private void checkExistence(RefactoringStatus status, IMember member, String message) {
 		if (!member.exists()) {
-			addWarning(status, message, member);
+			addError(status, message, member);
 		}
 	}
 
@@ -895,7 +897,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 						if (!statements.isEmpty()) {
 							// TODO for now.
-							addWarning(status, Messages.NoMethodsWithStatements, method);
+							addError(status, Messages.NoMethodsWithStatements, method);
 						}
 					}
 				}
@@ -909,15 +911,24 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private static void addWarning(RefactoringStatus status, String message, IJavaElement... relatedElementCollection) {
+		addEntry(status, RefactoringStatus.WARNING, message, relatedElementCollection);
+	}
+
+	private static void addError(RefactoringStatus status, String message, IJavaElement... relatedElementCollection) {
+		addEntry(status, RefactoringStatus.ERROR, message, relatedElementCollection);
+	}
+
+	private static void addEntry(RefactoringStatus status, int severity, String message,
+			IJavaElement... relatedElementCollection) {
 		message = formatMessage(message, relatedElementCollection);
 
 		// add the first element as the context if appropriate.
 		if (relatedElementCollection.length > 0 && relatedElementCollection[0] instanceof IMember) {
 			IMember member = (IMember) relatedElementCollection[0];
 			RefactoringStatusContext context = JavaStatusContext.create(member);
-			status.addWarning(message, context);
+			status.addEntry(new RefactoringStatusEntry(severity, message, context));
 		} else // otherwise, just add the message.
-			status.addWarning(message);
+			status.addEntry(new RefactoringStatusEntry(severity, message));
 	}
 
 	private static String formatMessage(String message, IJavaElement... relatedElementCollection) {
@@ -941,6 +952,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	protected static RefactoringStatus createWarning(String message, IType type) {
 		return createRefactoringStatus(message, type, RefactoringStatus::createWarningStatus);
+	}
+
+	private RefactoringStatus createError(String message, IType type) {
+		return createRefactoringStatus(message, type, RefactoringStatus::createErrorStatus);
 	}
 
 	protected static RefactoringStatus createFatalError(String message, IType type) {
