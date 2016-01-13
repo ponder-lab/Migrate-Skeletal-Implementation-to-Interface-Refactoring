@@ -173,7 +173,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				return RefactoringStatus.createFatalErrorStatus(Messages.NoMoreThanOneMethod);
 			} else {
 				final RefactoringStatus status = new RefactoringStatus();
+				// FIXME: This is wrong. Declaring type of which method?
 				status.merge(checkDeclaringType(new SubProgressMonitor(pm, 1)));
+				// FIXME: For which method?
 				status.merge(checkCandidateDestinationInterfaces(Optional.of(new SubProgressMonitor(pm, 1))));
 
 				if (status.hasFatalError())
@@ -914,7 +916,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					JavaStatusContext.create(member.getCompilationUnit()));
 		}
 		return new RefactoringStatus();
-		}
+	}
 
 	private static RefactoringStatusEntry getLastRefactoringStatusEntry(RefactoringStatus status) {
 		return status.getEntryAt(status.getEntries().length - 1);
@@ -1147,45 +1149,51 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				return new NullChange(Messages.NoMethodsToMigrate);
 
 			for (IMethod sourceMethod : methods) {
-					logInfo("Migrating method: "
-							+ JavaElementLabels.getElementLabel(sourceMethod, JavaElementLabels.ALL_FULLY_QUALIFIED)
-							+ " to interface: " + getDestinationInterface().getFullyQualifiedName());
+				logInfo("Migrating method: "
+						+ JavaElementLabels.getElementLabel(sourceMethod, JavaElementLabels.ALL_FULLY_QUALIFIED)
+						+ " to interface: " + getDestinationInterface().getFullyQualifiedName());
 
-					CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
+				CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
 
-					MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod,
-							sourceCompilationUnit);
-					logInfo("Source method declaration: " + sourceMethodDeclaration);
+				MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod,
+						sourceCompilationUnit);
+				logInfo("Source method declaration: " + sourceMethodDeclaration);
 
-					// Find the target method.
-					IMethod targetMethod = getTargetMethod(sourceMethod);
-					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
-							destinationCompilationUnit);
+				// Find the target method.
+				IMethod targetMethod = getTargetMethod(sourceMethod);
+				MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
+						destinationCompilationUnit);
 
-					// tack on the source method body to the target method.
-					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+				// tack on the source method body to the target method.
+				copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
 
-					// Change the target method to default.
-					convertToDefault(targetMethodDeclaration, destinationRewrite);
+				// Change the target method to default.
+				convertToDefault(targetMethodDeclaration, destinationRewrite);
 
 				// TODO: Do we need to worry about preserving ordering of the
 				// modifiers?
-					// if the source method is strictfp.
-					if ((Flags.isStrictfp(sourceMethod.getFlags())
-							|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
-							&& !Flags.isStrictfp(targetMethod.getFlags()))
-						// change the target method to strictfp.
-						convertToStrictFP(targetMethodDeclaration, destinationRewrite);
 
-					// Remove the source method.
-					ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
-					removeMethod(sourceMethodDeclaration, sourceRewrite);
+				// TODO: Should I be using JdtFlags instead of Flags?
 
-					// save the source changes.
-					// TODO: Need to deal with imports #22.
-					if (!manager.containsChangesIn(sourceMethod.getCompilationUnit()))
-						manageCompilationUnit(manager, sourceMethod.getCompilationUnit(), sourceRewrite);
-				}
+				// if the source method is strictfp.
+				// FIXME: Actually, I think we need to check that, in the
+				// case the target method isn't already strictfp, that the other
+				// methods in the hierarchy are.
+				if ((Flags.isStrictfp(sourceMethod.getFlags())
+						|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
+						&& !Flags.isStrictfp(targetMethod.getFlags()))
+					// change the target method to strictfp.
+					convertToStrictFP(targetMethodDeclaration, destinationRewrite);
+
+				// Remove the source method.
+				ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
+				removeMethod(sourceMethodDeclaration, sourceRewrite);
+
+				// save the source changes.
+				// TODO: Need to deal with imports #22.
+				if (!manager.containsChangesIn(sourceMethod.getCompilationUnit()))
+					manageCompilationUnit(manager, sourceMethod.getCompilationUnit(), sourceRewrite);
+			}
 
 			if (!manager.containsChangesIn(getDestinationInterface().getCompilationUnit()))
 				manageCompilationUnit(manager, getDestinationInterface().getCompilationUnit(), destinationRewrite);
