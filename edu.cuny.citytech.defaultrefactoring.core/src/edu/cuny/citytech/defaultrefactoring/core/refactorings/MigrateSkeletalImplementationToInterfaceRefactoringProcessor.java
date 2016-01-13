@@ -87,6 +87,11 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends HierarchyProcessor {
 
+	/**
+	 * A list view of the methods to be migrated.
+	 */
+	private List<IMember> methodsToMove = Arrays.asList(this.getMembersToMove());
+
 	private static final String FUNCTIONAL_INTERFACE_ANNOTATION_NAME = "FunctionalInterface";
 
 	/**
@@ -212,7 +217,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private Stream<IMethod> getTargetMethodStream(Predicate<? super IMethod> filterPredicate) {
-		return Stream.of(this.getMethodsToMove()).parallel().map(this::getTargetMethod).filter(filterPredicate);
+		return this.getMethodsToMove().parallelStream().filter(m -> m instanceof IMethod).map(m -> (IMethod) m)
+				.map(this::getTargetMethod).filter(filterPredicate);
 	}
 
 	protected RefactoringStatus checkDestinationInterfaceOnlyDeclaresTargetMethods(IProgressMonitor monitor)
@@ -224,7 +230,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		// TODO: For now, the target interface must only contain the target
 		// method.
-		List<IMethod> methodsToMoveList = Arrays.asList(this.getMethodsToMove());
+		List<IMethod> methodsToMoveList = this.getMethodsToMove().parallelStream().filter(m -> m instanceof IMethod)
+				.map(m -> (IMethod) m).collect(Collectors.toList());
 		Set<IMethod> methodsToMoveSet = new HashSet<>(methodsToMoveList);
 
 		List<IMethod> destinationInterfaceMethodsList = Arrays.asList(targetInterface.getMethods());
@@ -322,10 +329,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private boolean allMethodsToMoveInTypeAreStrictFP(IType type) throws JavaModelException {
-		for (Iterator<IMethod> iterator = this.getMethodsToMoveIterator(); iterator.hasNext();) {
-			IMethod method = iterator.next();
-			if (method.getDeclaringType().equals(type) && !Flags.isStrictfp(method.getFlags()))
-				return false;
+		for (Iterator<IMember> iterator = this.getMethodsToMove().iterator(); iterator.hasNext();) {
+			IMember member = iterator.next();
+			if (member instanceof IMethod) {
+				IMethod method = (IMethod) member;
+				if (method.getDeclaringType().equals(type) && !Flags.isStrictfp(method.getFlags()))
+					return false;
+			}
 		}
 
 		return true;
@@ -627,53 +637,58 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	protected RefactoringStatus checkMethodsToMove(IProgressMonitor pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
-			Iterator<IMethod> it = getMethodsToMoveIterator();
+			Iterator<IMember> it = getMethodsToMove().iterator();
 
 			while (it.hasNext()) {
-				IMethod method = it.next();
+				IMember member = it.next();
 
-				checkExistence(status, method, Messages.MethodDoesNotExist);
-				checkWritabilitiy(status, method, Messages.CantChangeMethod);
-				checkStructure(status, method);
+				if (member instanceof IMethod) {
+					IMethod method = (IMethod) member;
 
-				if (method.isConstructor()) {
-					addError(status, Messages.NoConstructors, method);
-				}
+					checkExistence(status, method, Messages.MethodDoesNotExist);
+					checkWritabilitiy(status, method, Messages.CantChangeMethod);
+					checkStructure(status, method);
 
-				status.merge(checkAnnotations(method));
+					if (method.isConstructor()) {
+						addError(status, Messages.NoConstructors, method);
+					}
 
-				// synchronized methods aren't allowed in interfaces (even
-				// if they're default).
-				if (Flags.isSynchronized(method.getFlags())) {
-					addError(status, Messages.NoSynchronizedMethods, method);
-				}
-				if (Flags.isStatic(method.getFlags())) {
-					addError(status, Messages.NoStaticMethods, method);
-				}
-				if (Flags.isAbstract(method.getFlags())) {
-					addError(status, Messages.NoAbstractMethods, method);
-				}
-				// final methods aren't allowed in interfaces.
-				if (Flags.isFinal(method.getFlags())) {
-					addError(status, Messages.NoFinalMethods, method);
-				}
-				// native methods don't have bodies. As such, they can't
-				// be skeletal implementors.
-				if (JdtFlags.isNative(method)) {
-					addError(status, Messages.NoNativeMethods, method);
-				}
-				if (method.isLambdaMethod()) {
-					addError(status, Messages.NoLambdaMethods, method);
-				}
+					status.merge(checkAnnotations(method));
 
-				status.merge(checkExceptions(method));
-				status.merge(checkParameters(method));
+					// synchronized methods aren't allowed in interfaces (even
+					// if they're default).
+					if (Flags.isSynchronized(method.getFlags())) {
+						addError(status, Messages.NoSynchronizedMethods, method);
+					}
+					if (Flags.isStatic(method.getFlags())) {
+						addError(status, Messages.NoStaticMethods, method);
+					}
+					if (Flags.isAbstract(method.getFlags())) {
+						addError(status, Messages.NoAbstractMethods, method);
+					}
+					// final methods aren't allowed in interfaces.
+					if (Flags.isFinal(method.getFlags())) {
+						addError(status, Messages.NoFinalMethods, method);
+					}
+					// native methods don't have bodies. As such, they can't
+					// be skeletal implementors.
+					if (JdtFlags.isNative(method)) {
+						addError(status, Messages.NoNativeMethods, method);
+					}
+					if (method.isLambdaMethod()) {
+						addError(status, Messages.NoLambdaMethods, method);
+					}
 
-				if (!method.getReturnType().equals(Signature.SIG_VOID)) {
-					// return type must be void.
-					// TODO for now. Can't remove this until we allow at least
-					// one statement.
-					addError(status, Messages.NoMethodsWithReturnTypes, method);
+					status.merge(checkExceptions(method));
+					status.merge(checkParameters(method));
+
+					if (!method.getReturnType().equals(Signature.SIG_VOID)) {
+						// return type must be void.
+						// TODO for now. Can't remove this until we allow at
+						// least
+						// one statement.
+						addError(status, Messages.NoMethodsWithReturnTypes, method);
+					}
 				}
 				pm.worked(1);
 			}
@@ -802,10 +817,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		IMethod targetMethod = this.getTargetMethod(sourceMethod);
 
 		if (targetMethod != null) {
-		Set<String> sourceMethodExceptionTypeSet = getExceptionTypeSet(sourceMethod);
-		Set<String> targetMethodExceptionTypeSet = getExceptionTypeSet(targetMethod);
+			Set<String> sourceMethodExceptionTypeSet = getExceptionTypeSet(sourceMethod);
+			Set<String> targetMethodExceptionTypeSet = getExceptionTypeSet(targetMethod);
 
-		if (!sourceMethodExceptionTypeSet.equals(targetMethodExceptionTypeSet))
+			if (!sourceMethodExceptionTypeSet.equals(targetMethodExceptionTypeSet))
 				addError(status, Messages.ExceptionTypeMismatch, sourceMethod, targetMethod);
 		}
 
@@ -864,40 +879,36 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected Iterator<IMethod> getMethodsToMoveIterator() {
-		return Stream.of(fMembersToMove).parallel().filter(m -> m instanceof IMethod).map(m -> (IMethod) m).iterator();
-	}
-
-	protected IMethod[] getMethodsToMove() {
-		return getMethodsToMoveStream().toArray(IMethod[]::new);
-	}
-
-	private Stream<IMethod> getMethodsToMoveStream() {
-		return Stream.of(fMembersToMove).parallel().filter(m -> m instanceof IMethod).map(m -> (IMethod) m);
+	protected List<IMember> getMethodsToMove() {
+		return this.methodsToMove;
 	}
 
 	protected RefactoringStatus checkMethodsToMoveBodies(IProgressMonitor pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
-			Iterator<IMethod> it = this.getMethodsToMoveIterator();
+			Iterator<IMember> it = this.getMethodsToMove().iterator();
 
 			while (it.hasNext()) {
-				IMethod method = it.next();
-				ITypeRoot root = method.getCompilationUnit();
-				CompilationUnit unit = this.getCompilationUnit(root, new SubProgressMonitor(pm, 1));
+				IMember member = it.next();
 
-				MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
+				if (member instanceof IMethod) {
+					IMethod method = (IMethod) member;
+					ITypeRoot root = method.getCompilationUnit();
+					CompilationUnit unit = this.getCompilationUnit(root, new SubProgressMonitor(pm, 1));
 
-				if (declaration != null) {
-					Block body = declaration.getBody();
+					MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
 
-					if (body != null) {
-						@SuppressWarnings("rawtypes")
-						List statements = body.statements();
+					if (declaration != null) {
+						Block body = declaration.getBody();
 
-						if (!statements.isEmpty()) {
-							// TODO for now.
-							addError(status, Messages.NoMethodsWithStatements, method);
+						if (body != null) {
+							@SuppressWarnings("rawtypes")
+							List statements = body.statements();
+
+							if (!statements.isEmpty()) {
+								// TODO for now.
+								addError(status, Messages.NoMethodsWithStatements, method);
+							}
 						}
 					}
 				}
@@ -1059,46 +1070,52 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			ASTRewrite destinationRewrite = getASTRewrite(destinationCompilationUnit);
 			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
 
-			Iterator<IMethod> methodsToMoveIterator = getMethodsToMoveIterator();
+			Iterator<IMember> methodsToMoveIterator = getMethodsToMove().iterator();
+
 			while (methodsToMoveIterator.hasNext()) {
-				IMethod sourceMethod = methodsToMoveIterator.next();
-				logInfo("Migrating method: "
-						+ JavaElementLabels.getElementLabel(sourceMethod, JavaElementLabels.ALL_FULLY_QUALIFIED)
-						+ " to interface: " + getDestinationInterface().getFullyQualifiedName());
+				IMember sourceMember = methodsToMoveIterator.next();
 
-				CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
+				if (sourceMember instanceof IMethod) {
+					IMethod sourceMethod = (IMethod) sourceMember;
 
-				MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod,
-						sourceCompilationUnit);
-				logInfo("Source method declaration: " + sourceMethodDeclaration);
+					logInfo("Migrating method: "
+							+ JavaElementLabels.getElementLabel(sourceMethod, JavaElementLabels.ALL_FULLY_QUALIFIED)
+							+ " to interface: " + getDestinationInterface().getFullyQualifiedName());
 
-				// Find the target method.
-				IMethod targetMethod = getTargetMethod(sourceMethod);
-				MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
-						destinationCompilationUnit);
+					CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
 
-				// tack on the source method body to the target method.
-				copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+					MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod,
+							sourceCompilationUnit);
+					logInfo("Source method declaration: " + sourceMethodDeclaration);
 
-				// Change the target method to default.
-				convertToDefault(targetMethodDeclaration, destinationRewrite);
-				
+					// Find the target method.
+					IMethod targetMethod = getTargetMethod(sourceMethod);
+					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
+							destinationCompilationUnit);
+
+					// tack on the source method body to the target method.
+					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+
+					// Change the target method to default.
+					convertToDefault(targetMethodDeclaration, destinationRewrite);
+
 				// TODO: Do we need to worry about preserving ordering of the modifiers?
-				// if the source method is strictfp.
-				if ((Flags.isStrictfp(sourceMethod.getFlags())
-						|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
-						&& !Flags.isStrictfp(targetMethod.getFlags()))
-					//change the target method to strictfp.
-					convertToStrictFP(targetMethodDeclaration, destinationRewrite);
+					// if the source method is strictfp.
+					if ((Flags.isStrictfp(sourceMethod.getFlags())
+							|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
+							&& !Flags.isStrictfp(targetMethod.getFlags()))
+						// change the target method to strictfp.
+						convertToStrictFP(targetMethodDeclaration, destinationRewrite);
 
-				// Remove the source method.
-				ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
-				removeMethod(sourceMethodDeclaration, sourceRewrite);
+					// Remove the source method.
+					ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
+					removeMethod(sourceMethodDeclaration, sourceRewrite);
 
-				// save the source changes.
-				// TODO: Need to deal with imports #22.
-				if (!manager.containsChangesIn(sourceMethod.getCompilationUnit()))
-					manageCompilationUnit(manager, sourceMethod.getCompilationUnit(), sourceRewrite);
+					// save the source changes.
+					// TODO: Need to deal with imports #22.
+					if (!manager.containsChangesIn(sourceMethod.getCompilationUnit()))
+						manageCompilationUnit(manager, sourceMethod.getCompilationUnit(), sourceRewrite);
+				}
 			}
 
 			if (!manager.containsChangesIn(getDestinationInterface().getCompilationUnit()))
@@ -1252,7 +1269,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	@Override
 	public boolean isApplicable() throws CoreException {
-		return RefactoringAvailabilityTester.isInterfaceMigrationAvailable(getMethodsToMove());
+		return RefactoringAvailabilityTester.isInterfaceMigrationAvailable(getMethodsToMove().parallelStream()
+				.filter(m -> m instanceof IMethod).map(m -> (IMethod) m).toArray(IMethod[]::new));
 	}
 
 	public IMethod[] getMigratableMembersOfDeclaringType() {
