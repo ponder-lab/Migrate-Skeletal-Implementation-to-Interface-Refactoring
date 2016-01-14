@@ -912,7 +912,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (!member.isStructureKnown()) {
 			return RefactoringStatus.createErrorStatus(
 					MessageFormat.format(Messages.CUContainsCompileErrors, createLabel(member),
-							createLabel(member.getCompilationUnit())),
+							JavaElementLabels.getElementLabel(member.getCompilationUnit(),
+									JavaElementLabels.ALL_FULLY_QUALIFIED)),
 					JavaStatusContext.create(member.getCompilationUnit()));
 		}
 		return new RefactoringStatus();
