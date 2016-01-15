@@ -11,7 +11,8 @@ Require-Bundle: org.eclipse.ltk.core.refactoring,
  org.eclipse.jdt.core,
  org.eclipse.osgi,
  edu.cuny.citytech.refactoring.common.core;bundle-version="1.1.0",
- org.eclipse.jdt.ui
+ org.eclipse.jdt.ui,
+ org.eclipse.jface;bundle-version="3.11.0"
 Export-Package: edu.cuny.citytech.defaultrefactoring.core.contributions,
  edu.cuny.citytech.defaultrefactoring.core.descriptors,
  edu.cuny.citytech.defaultrefactoring.core.messages,
