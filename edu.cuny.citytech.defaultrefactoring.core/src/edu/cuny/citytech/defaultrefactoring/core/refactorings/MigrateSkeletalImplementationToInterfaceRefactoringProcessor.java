@@ -223,36 +223,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
+		// get the destination interface.
 		IType destinationInterface = this.getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
 
-		// TODO: For now, the target interface must only contain the target
-		// method.
-		List<IMethod> destinationInterfaceMethodsList = Arrays.asList(destinationInterface.getMethods());
-		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(destinationInterfaceMethodsList);
+		// get the methods declared by the destination interface.
+		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(Arrays.asList(destinationInterface.getMethods()));
 
-		// ensure that all the methods to move have target methods in the target
-		// interface.
-		boolean allSourceMethodsHaveTargets;
-
-		// if they are different sizes, they can't be the same.
-		if (this.getSourceMethods().size() != destinationInterfaceMethodsSet.size())
-			allSourceMethodsHaveTargets = false;
-		else
-			// make sure there's a match for each method.
-			allSourceMethodsHaveTargets = this.getSourceMethods().parallelStream() // in
-																					// parallel.
-					.map(m -> this.getSourceMethodToTargetMethodMap().get(m)) // find
-																				// the
-																				// target
-																				// method
-																				// in
-																				// the
-																				// target
+		// get the target methods that are declared by the destination
 																				// interface.
-					.allMatch(Objects::nonNull); // make sure they are all
-													// there.
+		Set<IMethod> targetMethodDeclaredByDestinationInterfaceSet = this.getSourceMethodToTargetMethodMap().values()
+				.parallelStream().filter(Objects::nonNull)
+				.filter(m -> m.getDeclaringType().equals(destinationInterface)).collect(Collectors.toSet());
 
-		if (!allSourceMethodsHaveTargets) {
+		// TODO: For now, the target interface must only contain the target
+		// methods.
+		if (!destinationInterfaceMethodsSet.equals(targetMethodDeclaredByDestinationInterfaceSet)) {
 			RefactoringStatusEntry error = addError(status,
 					Messages.DestinationInterfaceMustOnlyDeclareTheMethodToMigrate, destinationInterface);
 			addUnmigratableMethod(sourceMethod, error);
@@ -546,9 +531,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.getInitializers().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithInitializers, sourceMethod, type);
-		if (type.getMethods().length > 1)
-			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithMoreThanOneMethod, sourceMethod, type);
 		if (type.getTypeParameters().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithTypeParameters, sourceMethod, type);
