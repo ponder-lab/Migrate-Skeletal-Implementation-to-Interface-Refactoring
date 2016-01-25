@@ -230,7 +230,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(Arrays.asList(destinationInterface.getMethods()));
 
 		// get the target methods that are declared by the destination
-																				// interface.
+		// interface.
 		Set<IMethod> targetMethodDeclaredByDestinationInterfaceSet = this.getSourceMethodToTargetMethodMap().values()
 				.parallelStream().filter(Objects::nonNull)
 				.filter(m -> m.getDeclaringType().equals(destinationInterface)).collect(Collectors.toSet());

@@ -480,4 +480,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testMethodWithNoTargetMethod() throws Exception {
+		//this source method has no target. It should fail.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
