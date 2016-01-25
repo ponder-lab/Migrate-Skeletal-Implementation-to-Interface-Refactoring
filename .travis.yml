@@ -1,7 +1,10 @@
 sudo: false
 language: java
 jdk: oraclejdk8
-cache: apt
+cache:
+    apt: true
+    directories:
+        - $HOME/.m2
 script: mvn install
 before_install:
   - "export DISPLAY=:99.0"
