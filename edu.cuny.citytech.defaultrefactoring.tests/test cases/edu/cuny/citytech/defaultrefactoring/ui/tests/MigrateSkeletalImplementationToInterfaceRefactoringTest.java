@@ -307,6 +307,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m", "n" }, new String[][] { new String[0], new String[0] });
 	}
 
+	public void testMultipleMethods2() throws Exception {
+		helperPass(new String[] { "m", "n" }, new String[][] { new String[0], new String[0] });
+	}
+
 	public void testTargetInterfaceWithMultipleMethods() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
