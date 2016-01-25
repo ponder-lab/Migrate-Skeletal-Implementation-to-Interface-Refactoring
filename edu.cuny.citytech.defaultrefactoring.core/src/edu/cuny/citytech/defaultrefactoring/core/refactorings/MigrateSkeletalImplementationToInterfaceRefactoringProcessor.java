@@ -764,11 +764,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					RefactoringStatusEntry entry = addError(status, Messages.NoMethodsWithReturnTypes, method);
 					addUnmigratableMethod(method, entry);
 				}
-				
-				//ensure that the method has a target.
+
+				// ensure that the method has a target.
 				if (this.getSourceMethodToTargetMethodMap().get(method) == null)
 					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, method);
-				
+
 				pm.ifPresent(m -> m.worked(1));
 			}
 
@@ -1277,7 +1277,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				removeMethod(sourceMethodDeclaration, sourceRewrite);
 			}
 
-				// TODO: Need to deal with imports #22.
+			// TODO: Need to deal with imports #22.
 
 			// save the source changes.
 			ICompilationUnit[] units = this.typeRootToCompilationUnitMap.keySet().parallelStream()
@@ -1289,6 +1289,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			final Map<String, String> arguments = new HashMap<>();
 			int flags = RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
+
+			// TODO: Fill in description.
 
 			MigrateSkeletalImplementationToInterfaceRefactoringDescriptor descriptor = new MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(
 					null, "TODO", null, arguments, flags);
