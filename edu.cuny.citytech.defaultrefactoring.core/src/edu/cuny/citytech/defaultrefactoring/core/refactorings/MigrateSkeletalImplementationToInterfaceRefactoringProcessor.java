@@ -764,6 +764,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					RefactoringStatusEntry entry = addError(status, Messages.NoMethodsWithReturnTypes, method);
 					addUnmigratableMethod(method, entry);
 				}
+				
+				//ensure that the method has a target.
+				if (this.getSourceMethodToTargetMethodMap().get(method) == null)
+					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, method);
+				
 				pm.ifPresent(m -> m.worked(1));
 			}
 
