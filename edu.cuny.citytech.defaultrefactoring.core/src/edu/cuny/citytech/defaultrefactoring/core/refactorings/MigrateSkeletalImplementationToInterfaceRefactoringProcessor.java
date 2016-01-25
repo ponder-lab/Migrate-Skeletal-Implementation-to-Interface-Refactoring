@@ -1275,15 +1275,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// Remove the source method.
 				ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
 				removeMethod(sourceMethodDeclaration, sourceRewrite);
-
-				// save the source changes.
-				// TODO: Need to deal with imports #22.
-				if (!manager.containsChangesIn(sourceMethod.getCompilationUnit()))
-					manageCompilationUnit(manager, sourceMethod.getCompilationUnit(), sourceRewrite);
-
-				if (!manager.containsChangesIn(destinationInterface.getCompilationUnit()))
-					manageCompilationUnit(manager, destinationInterface.getCompilationUnit(), destinationRewrite);
 			}
+
+				// TODO: Need to deal with imports #22.
+
+			// save the source changes.
+			ICompilationUnit[] units = this.typeRootToCompilationUnitMap.keySet().parallelStream()
+					.filter(t -> t instanceof ICompilationUnit).map(t -> (ICompilationUnit) t)
+					.filter(cu -> !manager.containsChangesIn(cu)).toArray(ICompilationUnit[]::new);
+
+			for (ICompilationUnit cu : units)
+				manageCompilationUnit(manager, cu, getASTRewrite(getCompilationUnit(cu, pm)));
 
 			final Map<String, String> arguments = new HashMap<>();
 			int flags = RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
