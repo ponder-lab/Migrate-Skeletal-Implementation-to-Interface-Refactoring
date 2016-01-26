@@ -135,7 +135,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", this.sourceMethods.size()));
 
 			for (IMethod method : this.sourceMethods) {
-				this.sourceMethodToTargetMethodMap.put(method, this.getTargetMethod(method, monitor));
+				this.sourceMethodToTargetMethodMap.put(method, getTargetMethod(method, monitor));
 				monitor.ifPresent(m -> m.worked(1));
 			}
 
@@ -640,7 +640,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 *             upon Java model problems.
 	 */
-	public IType[] getCandidateDestinationInterfaces(IMethod method, final Optional<IProgressMonitor> monitor)
+	public static IType[] getCandidateDestinationInterfaces(IMethod method, final Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
 			monitor.ifPresent(m -> m.beginTask("Retrieving candidate types...", IProgressMonitor.UNKNOWN));
@@ -658,7 +658,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private IType[] getSuperInterfaces(IType type, final Optional<IProgressMonitor> monitor) throws JavaModelException {
+	private static IType[] getSuperInterfaces(IType type, final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		try {
 			monitor.ifPresent(m -> m.beginTask("Retrieving type super interfaces...", IProgressMonitor.UNKNOWN));
 			return getSuperTypeHierarchy(type, monitor.map(m -> new SubProgressMonitor(m, 1)))
@@ -679,11 +680,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private ITypeHierarchy getSuperTypeHierarchy(IType type, final Optional<IProgressMonitor> monitor)
+	private static ITypeHierarchy getSuperTypeHierarchy(IType type, final Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
 			monitor.ifPresent(m -> m.subTask("Retrieving declaring super type hierarchy..."));
-			// TODO: Need to cache this.
+			// TODO: Need to cache this. But, that should be outside this
+			// method.
 			return type.newSupertypeHierarchy(monitor.orElseGet(NullProgressMonitor::new));
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
@@ -1382,16 +1384,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @return The target method that will be manipulated or null if not found.
 	 * @throws JavaModelException
 	 */
-	private IMethod getTargetMethod(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
+	public static IMethod getTargetMethod(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
 		return getTargetMethod(sourceMethod, destinationInterface);
 	}
 
-	private IType getDestinationInterface(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
+	private static IType getDestinationInterface(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
-			IType[] candidateDestinationInterfaces = this.getCandidateDestinationInterfaces(sourceMethod,
+			IType[] candidateDestinationInterfaces = getCandidateDestinationInterfaces(sourceMethod,
 					monitor.map(m -> new SubProgressMonitor(m, 1)));
 
 			// FIXME: Really just returning the first match here #23.
@@ -1457,7 +1459,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	@Override
 	public boolean isApplicable() throws CoreException {
 		return RefactoringAvailabilityTester.isInterfaceMigrationAvailable(getSourceMethods().parallelStream()
-				.filter(m -> !this.unmigratableMethods.contains(m)).toArray(IMethod[]::new));
+				.filter(m -> !this.unmigratableMethods.contains(m)).toArray(IMethod[]::new), Optional.empty());
 	}
 
 	/**

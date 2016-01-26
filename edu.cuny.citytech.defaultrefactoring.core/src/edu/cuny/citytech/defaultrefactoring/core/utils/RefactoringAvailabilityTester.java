@@ -4,11 +4,15 @@ import static org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilit
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
+
+import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoringProcessor;
 
 /**
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
@@ -22,7 +26,8 @@ public final class RefactoringAvailabilityTester {
 	private RefactoringAvailabilityTester() {
 	}
 
-	public static boolean isInterfaceMigrationAvailable(IMethod method) throws JavaModelException {
+	public static boolean isInterfaceMigrationAvailable(IMethod method, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		if (!Checks.isAvailable(method))
 			return false;
 		if (method.isConstructor())
@@ -32,33 +37,42 @@ public final class RefactoringAvailabilityTester {
 		if (declaring != null && declaring.isInterface())
 			return false; // Method is already in an interface.
 
+		// ensure that there is a target method.
+		IMethod targetMethod = MigrateSkeletalImplementationToInterfaceRefactoringProcessor.getTargetMethod(method,
+				monitor);
+		if (targetMethod == null) // no possible target.
+			return false;
+
 		return true;
 	}
 
-	public static boolean isInterfaceMigrationAvailable(IMethod[] methods) throws JavaModelException {
+	public static boolean isInterfaceMigrationAvailable(IMethod[] methods, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		if (methods != null && methods.length != 0) {
+			// FIXME: This seems wrong.
 			final IType type = getTopLevelType(methods);
 
-			if (type != null && getMigratableSkeletalImplementations(type).length != 0)
+			if (type != null && getMigratableSkeletalImplementations(type, monitor).length != 0)
 				return true;
 
 			for (int index = 0; index < methods.length; index++)
-				if (!isInterfaceMigrationAvailable(methods[index]))
+				if (!isInterfaceMigrationAvailable(methods[index], monitor))
 					return false;
 
-//			return isCommonDeclaringType(methods);
+			// return isCommonDeclaringType(methods);
 		}
 		return false;
 	}
 
-	public static IMethod[] getMigratableSkeletalImplementations(final IType type) throws JavaModelException {
+	public static IMethod[] getMigratableSkeletalImplementations(final IType type, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		List<IMethod> ret = new ArrayList<>();
 
 		if (type.exists()) {
 			IMethod[] methodsOfType = type.getMethods();
 			for (int i = 0; i < methodsOfType.length; i++) {
 				IMethod method = methodsOfType[i];
-				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method))
+				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor))
 					ret.add(method);
 			}
 		}
