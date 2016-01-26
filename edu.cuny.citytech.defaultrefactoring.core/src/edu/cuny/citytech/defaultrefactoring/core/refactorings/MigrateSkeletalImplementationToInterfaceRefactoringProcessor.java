@@ -359,7 +359,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				status.merge(checkDestinationInterfaceHierarchy(sourceMethod,
 						monitor.map(m -> new SubProgressMonitor(m, 1))));
-				status.merge(checkDestinationInterfaceOnlyDeclaresTargetMethods(sourceMethod));
 				status.merge(checkDestinationInterfaceTargetMethods(sourceMethod));
 
 				monitor.ifPresent(m -> m.worked(1));
