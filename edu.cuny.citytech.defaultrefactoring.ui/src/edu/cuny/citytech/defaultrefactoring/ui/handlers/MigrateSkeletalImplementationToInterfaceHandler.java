@@ -1,10 +1,10 @@
 package edu.cuny.citytech.defaultrefactoring.ui.handlers;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -22,6 +22,7 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 import edu.cuny.citytech.defaultrefactoring.ui.wizards.MigrateSkeletalImplementationToInterfaceRefactoringWizard;
 
 public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHandler {
@@ -47,20 +48,21 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							break;
 						case IJavaElement.TYPE:
 							// A type is either a class, interface, or enum. Get
-							// only methods from classes.
-							extractMethodsFromClass(methodSet, (IType) jElem);
+							// only methods from classes. TODO: Should mention
+							// this in paper as a filtered context.
+							methodSet.addAll(extractMethodsFromClass((IType) jElem));
 							break;
 						case IJavaElement.COMPILATION_UNIT:
-							extractMethodsFromCompilationUnit(methodSet, (ICompilationUnit) jElem);
+							methodSet.addAll(extractMethodsFromCompilationUnit((ICompilationUnit) jElem));
 							break;
 						case IJavaElement.PACKAGE_FRAGMENT:
-							extractMethodsFromPackageFragment(methodSet, (IPackageFragment) jElem);
+							methodSet.addAll(extractMethodsFromPackageFragment((IPackageFragment) jElem));
 							break;
 						case IJavaElement.PACKAGE_FRAGMENT_ROOT:
-							extractMethodsFromPackageFragmentRoot(methodSet, (IPackageFragmentRoot) jElem);
+							methodSet.addAll(extractMethodsFromPackageFragmentRoot((IPackageFragmentRoot) jElem));
 							break;
 						case IJavaElement.JAVA_PROJECT:
-							extractMethodsFromJavaProject(methodSet, (IJavaProject) jElem);
+							methodSet.addAll(extractMethodsFromJavaProject((IJavaProject) jElem));
 							break;
 						}
 					}
@@ -79,39 +81,56 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		return null;
 	}
 
-	private void extractMethodsFromJavaProject(Set<IMethod> methodSet, IJavaProject jProj) throws JavaModelException {
+	private Set<IMethod> extractMethodsFromJavaProject(IJavaProject jProj) throws JavaModelException {
+		Set<IMethod> methodSet = new HashSet<>();
+
 		IPackageFragmentRoot[] roots = jProj.getPackageFragmentRoots();
-		for (IPackageFragmentRoot iPackageFragmentRoot : roots) {
-			extractMethodsFromPackageFragmentRoot(methodSet, iPackageFragmentRoot);
-		}
+		for (IPackageFragmentRoot iPackageFragmentRoot : roots)
+			methodSet.addAll(extractMethodsFromPackageFragmentRoot(iPackageFragmentRoot));
+
+		return methodSet;
 	}
 
-	private void extractMethodsFromPackageFragmentRoot(Set<IMethod> methodSet, IPackageFragmentRoot root)
-			throws JavaModelException {
+	private Set<IMethod> extractMethodsFromPackageFragmentRoot(IPackageFragmentRoot root) throws JavaModelException {
+		Set<IMethod> methodSet = new HashSet<>();
+
 		IJavaElement[] children = root.getChildren();
 		for (IJavaElement child : children)
 			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
-				extractMethodsFromPackageFragment(methodSet, (IPackageFragment) child);
+				methodSet.addAll(extractMethodsFromPackageFragment((IPackageFragment) child));
+
+		return methodSet;
 	}
 
-	private void extractMethodsFromPackageFragment(Set<IMethod> methodSet, IPackageFragment frag)
-			throws JavaModelException {
+	private Set<IMethod> extractMethodsFromPackageFragment(IPackageFragment frag) throws JavaModelException {
+		Set<IMethod> methodSet = new HashSet<>();
 		ICompilationUnit[] units = frag.getCompilationUnits();
-		for (ICompilationUnit iCompilationUnit : units) {
-			extractMethodsFromCompilationUnit(methodSet, iCompilationUnit);
-		}
+
+		for (ICompilationUnit iCompilationUnit : units)
+			methodSet.addAll(extractMethodsFromCompilationUnit(iCompilationUnit));
+
+		return methodSet;
 	}
 
-	private void extractMethodsFromCompilationUnit(Set<IMethod> methodSet, ICompilationUnit cu)
-			throws JavaModelException {
+	private Set<IMethod> extractMethodsFromCompilationUnit(ICompilationUnit cu) throws JavaModelException {
+		Set<IMethod> methodSet = new HashSet<>();
 		IType[] types = cu.getTypes();
-		for (IType iType : types) {
-			extractMethodsFromClass(methodSet, iType);
-		}
+
+		for (IType iType : types)
+			methodSet.addAll(extractMethodsFromClass(iType));
+
+		return methodSet;
 	}
 
-	private void extractMethodsFromClass(Set<IMethod> methodSet, IType type) throws JavaModelException {
-		if (type.isClass())
-			methodSet.addAll(Arrays.asList(type.getMethods()));
+	private Set<IMethod> extractMethodsFromClass(IType type) throws JavaModelException {
+		Set<IMethod> methodSet = new HashSet<>();
+
+		if (type.isClass()) {
+			for (IMethod method : type.getMethods())
+				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method))
+					methodSet.add(method);
+		}
+
+		return methodSet;
 	}
 }
