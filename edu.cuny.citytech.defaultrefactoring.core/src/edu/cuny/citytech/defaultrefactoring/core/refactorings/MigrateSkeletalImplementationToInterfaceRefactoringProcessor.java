@@ -191,6 +191,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					status.merge(
 							checkCandidateDestinationInterfaces(method, Optional.of(new SubProgressMonitor(pm, 0))));
 					// FIXME: Repeated.
+					// TODO: Also, does not remove the method if there is an
+					// error.
 					status.merge(checkExistence(method, Messages.MethodDoesNotExist));
 
 					pm.worked(1);
@@ -1138,6 +1140,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (monitor.isCanceled())
 				throw new OperationCanceledException();
 
+			// TODO: Should this be a separate method?
 			status.merge(checkDestinationInterfaces(Optional.of(new SubProgressMonitor(monitor, 1))));
 			if (status.hasFatalError())
 				return status;
