@@ -1,7 +1,9 @@
 package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
+import static org.eclipse.jdt.ui.JavaElementLabels.ALL_DEFAULT;
 import static org.eclipse.jdt.ui.JavaElementLabels.ALL_FULLY_QUALIFIED;
 import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
+import static org.eclipse.jdt.ui.JavaElementLabels.getTextLabel;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -62,7 +64,6 @@ import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManag
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.GroupCategory;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
@@ -1179,12 +1180,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							boolean reported = false;
 							final IExtendedModifier modifier = iterator.next();
 							if (!reported && modifier.isAnnotation()) {
-								status.merge(RefactoringStatus.createErrorStatus(
-										MessageFormat.format(
-												RefactoringCoreMessages.PullUpRefactoring_incompatible_langauge_constructs,
-												JavaElementLabels.getTextLabel(members[index],
-														JavaElementLabels.ALL_FULLY_QUALIFIED),
-										JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_DEFAULT)),
+								status.merge(
+										RefactoringStatus
+												.createErrorStatus(
+														MessageFormat
+																.format(RefactoringCoreMessages.PullUpRefactoring_incompatible_langauge_constructs,
+																		getTextLabel(members[index],
+																				ALL_FULLY_QUALIFIED),
+																		getTextLabel(destination, ALL_DEFAULT)),
 										JavaStatusContext.create(members[index])));
 								reported = true;
 							}
@@ -1200,9 +1203,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							status.merge(RefactoringStatus.createErrorStatus(
 									MessageFormat.format(
 											RefactoringCoreMessages.PullUpRefactoring_incompatible_language_constructs1,
-											JavaElementLabels.getTextLabel(members[index],
-													JavaElementLabels.ALL_FULLY_QUALIFIED),
-									JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_DEFAULT)),
+											getTextLabel(members[index], ALL_FULLY_QUALIFIED),
+											getTextLabel(destination, ALL_DEFAULT)),
 									JavaStatusContext.create(members[index])));
 					} catch (JavaModelException exception) {
 						JavaPlugin.log(exception);
