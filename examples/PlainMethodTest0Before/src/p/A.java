@@ -4,7 +4,11 @@ interface I {
 	void m();
 }
 
-abstract class A implements I {
+interface J {
+	void m();
+}
+
+abstract class A implements I, J {
 	public void m() {
 	}
 }
