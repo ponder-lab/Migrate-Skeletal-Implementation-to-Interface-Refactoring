@@ -79,6 +79,9 @@ import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
 import org.eclipse.text.edits.TextEdit;
 import org.osgi.framework.FrameworkUtil;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
+
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
@@ -116,6 +119,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	/** Does the refactoring use a working copy layer? */
 	protected final boolean layer;
+
+	private static Table<IMethod, IType, IMethod> sourceMethodTargetInterfaceTargetMethodTable = HashBasedTable
+			.create();
 
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
@@ -1387,7 +1393,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	public static IMethod getTargetMethod(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
-		return getTargetMethod(sourceMethod, destinationInterface);
+
+		if (sourceMethodTargetInterfaceTargetMethodTable.contains(sourceMethod, destinationInterface))
+			return sourceMethodTargetInterfaceTargetMethodTable.get(sourceMethod, destinationInterface);
+		else {
+			if (destinationInterface == null)
+				return null; // no target method in null destination interfaces.
+			else {
+				IMethod targetMethod = getTargetMethod(sourceMethod, destinationInterface);
+				sourceMethodTargetInterfaceTargetMethodTable.put(sourceMethod, destinationInterface, targetMethod);
+				return targetMethod;
+			}
+		}
 	}
 
 	private static IType getDestinationInterface(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
@@ -1412,7 +1429,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @param
 	 * @return The target method that will be manipulated or null if not found.
 	 */
-	// TODO: Should somehow cache this.
 	private static IMethod getTargetMethod(IMethod sourceMethod, IType targetInterface) {
 		if (targetInterface == null)
 			return null; // not found.
