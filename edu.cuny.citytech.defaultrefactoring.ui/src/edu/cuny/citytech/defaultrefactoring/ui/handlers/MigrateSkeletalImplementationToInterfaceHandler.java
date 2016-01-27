@@ -46,6 +46,8 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 						IJavaElement jElem = (IJavaElement) obj;
 						switch (jElem.getElementType()) {
 						case IJavaElement.METHOD:
+							// if a method is explicitly selected, add it
+							// straight away.
 							methodSet.add((IMethod) jElem);
 							break;
 						case IJavaElement.TYPE:
