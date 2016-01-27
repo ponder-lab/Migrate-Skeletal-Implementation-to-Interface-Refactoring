@@ -816,7 +816,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return new RefactoringStatus(); // OK.
 	}
 
-	private void addUnmigratableMethod(IMethod method, RefactoringStatusEntry reason) {
+	private void addUnmigratableMethod(IMethod method, Object reason) {
 		this.getUnmigratableMethods().add(method);
 		this.logInfo(
 				"Method " + getElementLabel(method, ALL_FULLY_QUALIFIED) + " is not migratable because: " + reason);
