@@ -1,5 +1,6 @@
 package edu.cuny.citytech.defaultrefactoring.ui.handlers;
 
+import java.util.Formatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +10,8 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -19,9 +22,11 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
+import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
+import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 import edu.cuny.citytech.defaultrefactoring.ui.wizards.MigrateSkeletalImplementationToInterfaceRefactoringWizard;
@@ -137,10 +142,33 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 
 		if (type.isClass()) {
 			for (IMethod method : type.getMethods())
-				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor))
+				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor)) {
+					logPossiblyMigratableMethod(method);
 					methodSet.add(method);
+				} else
+					logNonMigratableMethod(method);
+
 		}
 
 		return methodSet;
+	}
+
+	private void logPossiblyMigratableMethod(IMethod method) {
+		logMethod(method, "Method: %s is possibly migratable.");
+	}
+
+	private void logNonMigratableMethod(IMethod method) {
+		logMethod(method, "Method: %s is not migratable.");
+	}
+
+	private void logMethod(IMethod method, String format) {
+		Formatter formatter = new Formatter();
+
+		formatter.format(format, JavaElementLabels.getElementLabel(method, JavaElementLabels.ALL_FULLY_QUALIFIED));
+
+		JavaPlugin.log(new Status(IStatus.INFO, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
+				formatter.toString()));
+
+		formatter.close();
 	}
 }
