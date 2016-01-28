@@ -689,13 +689,25 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
+	private static Map<IType, ITypeHierarchy> typeToSuperTypeHierarchyMap = new HashMap<>();
+
+	private static Map<IType, ITypeHierarchy> getTypeToSuperTypeHierarchyMap() {
+		return typeToSuperTypeHierarchyMap;
+	}
+
 	private static ITypeHierarchy getSuperTypeHierarchy(IType type, final Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
 			monitor.ifPresent(m -> m.subTask("Retrieving declaring super type hierarchy..."));
-			// TODO: Need to cache this. But, that should be outside this
-			// method.
-			return type.newSupertypeHierarchy(monitor.orElseGet(NullProgressMonitor::new));
+
+			if (getTypeToSuperTypeHierarchyMap().containsKey(type))
+				return getTypeToSuperTypeHierarchyMap().get(type);
+			else {
+				ITypeHierarchy newSupertypeHierarchy = type
+						.newSupertypeHierarchy(monitor.orElseGet(NullProgressMonitor::new));
+				getTypeToSuperTypeHierarchyMap().put(type, newSupertypeHierarchy);
+				return newSupertypeHierarchy;
+			}
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
