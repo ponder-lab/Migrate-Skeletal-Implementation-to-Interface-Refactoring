@@ -704,6 +704,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	protected RefactoringStatus checkMethodsToMigrate(Optional<IProgressMonitor> pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
+			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
 
 			for (IMethod method : this.getSourceMethods()) {
 
