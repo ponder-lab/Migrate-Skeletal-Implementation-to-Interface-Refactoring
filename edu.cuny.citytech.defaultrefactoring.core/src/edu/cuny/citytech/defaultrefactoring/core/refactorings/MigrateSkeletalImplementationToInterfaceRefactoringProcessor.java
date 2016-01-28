@@ -425,7 +425,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 
 		// TODO: For now, the destination interface can only be implemented by
-		// the declaring class.
+		// the source class.
 		if (!Stream.of(hierarchy.getImplementingClasses(destinationInterface)).parallel().distinct()
 				.allMatch(c -> c.equals(sourceMethod.getDeclaringType()))) {
 			RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceHasInvalidImplementingClass,
@@ -1157,7 +1157,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// org.eclipse.jdt.internal.corext.refactoring.structure.PullUpRefactoringProcessor.checkFinalConditions(IProgressMonitor,
 			// CheckConditionsContext).
 
+			// check if there are any methods left to migrate.
 			if (this.getUnmigratableMethods().containsAll(this.getSourceMethods()))
+				// if not, we have a fatal error.
 				status.addFatalError(Messages.NoMethodsHavePassedThePreconditions);
 
 			return status;
