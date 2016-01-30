@@ -925,81 +925,81 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			RefactoringStatus status = new RefactoringStatus();
 			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
 
-			for (IMethod method : this.getSourceMethods()) {
+			for (IMethod sourceMethod : this.getSourceMethods()) {
 
 				// FIXME: Repeated.
-				RefactoringStatus existenceStatus = checkExistence(method, Messages.MethodDoesNotExist);
+				RefactoringStatus existenceStatus = checkExistence(sourceMethod, Messages.MethodDoesNotExist);
 				if (!existenceStatus.isOK()) {
 					status.merge(existenceStatus);
-					addUnmigratableMethod(method, existenceStatus.getEntryWithHighestSeverity());
+					addUnmigratableMethod(sourceMethod, existenceStatus.getEntryWithHighestSeverity());
 				}
 
-				RefactoringStatus writabilityStatus = checkWritabilitiy(method, Messages.CantChangeMethod);
+				RefactoringStatus writabilityStatus = checkWritabilitiy(sourceMethod, Messages.CantChangeMethod);
 				if (!writabilityStatus.isOK()) {
 					status.merge(writabilityStatus);
-					addUnmigratableMethod(method, writabilityStatus.getEntryWithHighestSeverity());
+					addUnmigratableMethod(sourceMethod, writabilityStatus.getEntryWithHighestSeverity());
 				}
 
-				RefactoringStatus structureStatus = checkStructure(method);
+				RefactoringStatus structureStatus = checkStructure(sourceMethod);
 				if (!structureStatus.isOK()) {
 					status.merge(structureStatus);
-					addUnmigratableMethod(method, structureStatus.getEntryWithHighestSeverity());
+					addUnmigratableMethod(sourceMethod, structureStatus.getEntryWithHighestSeverity());
 				}
 
-				if (method.isConstructor()) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoConstructors, method);
-					addUnmigratableMethod(method, entry);
+				if (sourceMethod.isConstructor()) {
+					RefactoringStatusEntry entry = addError(status, Messages.NoConstructors, sourceMethod);
+					addUnmigratableMethod(sourceMethod, entry);
 				}
 
-				status.merge(checkAnnotations(method));
+				status.merge(checkAnnotations(sourceMethod));
 
 				// synchronized methods aren't allowed in interfaces (even
 				// if they're default).
-				if (Flags.isSynchronized(method.getFlags())) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoSynchronizedMethods, method);
-					addUnmigratableMethod(method, entry);
+				if (Flags.isSynchronized(sourceMethod.getFlags())) {
+					RefactoringStatusEntry entry = addError(status, Messages.NoSynchronizedMethods, sourceMethod);
+					addUnmigratableMethod(sourceMethod, entry);
 				}
-				if (Flags.isStatic(method.getFlags())) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoStaticMethods, method);
-					addUnmigratableMethod(method, entry);
+				if (Flags.isStatic(sourceMethod.getFlags())) {
+					RefactoringStatusEntry entry = addError(status, Messages.NoStaticMethods, sourceMethod);
+					addUnmigratableMethod(sourceMethod, entry);
 				}
-				if (Flags.isAbstract(method.getFlags())) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoAbstractMethods, method);
-					addUnmigratableMethod(method, entry);
+				if (Flags.isAbstract(sourceMethod.getFlags())) {
+					RefactoringStatusEntry entry = addError(status, Messages.NoAbstractMethods, sourceMethod);
+					addUnmigratableMethod(sourceMethod, entry);
 				}
 				// final methods aren't allowed in interfaces.
-				if (Flags.isFinal(method.getFlags())) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoFinalMethods, method);
-					addUnmigratableMethod(method, entry);
+				if (Flags.isFinal(sourceMethod.getFlags())) {
+					RefactoringStatusEntry entry = addError(status, Messages.NoFinalMethods, sourceMethod);
+					addUnmigratableMethod(sourceMethod, entry);
 				}
 				// native methods don't have bodies. As such, they can't
 				// be skeletal implementors.
-				if (JdtFlags.isNative(method)) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoNativeMethods, method);
-					addUnmigratableMethod(method, entry);
+				if (JdtFlags.isNative(sourceMethod)) {
+					RefactoringStatusEntry entry = addError(status, Messages.NoNativeMethods, sourceMethod);
+					addUnmigratableMethod(sourceMethod, entry);
 				}
-				if (method.isLambdaMethod()) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoLambdaMethods, method);
-					addUnmigratableMethod(method, entry);
+				if (sourceMethod.isLambdaMethod()) {
+					RefactoringStatusEntry entry = addError(status, Messages.NoLambdaMethods, sourceMethod);
+					addUnmigratableMethod(sourceMethod, entry);
 				}
 
-				status.merge(checkExceptions(method));
-				status.merge(checkParameters(method));
+				status.merge(checkExceptions(sourceMethod));
+				status.merge(checkParameters(sourceMethod));
 
-				if (!method.getReturnType().equals(Signature.SIG_VOID)) {
+				if (!sourceMethod.getReturnType().equals(Signature.SIG_VOID)) {
 					// return type must be void.
 					// TODO for now. Can't remove this until we allow at
 					// least
 					// one statement.
-					RefactoringStatusEntry entry = addError(status, Messages.NoMethodsWithReturnTypes, method);
-					addUnmigratableMethod(method, entry);
+					RefactoringStatusEntry entry = addError(status, Messages.NoMethodsWithReturnTypes, sourceMethod);
+					addUnmigratableMethod(sourceMethod, entry);
 				}
 
 				// ensure that the method has a target.
-				if (this.getSourceMethodToTargetMethodMap().get(method) == null)
-					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, method);
+				if (this.getSourceMethodToTargetMethodMap().get(sourceMethod) == null)
+					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, sourceMethod);
 				else // otherwise, check accesses in the source method.
-					status.merge(checkAccesses(method, pm.map(m -> new SubProgressMonitor(m, 1))));
+					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 
 				pm.ifPresent(m -> m.worked(1));
 			}
