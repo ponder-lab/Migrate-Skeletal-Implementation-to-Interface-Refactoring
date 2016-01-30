@@ -33,6 +33,8 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
@@ -59,11 +61,13 @@ import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.structure.ReferenceFinderUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.GroupCategory;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
@@ -378,6 +382,198 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			monitor.ifPresent(IProgressMonitor::done);
 		}
 	}
+	
+	protected IType[] getTypesReferencedInMovedMembers(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		// TODO: Cache this result.
+		final IType[] types = ReferenceFinderUtil.getTypesReferencedIn(new IJavaElement[] { sourceMethod },
+				monitor.orElseGet(NullProgressMonitor::new));
+		final List<IType> result = new ArrayList<IType>(types.length);
+		final List<IMember> members = Arrays.asList(new IMember[] { sourceMethod });
+		for (int index = 0; index < types.length; index++) {
+			if (!members.contains(types[index]) && !types[index].equals(sourceMethod.getDeclaringType()))
+				result.add(types[index]);
+		}
+		return result.toArray(new IType[result.size()]);
+	}
+
+	protected boolean canBeAccessedFrom(IMethod sourceMethod, final IMember member, final IType target,
+			final ITypeHierarchy hierarchy) throws JavaModelException {
+		Assert.isTrue(!(member instanceof IInitializer));
+		if (member.exists()) {
+			if (target.isInterface())
+				return true;
+			if (target.equals(member.getDeclaringType()))
+				return true;
+			if (target.equals(member))
+				return true;
+			if (member instanceof IMethod) {
+				final IMethod method = (IMethod) member;
+				final IMethod stub = target.getMethod(method.getElementName(), method.getParameterTypes());
+				if (stub.exists())
+					return true;
+			}
+			if (member.getDeclaringType() == null) {
+				if (!(member instanceof IType))
+					return false;
+				if (JdtFlags.isPublic(member))
+					return true;
+				if (!JdtFlags.isPackageVisible(member))
+					return false;
+				if (JavaModelUtil.isSamePackage(((IType) member).getPackageFragment(), target.getPackageFragment()))
+					return true;
+				final IType type = member.getDeclaringType();
+				if (type != null)
+					return hierarchy.contains(type);
+				return false;
+			}
+			final IType declaringType = member.getDeclaringType();
+			if (!canBeAccessedFrom(sourceMethod, declaringType, target, hierarchy))
+				return false;
+			if (declaringType.equals(sourceMethod.getDeclaringType()))
+				return false;
+			return true;
+		}
+		return false;
+	}
+
+	private RefactoringStatus checkAccessedTypes(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
+			final ITypeHierarchy hierarchy) throws JavaModelException {
+		final RefactoringStatus result = new RefactoringStatus();
+		final IType[] accessedTypes = getTypesReferencedInMovedMembers(sourceMethod, monitor);
+		final IType destination = getDestinationInterface(sourceMethod).get();
+		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+		for (int index = 0; index < accessedTypes.length; index++) {
+			final IType type = accessedTypes[index];
+			if (!type.exists())
+				continue;
+
+			if (!canBeAccessedFrom(sourceMethod, type, destination, hierarchy) && !pulledUpList.contains(type)) {
+				final String message = org.eclipse.jdt.internal.corext.util.Messages
+						.format(RefactoringCoreMessages.PullUpRefactoring_type_not_accessible,
+								new String[] { JavaElementLabels.getTextLabel(type,
+										JavaElementLabels.ALL_FULLY_QUALIFIED),
+								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
+				result.addError(message, JavaStatusContext.create(type));
+			}
+		}
+		monitor.ifPresent(IProgressMonitor::done);
+		return result;
+	}
+
+	// skipped super classes are those declared in the hierarchy between the
+	// declaring type of the selected members
+	// and the target type
+	private Set<IType> getSkippedSuperTypes(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		// TODO: Cache this?
+		Set<IType> skippedSuperTypes = new HashSet<>();
+		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, 1));
+		try {
+			final ITypeHierarchy hierarchy = getDestinationInterfaceHierarchy(sourceMethod,
+					monitor.map(m -> new SubProgressMonitor(m, 1)));
+			IType current = hierarchy.getSuperclass(sourceMethod.getDeclaringType());
+			while (current != null && !current.equals(getDestinationInterface(sourceMethod).get())) {
+				skippedSuperTypes.add(current);
+				current = hierarchy.getSuperclass(current);
+			}
+			return skippedSuperTypes;
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+	}
+
+	private RefactoringStatus checkAccessedFields(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
+			final ITypeHierarchy hierarchy) throws JavaModelException {
+		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
+		final RefactoringStatus result = new RefactoringStatus();
+
+		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+		final IField[] accessedFields = ReferenceFinderUtil.getFieldsReferencedIn(new IJavaElement[] { sourceMethod },
+				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
+
+		final IType destination = getDestinationInterface(sourceMethod).get();
+		for (int i = 0; i < accessedFields.length; i++) {
+			final IField field = accessedFields[i];
+			if (!field.exists())
+				continue;
+
+			boolean isAccessible = pulledUpList.contains(field)
+					|| canBeAccessedFrom(sourceMethod, field, destination, hierarchy) || Flags.isEnum(field.getFlags());
+			if (!isAccessible) {
+				final String message = org.eclipse.jdt.internal.corext.util.Messages
+						.format(RefactoringCoreMessages.PullUpRefactoring_field_not_accessible,
+								new String[] { JavaElementLabels.getTextLabel(field,
+										JavaElementLabels.ALL_FULLY_QUALIFIED),
+								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
+				result.addError(message, JavaStatusContext.create(field));
+			} else if (getSkippedSuperTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)))
+					.contains(field.getDeclaringType())) {
+				final String message = org.eclipse.jdt.internal.corext.util.Messages
+						.format(RefactoringCoreMessages.PullUpRefactoring_field_cannot_be_accessed,
+								new String[] { JavaElementLabels.getTextLabel(field,
+										JavaElementLabels.ALL_FULLY_QUALIFIED),
+								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
+				result.addError(message, JavaStatusContext.create(field));
+			}
+		}
+		monitor.ifPresent(IProgressMonitor::done);
+		return result;
+	}
+
+	private RefactoringStatus checkAccessedMethods(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
+			final ITypeHierarchy hierarchy) throws JavaModelException {
+		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
+		final RefactoringStatus result = new RefactoringStatus();
+
+		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+		final IMethod[] accessedMethods = ReferenceFinderUtil.getMethodsReferencedIn(
+				new IJavaElement[] { sourceMethod },
+				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
+
+		final IType destination = getDestinationInterface(sourceMethod).get();
+		for (int index = 0; index < accessedMethods.length; index++) {
+			final IMethod method = accessedMethods[index];
+			if (!method.exists())
+				continue;
+			boolean isAccessible = pulledUpList.contains(method)
+					|| canBeAccessedFrom(sourceMethod, method, destination, hierarchy);
+			if (!isAccessible) {
+				final String message = org.eclipse.jdt.internal.corext.util.Messages
+						.format(RefactoringCoreMessages.PullUpRefactoring_method_not_accessible,
+								new String[] { JavaElementLabels.getTextLabel(method,
+										JavaElementLabels.ALL_FULLY_QUALIFIED),
+								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
+				result.addError(message, JavaStatusContext.create(method));
+			} else if (getSkippedSuperTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)))
+					.contains(method.getDeclaringType())) {
+				final String[] keys = { JavaElementLabels.getTextLabel(method, JavaElementLabels.ALL_FULLY_QUALIFIED),
+						JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) };
+				final String message = org.eclipse.jdt.internal.corext.util.Messages
+						.format(RefactoringCoreMessages.PullUpRefactoring_method_cannot_be_accessed, keys);
+				result.addError(message, JavaStatusContext.create(method));
+			}
+		}
+		monitor.ifPresent(IProgressMonitor::done);
+		return result;
+	}
+
+	private RefactoringStatus checkAccesses(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		final RefactoringStatus result = new RefactoringStatus();
+		try {
+			monitor.ifPresent(
+					m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 4));
+			final ITypeHierarchy hierarchy = getSuperTypeHierarchy(getDestinationInterface(sourceMethod).get(),
+					monitor.map(m -> new SubProgressMonitor(m, 1)));
+			result.merge(checkAccessedTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
+			result.merge(checkAccessedFields(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
+			result.merge(checkAccessedMethods(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+		return result;
+	}
 
 	private boolean allMethodsToMoveInTypeAreStrictFP(IType type) throws JavaModelException {
 		for (Iterator<IMethod> iterator = this.getSourceMethods().iterator(); iterator.hasNext();) {
@@ -689,6 +885,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
+	private ITypeHierarchy getDestinationInterfaceHierarchy(IMethod sourceMethod,
+			final Optional<IProgressMonitor> monitor) throws JavaModelException {
+		try {
+			monitor.ifPresent(m -> m.subTask("Retrieving destination type hierarchy..."));
+			IType destinationInterface = getDestinationInterface(sourceMethod).get();
+			return this.getTypeHierarchy(destinationInterface, monitor);
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+	}
+
 	private static Map<IType, ITypeHierarchy> typeToSuperTypeHierarchyMap = new HashMap<>();
 
 	private static Map<IType, ITypeHierarchy> getTypeToSuperTypeHierarchyMap() {
@@ -791,6 +998,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// ensure that the method has a target.
 				if (this.getSourceMethodToTargetMethodMap().get(method) == null)
 					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, method);
+				else // otherwise, check accesses in the source method.
+					status.merge(checkAccesses(method, pm.map(m -> new SubProgressMonitor(m, 1))));
 
 				pm.ifPresent(m -> m.worked(1));
 			}
