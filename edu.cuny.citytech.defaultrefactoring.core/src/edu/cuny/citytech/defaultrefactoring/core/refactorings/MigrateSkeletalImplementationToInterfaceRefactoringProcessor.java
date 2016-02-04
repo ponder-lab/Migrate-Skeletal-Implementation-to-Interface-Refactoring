@@ -920,7 +920,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected RefactoringStatus checkMethodsToMigrate(Optional<IProgressMonitor> pm) throws JavaModelException {
+	protected RefactoringStatus checkSourceMethods(Optional<IProgressMonitor> pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
@@ -1005,7 +1005,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			}
 
 			if (!status.hasFatalError())
-				status.merge(checkMethodsToMigrateBodies(new SubProgressMonitor(pm.orElseGet(NullProgressMonitor::new),
+				status.merge(checkSourceMethodBodies(new SubProgressMonitor(pm.orElseGet(NullProgressMonitor::new),
 						this.getSourceMethods().size())));
 
 			return status;
@@ -1223,7 +1223,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return this.unmigratableMethods;
 	}
 
-	protected RefactoringStatus checkMethodsToMigrateBodies(IProgressMonitor pm) throws JavaModelException {
+	protected RefactoringStatus checkSourceMethodBodies(IProgressMonitor pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 
@@ -1356,7 +1356,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (monitor.isCanceled())
 				throw new OperationCanceledException();
 
-			status.merge(checkMethodsToMigrate(Optional.of(new SubProgressMonitor(monitor, 1))));
+			status.merge(checkSourceMethods(Optional.of(new SubProgressMonitor(monitor, 1))));
 			if (status.hasFatalError())
 				return status;
 			if (monitor.isCanceled())
