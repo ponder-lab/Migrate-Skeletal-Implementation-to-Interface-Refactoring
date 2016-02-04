@@ -401,8 +401,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final ITypeHierarchy hierarchy) throws JavaModelException {
 		Assert.isTrue(!(member instanceof IInitializer));
 		if (member.exists()) {
-			if (target.isInterface())
-				return true;
 			if (target.equals(member.getDeclaringType()))
 				return true;
 			if (target.equals(member))
