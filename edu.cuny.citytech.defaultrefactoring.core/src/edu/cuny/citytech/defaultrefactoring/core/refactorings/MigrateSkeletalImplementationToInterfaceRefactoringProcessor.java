@@ -1004,10 +1004,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				pm.ifPresent(m -> m.worked(1));
 			}
 
-			if (!status.hasFatalError())
-				status.merge(checkSourceMethodBodies(new SubProgressMonitor(pm.orElseGet(NullProgressMonitor::new),
-						this.getSourceMethods().size())));
-
 			return status;
 		} finally {
 			pm.ifPresent(IProgressMonitor::done);
