@@ -501,4 +501,43 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		//this source method has no target. It should fail.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodThatCallsAnotherMethod() throws Exception {
+		// this source method calls another method in the interface. It should
+		// pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod2() throws Exception {
+		// this source method calls another method outside the interface. It
+		// should fail.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod3() throws Exception {
+		// this source method calls another method outside both the interface
+		// and the class. The method is accessible from both locations. It
+		// should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod5() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod6() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod8() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod9() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
