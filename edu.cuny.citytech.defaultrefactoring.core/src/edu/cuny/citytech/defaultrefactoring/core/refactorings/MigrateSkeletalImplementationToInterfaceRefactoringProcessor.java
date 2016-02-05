@@ -544,7 +544,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				new IJavaElement[] { sourceMethod },
 				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
 
-		final IType destination = getDestinationInterface(sourceMethod).get();
+		final IType destination = getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
+				"Source method: " + sourceMethod + " has no destiantion interface."));
 		for (int index = 0; index < accessedMethods.length; index++) {
 			final IMethod method = accessedMethods[index];
 			if (!method.exists())
