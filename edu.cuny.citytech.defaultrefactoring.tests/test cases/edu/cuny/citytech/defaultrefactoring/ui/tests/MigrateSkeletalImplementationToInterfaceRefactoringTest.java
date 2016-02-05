@@ -533,11 +533,39 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testMethodThatCallsAnotherMethod7() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testMethodThatCallsAnotherMethod8() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatCallsAnotherMethod9() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod10() throws Exception {
+		// in this example, the source method calls a method declared in the
+		// target interface but defined in the source method's declaring type.
+		// The run time target of the method call remains intact.
+		// TODO: #77. This test should actually pass.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod11() throws Exception {
+		// in this example, the source method calls a method defined both in the
+		// target interface and the source method's declaring type.
+		// The run time target of the method call remains intact because the
+		// source method's declaring type overrides the default method in the
+		// target interface.
+		// TODO: #77. This test should actually pass.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod12() throws Exception {
+		// like testMethodThatCallsAnotherMethod5 but call ctor instead of a
+		// method.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
