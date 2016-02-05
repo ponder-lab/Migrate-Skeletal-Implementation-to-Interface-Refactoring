@@ -124,13 +124,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testStaticMethod() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testFinalMethod() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	/**
-	 * Synchronized methods aren't allowed in interfaces. 
+	 * Synchronized methods aren't allowed in interfaces.
 	 */
 	public void testSynchronizedMethod() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
@@ -320,7 +320,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMultipleMethods5() throws Exception {
-		//Two eligible methods here but only migrate one of them.
+		// Two eligible methods here but only migrate one of them.
 		helperPass(new String[] { "m" }, new String[][] { new String[0], new String[0] });
 	}
 
@@ -359,26 +359,28 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testDestinationInterfaceWithFields() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	/**
 	 * The destination interface should not be marked as an @FunctionalInterface
-	 * since we only convert abstract methods to default methods and it is
-	 * not allowed for a valid @FunctionalInterface to loose an abstract method. 
+	 * since we only convert abstract methods to default methods and it is not
+	 * allowed for a valid @FunctionalInterface to loose an abstract method.
 	 */
 	public void testDestinationFunctionalInterface() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	/**
-	 * Same as {@link MigrateSkeletalImplementationToInterfaceRefactoringTest#testDestinationFunctionalInterface()}
+	 * Same as
+	 * {@link MigrateSkeletalImplementationToInterfaceRefactoringTest#testDestinationFunctionalInterface()}
 	 * but with non-abstract methods also included in the interface.
 	 */
 	public void testDestinationFunctionalInterfaceWithNonAbstractMethods() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	/**
-	 * Same as {@link MigrateSkeletalImplementationToInterfaceRefactoringTest#testDestinationFunctionalInterface()}
+	 * Same as
+	 * {@link MigrateSkeletalImplementationToInterfaceRefactoringTest#testDestinationFunctionalInterface()}
 	 * but with non-abstract methods also included in the interface.
 	 */
 	public void testDestinationFunctionalInterfaceWithNonAbstractMethods2() throws Exception {
@@ -498,7 +500,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodWithNoTargetMethod() throws Exception {
-		//this source method has no target. It should fail.
+		// this source method has no target. It should fail.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
