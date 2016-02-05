@@ -421,8 +421,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				return false;
 			}
 			final IType declaringType = member.getDeclaringType();
+			// if the member's declaring type isn't accessible from the target
+			// type.
 			if (!canBeAccessedFrom(sourceMethod, declaringType, target, hierarchy))
-				return false;
+				return false; // then, the member isn't accessible from the
+								// target type.
+			// otherwise, the member's declaring type is accessible from the
+			// target type.
+			// if the member's declaring type equals the source method's
+			// declaring type.
 			if (declaringType.equals(sourceMethod.getDeclaringType()))
 				return false;
 			return true;
