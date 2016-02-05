@@ -1,7 +1,5 @@
 package p;
 
-import p.A.C;
-
 interface I {
 	void m();
 }
