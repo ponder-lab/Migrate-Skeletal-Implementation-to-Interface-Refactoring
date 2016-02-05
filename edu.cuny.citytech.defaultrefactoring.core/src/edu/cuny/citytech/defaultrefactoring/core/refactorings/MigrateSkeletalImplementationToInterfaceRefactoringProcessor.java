@@ -430,8 +430,49 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// target type.
 			// if the member's declaring type equals the source method's
 			// declaring type.
-			if (declaringType.equals(sourceMethod.getDeclaringType()))
+			if (declaringType.equals(sourceMethod.getDeclaringType())) {
+				// then, the member and the source method are declared in the
+				// same type.
+				// But, we are going to be moving the source method from it's
+				// declaring type.
+				// We know that the member's declaring type is accessible from
+				// the target.
+				// We also know that the member's declaring type and the target
+				// type are different.
+				// The question now is if the target type can access the
+				// particular member given that
+				// the target type can access the member's declaring type.
+				// if it's a method and it's not static.
+				if (member.getElementType() == IJavaElement.METHOD && !JdtFlags.isStatic(member)) {
+					// In this case, we have that the member is an instance
+					// method.
+					// We need to make sure that the destination interface is
+					// able to access this instance method and that the run time
+					// target of the method doesn't change.
+					// TODO: For now, let's just say no.
+					return false;
+				}
+				// if it's public, the answer is yes.
+				if (JdtFlags.isPublic(member))
+					return true;
+				// if the member is private, the answer is no.
+				else if (JdtFlags.isPrivate(member))
 				return false;
+				// if it's package-private or protected.
+				else if (JdtFlags.isPackageVisible(member) || JdtFlags.isProtected(member)) {
+					// then, if the member's declaring type in the same package
+					// as the target's declaring type, the answer is yes.
+					if (JavaModelUtil.isVisible(member, target.getPackageFragment()))
+						return true;
+					// otherwise, if it's protected.
+					else if (JdtFlags.isProtected(member))
+						// then, the answer is yes if the target type is a
+						// sub-type of the member's declaring type. Otherwise,
+						// the answer is no.
+						return hierarchy.contains(declaringType);
+				} else
+					throw new IllegalStateException("Member: " + member + " has no known visibility.");
+			}
 			return true;
 		}
 		return false;
