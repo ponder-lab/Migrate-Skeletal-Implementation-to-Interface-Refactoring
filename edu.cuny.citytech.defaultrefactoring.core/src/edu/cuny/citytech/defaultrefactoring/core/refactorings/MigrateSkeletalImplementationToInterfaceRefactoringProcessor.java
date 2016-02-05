@@ -747,6 +747,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.getTypeParameters().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithTypeParameters, sourceMethod, type);
+		if (type.getTypes().length != 0)
+			// TODO for now.
+			addErrorAndMark(status, Messages.NoMethodsInTypesWithType, sourceMethod, type);
 		if (type.getSuperclassName() != null)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithSuperType, sourceMethod, type);
