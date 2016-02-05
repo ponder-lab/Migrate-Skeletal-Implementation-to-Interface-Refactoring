@@ -405,12 +405,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				return true;
 			if (target.equals(member))
 				return true;
-			if (member instanceof IMethod) {
-				final IMethod method = (IMethod) member;
-				final IMethod stub = target.getMethod(method.getElementName(), method.getParameterTypes());
-				if (stub.exists())
-					return true;
-			}
 			if (member.getDeclaringType() == null) {
 				if (!(member instanceof IType))
 					return false;
