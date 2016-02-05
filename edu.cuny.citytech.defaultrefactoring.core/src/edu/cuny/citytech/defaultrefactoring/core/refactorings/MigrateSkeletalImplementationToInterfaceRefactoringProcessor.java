@@ -447,6 +447,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 										JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addError(message, JavaStatusContext.create(type));
+				this.getUnmigratableMethods().add(sourceMethod);
 			}
 		}
 		monitor.ifPresent(IProgressMonitor::done);
@@ -507,6 +508,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 										JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addError(message, JavaStatusContext.create(field));
+				this.getUnmigratableMethods().add(sourceMethod);
 			}
 		}
 		monitor.ifPresent(IProgressMonitor::done);
@@ -544,6 +546,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				final String message = org.eclipse.jdt.internal.corext.util.Messages
 						.format(RefactoringCoreMessages.PullUpRefactoring_method_cannot_be_accessed, keys);
 				result.addError(message, JavaStatusContext.create(method));
+				this.getUnmigratableMethods().add(sourceMethod);
 			}
 		}
 		monitor.ifPresent(IProgressMonitor::done);
