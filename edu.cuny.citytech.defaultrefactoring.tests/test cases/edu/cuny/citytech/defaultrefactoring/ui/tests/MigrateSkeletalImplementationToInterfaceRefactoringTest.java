@@ -540,4 +540,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatCallsAnotherMethod9() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodThatUsesThis() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatUsesThis2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
