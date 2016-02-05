@@ -522,7 +522,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		try {
 			monitor.ifPresent(
 					m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 4));
-			final ITypeHierarchy hierarchy = getSuperTypeHierarchy(getDestinationInterface(sourceMethod).get(),
+			final ITypeHierarchy hierarchy = getSuperTypeHierarchy(
+					getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
+							"Source method: " + sourceMethod + " has no destination interface.")),
 					monitor.map(m -> new SubProgressMonitor(m, 1)));
 			result.merge(checkAccessedTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
 			result.merge(checkAccessedFields(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
