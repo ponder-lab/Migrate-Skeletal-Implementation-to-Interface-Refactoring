@@ -457,7 +457,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					return true;
 				// if the member is private, the answer is no.
 				else if (JdtFlags.isPrivate(member))
-				return false;
+					return false;
 				// if it's package-private or protected.
 				else if (JdtFlags.isPackageVisible(member) || JdtFlags.isProtected(member)) {
 					// then, if the member's declaring type in the same package
