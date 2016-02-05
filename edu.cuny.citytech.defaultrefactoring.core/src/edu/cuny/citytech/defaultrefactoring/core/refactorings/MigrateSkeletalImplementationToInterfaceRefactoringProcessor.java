@@ -1,5 +1,6 @@
 package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
+import static org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages.PullUpRefactoring_method_not_accessible;
 import static org.eclipse.jdt.ui.JavaElementLabels.ALL_DEFAULT;
 import static org.eclipse.jdt.ui.JavaElementLabels.ALL_FULLY_QUALIFIED;
 import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
@@ -382,7 +383,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			monitor.ifPresent(IProgressMonitor::done);
 		}
 	}
-	
+
 	protected IType[] getTypesReferencedInMovedMembers(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		// TODO: Cache this result.
@@ -454,28 +455,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return result;
 	}
 
-	// skipped super classes are those declared in the hierarchy between the
-	// declaring type of the selected members
-	// and the target type
-	private Set<IType> getSkippedSuperTypes(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		// TODO: Cache this?
-		Set<IType> skippedSuperTypes = new HashSet<>();
-		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, 1));
-		try {
-			final ITypeHierarchy hierarchy = getDestinationInterfaceHierarchy(sourceMethod,
-					monitor.map(m -> new SubProgressMonitor(m, 1)));
-			IType current = hierarchy.getSuperclass(sourceMethod.getDeclaringType());
-			while (current != null && !current.equals(getDestinationInterface(sourceMethod).get())) {
-				skippedSuperTypes.add(current);
-				current = hierarchy.getSuperclass(current);
-			}
-			return skippedSuperTypes;
-		} finally {
-			monitor.ifPresent(IProgressMonitor::done);
-		}
-	}
-
 	private RefactoringStatus checkAccessedFields(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
 			final ITypeHierarchy hierarchy) throws JavaModelException {
 		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
@@ -496,14 +475,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (!isAccessible) {
 				final String message = org.eclipse.jdt.internal.corext.util.Messages
 						.format(RefactoringCoreMessages.PullUpRefactoring_field_not_accessible,
-								new String[] { JavaElementLabels.getTextLabel(field,
-										JavaElementLabels.ALL_FULLY_QUALIFIED),
-								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
-				result.addError(message, JavaStatusContext.create(field));
-			} else if (getSkippedSuperTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)))
-					.contains(field.getDeclaringType())) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(RefactoringCoreMessages.PullUpRefactoring_field_cannot_be_accessed,
 								new String[] { JavaElementLabels.getTextLabel(field,
 										JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
@@ -533,18 +504,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			boolean isAccessible = pulledUpList.contains(method)
 					|| canBeAccessedFrom(sourceMethod, method, destination, hierarchy);
 			if (!isAccessible) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(RefactoringCoreMessages.PullUpRefactoring_method_not_accessible,
-								new String[] { JavaElementLabels.getTextLabel(method,
-										JavaElementLabels.ALL_FULLY_QUALIFIED),
-								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
-				result.addError(message, JavaStatusContext.create(method));
-			} else if (getSkippedSuperTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)))
-					.contains(method.getDeclaringType())) {
-				final String[] keys = { JavaElementLabels.getTextLabel(method, JavaElementLabels.ALL_FULLY_QUALIFIED),
-						JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) };
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(RefactoringCoreMessages.PullUpRefactoring_method_cannot_be_accessed, keys);
+				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+						PullUpRefactoring_method_not_accessible,
+						new String[] { getTextLabel(method, ALL_FULLY_QUALIFIED),
+								getTextLabel(destination, ALL_FULLY_QUALIFIED) });
 				result.addError(message, JavaStatusContext.create(method));
 				this.getUnmigratableMethods().add(sourceMethod);
 			}
@@ -880,6 +843,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private ITypeHierarchy getDestinationInterfaceHierarchy(IMethod sourceMethod,
 			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		try {
@@ -1406,7 +1370,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 																		getTextLabel(members[index],
 																				ALL_FULLY_QUALIFIED),
 																		getTextLabel(destination, ALL_DEFAULT)),
-										JavaStatusContext.create(members[index])));
+														JavaStatusContext.create(members[index])));
 								reported = true;
 							}
 						}
