@@ -536,7 +536,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodThatCallsAnotherMethod7() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		//this should pass. TODO: #78.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatCallsAnotherMethod8() throws Exception {
@@ -567,7 +568,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 	public void testMethodThatCallsAnotherMethod12() throws Exception {
 		// like testMethodThatCallsAnotherMethod5 but call ctor instead of a
-		// method.
+		// method. Should fail.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
