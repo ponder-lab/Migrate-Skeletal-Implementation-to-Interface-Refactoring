@@ -579,4 +579,41 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatUsesThis2() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodThatAccessesType() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesType2() throws Exception {
+		// TODO: #77. This test should actually pass.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesType3() throws Exception {
+		// TODO: #77. This test should fail but for the right reasons.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesType4() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesType5() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesType6() throws Exception {
+		// TODO: #77. Should pass.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesType7() throws Exception {
+		// Generics don't match up here.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesType8() throws Exception {
+		// TODO: #84. Should pass.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
