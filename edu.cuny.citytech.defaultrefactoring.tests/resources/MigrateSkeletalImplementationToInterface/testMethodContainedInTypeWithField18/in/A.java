@@ -5,9 +5,13 @@ interface I {
 }
 
 public abstract class A implements I {
-	int f;
+	
+	class B {
+		private static final int f = 5;
+	}
 
 	@Override
 	public void m() {
+		int f2 = B.f;
 	}
 }

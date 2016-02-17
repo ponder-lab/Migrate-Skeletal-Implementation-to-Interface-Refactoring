@@ -517,7 +517,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final IField field = accessedFields[i];
 			if (!field.exists())
 				continue;
-
+			
+			if (!Flags.isStatic(field.getFlags())) { //if it's an instance field
+				addErrorAndMark(result, Messages.SourceMethodAccessesInstanceField, sourceMethod, field);
+			}
+			
 			boolean isAccessible = pulledUpList.contains(field)
 					|| canBeAccessedFrom(sourceMethod, field, destination, hierarchy) || Flags.isEnum(field.getFlags());
 			if (!isAccessible) {
@@ -738,9 +742,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.getAnnotations().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInAnnotatedTypes, sourceMethod, type);
-		if (type.getFields().length != 0)
-			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithFields, sourceMethod, type);
 		if (type.getInitializers().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithInitializers, sourceMethod, type);
