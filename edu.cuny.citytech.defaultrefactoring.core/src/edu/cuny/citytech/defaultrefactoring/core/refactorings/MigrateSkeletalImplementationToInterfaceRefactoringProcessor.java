@@ -738,9 +738,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.getAnnotations().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInAnnotatedTypes, sourceMethod, type);
-		if (type.getFields().length != 0)
-			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithFields, sourceMethod, type);
 		if (type.getInitializers().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithInitializers, sourceMethod, type);

@@ -1,13 +1,12 @@
 package p;
 
 interface I {
-	void m();
+	default void m() {
+		int f;
+		f = 5;
+	}
 }
 
 public abstract class A implements I {
 	int f;
-
-	@Override
-	public void m() {
-	}
 }

@@ -185,6 +185,96 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodContainedInTypeWithField() throws Exception {
+		// Just a simple field that's not accessed in the source method.
+		// Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField2() throws Exception {
+		// Here, we have a local variable with the same type and name as the
+		// field. The refactoring should not be confused between the two. Should
+		// pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField3() throws Exception {
+		// Source method accesses a field of the declaring type. Should fail
+		// because interfaces can't have fields.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField4() throws Exception {
+		// Same as 3 but with private field. Should fail.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField5() throws Exception {
+		// Same as 3 but with public field. Should fail.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField6() throws Exception {
+		// Same as 3 but with protected field. Should fail.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField7() throws Exception {
+		// Access a package-private static field. Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField8() throws Exception {
+		// Same as 7 but public static field.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField9() throws Exception {
+		// Same as 7 but protected static field. Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField10() throws Exception {
+		// Same as 7 but private static field. Should fail.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField11() throws Exception {
+		// Same as 7 but in an inner class. Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField12() throws Exception {
+		// Same as 11 but a public field. Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField13() throws Exception {
+		// Same as 11 but a protected field. Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField14() throws Exception {
+		// Same as 11 but a private field. Should fail.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField15() throws Exception {
+		// Same as 7 but in a static inner class. Should pass.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField16() throws Exception {
+		// Same as 15 but a public field. Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField17() throws Exception {
+		// Same as 15 but a protected field. Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithField18() throws Exception {
+		// Same as 15 but a private field. Should fail.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
@@ -536,7 +626,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodThatCallsAnotherMethod7() throws Exception {
-		//this should pass. TODO: #78.
+		// this should pass. TODO: #78.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 

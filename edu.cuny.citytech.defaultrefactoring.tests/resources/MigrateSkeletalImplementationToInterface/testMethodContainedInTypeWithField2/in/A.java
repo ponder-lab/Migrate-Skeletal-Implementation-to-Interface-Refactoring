@@ -9,5 +9,7 @@ public abstract class A implements I {
 
 	@Override
 	public void m() {
+		int f;
+		f = 5;
 	}
 }
