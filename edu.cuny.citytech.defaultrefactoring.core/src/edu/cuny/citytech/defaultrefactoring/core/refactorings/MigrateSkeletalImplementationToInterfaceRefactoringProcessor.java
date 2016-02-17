@@ -517,7 +517,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final IField field = accessedFields[i];
 			if (!field.exists())
 				continue;
-
+			
+			if (!Flags.isStatic(field.getFlags())) { //if it's an instance field
+				addErrorAndMark(result, Messages.SourceMethodAccessesInstanceField, sourceMethod, field);
+			}
+			
 			boolean isAccessible = pulledUpList.contains(field)
 					|| canBeAccessedFrom(sourceMethod, field, destination, hierarchy) || Flags.isEnum(field.getFlags());
 			if (!isAccessible) {

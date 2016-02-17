@@ -97,6 +97,7 @@ public class Messages extends NLS {
 	public static String NoMethodsToMigrate;
 	public static String NoMethodsInAnnotationTypes;
 	public static String SourceMethodHasNoTargetMethod;
+	public static String SourceMethodAccessesInstanceField;
 
 	static {
 		// initialize resource bundle
