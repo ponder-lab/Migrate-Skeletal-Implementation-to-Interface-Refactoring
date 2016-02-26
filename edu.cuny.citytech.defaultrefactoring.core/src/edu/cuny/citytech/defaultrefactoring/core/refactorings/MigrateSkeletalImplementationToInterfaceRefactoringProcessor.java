@@ -1,5 +1,6 @@
 package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
+import static org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements;
 import static org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages.PullUpRefactoring_method_not_accessible;
 import static org.eclipse.jdt.ui.JavaElementLabels.ALL_FULLY_QUALIFIED;
 import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
@@ -518,12 +519,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final IField field = accessedFields[i];
 			if (!field.exists())
 				continue;
-			
+
 			if (!Flags.isStatic(field.getFlags())) { // if it's an instance
 														// field
 				addErrorAndMark(result, Messages.SourceMethodAccessesInstanceField, sourceMethod, field);
 			}
-			
+
 			boolean isAccessible = pulledUpList.contains(field)
 					|| canBeAccessedFrom(sourceMethod, field, destination, hierarchy) || Flags.isEnum(field.getFlags());
 			if (!isAccessible) {
@@ -542,7 +543,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private RefactoringStatus checkAccessedMethods(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
 			final ITypeHierarchy hierarchy) throws JavaModelException {
-		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
+		monitor.ifPresent(m -> m.beginTask(PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
 		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
