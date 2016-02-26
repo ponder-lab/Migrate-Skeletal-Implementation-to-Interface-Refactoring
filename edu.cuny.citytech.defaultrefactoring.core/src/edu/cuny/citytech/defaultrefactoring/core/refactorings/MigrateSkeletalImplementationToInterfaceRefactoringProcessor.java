@@ -518,7 +518,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (!field.exists())
 				continue;
 			
-			if (!Flags.isStatic(field.getFlags())) { //if it's an instance field
+			if (!Flags.isStatic(field.getFlags())) { // if it's an instance
+														// field
 				addErrorAndMark(result, Messages.SourceMethodAccessesInstanceField, sourceMethod, field);
 			}
 			
