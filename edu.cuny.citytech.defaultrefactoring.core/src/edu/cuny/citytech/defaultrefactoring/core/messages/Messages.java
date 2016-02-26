@@ -98,6 +98,7 @@ public class Messages extends NLS {
 	public static String NoMethodsInAnnotationTypes;
 	public static String SourceMethodHasNoTargetMethod;
 	public static String SourceMethodAccessesInstanceField;
+	public static String DestinationProjectIncompatible;
 
 	static {
 		// initialize resource bundle

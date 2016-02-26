@@ -1,7 +1,6 @@
 package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
 import static org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages.PullUpRefactoring_method_not_accessible;
-import static org.eclipse.jdt.ui.JavaElementLabels.ALL_DEFAULT;
 import static org.eclipse.jdt.ui.JavaElementLabels.ALL_FULLY_QUALIFIED;
 import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 import static org.eclipse.jdt.ui.JavaElementLabels.getTextLabel;
@@ -37,20 +36,20 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Block;
-import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
@@ -61,7 +60,6 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
-import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ReferenceFinderUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
 import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableUtil;
@@ -1017,6 +1015,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 
 				status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
+				status.merge(checkProjectCompliance(sourceMethod));
 
 				pm.ifPresent(m -> m.worked(1));
 			}
@@ -1443,14 +1442,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (status.hasFatalError())
 				return status;
 
-			// workaround https://bugs.eclipse.org/bugs/show_bug.cgi?id=474524.
-			// if (fMembersToMove.length > 0)
-			// TODO: Check project compliance.
-			// status.merge(checkProjectCompliance(
-			// getCompilationUnitRewrite(compilationUnitRewrites,
-			// getDeclaringType().getCompilationUnit()),
-			// getDestinationType(), fMembersToMove));
-
 			// TODO: More checks, perhaps resembling those in
 			// org.eclipse.jdt.internal.corext.refactoring.structure.PullUpRefactoringProcessor.checkFinalConditions(IProgressMonitor,
 			// CheckConditionsContext).
@@ -1469,58 +1460,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected static RefactoringStatus checkProjectCompliance(CompilationUnitRewrite sourceRewriter, IType destination,
-			IMember[] members) {
+	protected RefactoringStatus checkProjectCompliance(IMethod sourceMethod) {
 		RefactoringStatus status = new RefactoringStatus();
-		if (!JavaModelUtil.is50OrHigher(destination.getJavaProject())) {
-			for (int index = 0; index < members.length; index++) {
-				try {
-					BodyDeclaration decl = ASTNodeSearchUtil.getBodyDeclarationNode(members[index],
-							sourceRewriter.getRoot());
-					if (decl != null) {
-						for (@SuppressWarnings("unchecked")
-						final Iterator<IExtendedModifier> iterator = decl.modifiers().iterator(); iterator.hasNext();) {
-							boolean reported = false;
-							final IExtendedModifier modifier = iterator.next();
-							if (!reported && modifier.isAnnotation()) {
-								status.merge(
-										RefactoringStatus
-												.createErrorStatus(
-														MessageFormat
-																.format(RefactoringCoreMessages.PullUpRefactoring_incompatible_langauge_constructs,
-																		getTextLabel(members[index],
-																				ALL_FULLY_QUALIFIED),
-																		getTextLabel(destination, ALL_DEFAULT)),
-														JavaStatusContext.create(members[index])));
-								reported = true;
-							}
-						}
-					}
-				} catch (JavaModelException exception) {
-					JavaPlugin.log(exception);
-				}
-				if (members[index] instanceof IMethod) {
-					final IMethod method = (IMethod) members[index];
-					try {
-						if (Flags.isVarargs(method.getFlags()))
-							status.merge(RefactoringStatus.createErrorStatus(
-									MessageFormat.format(
-											RefactoringCoreMessages.PullUpRefactoring_incompatible_language_constructs1,
-											getTextLabel(members[index], ALL_FULLY_QUALIFIED),
-											getTextLabel(destination, ALL_DEFAULT)),
-									JavaStatusContext.create(members[index])));
-					} catch (JavaModelException exception) {
-						JavaPlugin.log(exception);
-					}
-				}
-			}
-		}
+		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IJavaProject destinationProject = targetMethod.getJavaProject();
 
-		if (!JavaModelUtil.is18OrHigher(destination.getJavaProject())) {
-			Arrays.asList(members).stream().filter(e -> e instanceof IMethod).map(IMethod.class::cast)
-					.filter(IMethod::isLambdaMethod)
-					.forEach(m -> addError(status, Messages.IncompatibleLanguageConstruct, m, destination));
-		}
+		if (!JavaModelUtil.is18OrHigher(destinationProject))
+			addErrorAndMark(status, Messages.DestinationProjectIncompatible, sourceMethod, targetMethod);
 
 		return status;
 	}
