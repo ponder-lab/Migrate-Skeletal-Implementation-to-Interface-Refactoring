@@ -63,11 +63,14 @@ import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefa
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ReferenceFinderUtil;
+import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
+import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.viewsupport.BasicElementLabels;
 import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.GroupCategory;
@@ -1013,6 +1016,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				else // otherwise, check accesses in the source method.
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 
+				status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
+
 				pm.ifPresent(m -> m.worked(1));
 			}
 
@@ -1020,6 +1025,69 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			pm.ifPresent(IProgressMonitor::done);
 		}
+	}
+
+	private RefactoringStatus checkGenericDeclaringType(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		final RefactoringStatus status = new RefactoringStatus();
+		try {
+			final IMember[] pullables = new IMember[] { sourceMethod };
+			monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, pullables.length));
+
+			final IType declaring = sourceMethod.getDeclaringType();
+			final ITypeParameter[] parameters = declaring.getTypeParameters();
+			if (parameters.length > 0) {
+				final TypeVariableMaplet[] mapping = TypeVariableUtil.subTypeToInheritedType(declaring);
+				IMember member = null;
+				int length = 0;
+				for (int index = 0; index < pullables.length; index++) {
+					member = pullables[index];
+					final String[] unmapped = TypeVariableUtil.getUnmappedVariables(mapping, declaring, member);
+					length = unmapped.length;
+
+					String superClassLabel = BasicElementLabels.getJavaElementName(declaring.getSuperclassName());
+					switch (length) {
+					case 0:
+						break;
+					case 1:
+						status.addError(
+								String.format(RefactoringCoreMessages.PullUpRefactoring_Type_variable_not_available,
+										unmapped[0], superClassLabel),
+								JavaStatusContext.create(member));
+						addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
+						break;
+					case 2:
+						status.addError(
+								String.format(RefactoringCoreMessages.PullUpRefactoring_Type_variable2_not_available,
+										unmapped[0], unmapped[1], superClassLabel),
+								JavaStatusContext.create(member));
+						addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
+						break;
+					case 3:
+						status.addError(
+								String.format(RefactoringCoreMessages.PullUpRefactoring_Type_variable3_not_available,
+										unmapped[0], unmapped[1], unmapped[2], superClassLabel),
+								JavaStatusContext.create(member));
+						addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
+						break;
+					default:
+						status.addError(
+								String.format(RefactoringCoreMessages.PullUpRefactoring_Type_variables_not_available,
+										superClassLabel),
+								JavaStatusContext.create(member));
+						addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
+					}
+					monitor.ifPresent(m -> m.worked(1));
+					monitor.ifPresent(m -> {
+						if (m.isCanceled())
+							throw new OperationCanceledException();
+					});
+				}
+			}
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+		return status;
 	}
 
 	/**
