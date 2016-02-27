@@ -123,10 +123,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private Map<IMethod, IMethod> sourceMethodToTargetMethodMap = new HashMap<>();
 
 	/** The code generation settings, or <code>null</code> */
-	protected CodeGenerationSettings settings;
+	private CodeGenerationSettings settings;
 
 	/** Does the refactoring use a working copy layer? */
-	protected final boolean layer;
+	private final boolean layer;
 
 	private static Table<IMethod, IType, IMethod> sourceMethodTargetInterfaceTargetMethodTable = HashBasedTable
 			.create();
@@ -214,7 +214,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected RefactoringStatus checkDestinationInterfaceTargetMethods(IMethod sourceMethod) throws JavaModelException {
+	private RefactoringStatus checkDestinationInterfaceTargetMethods(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		logInfo("Checking destination interface target methods...");
@@ -235,7 +235,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	protected RefactoringStatus checkDestinationInterfaceOnlyDeclaresTargetMethods(IMethod sourceMethod)
+	private RefactoringStatus checkDestinationInterfaceOnlyDeclaresTargetMethods(IMethod sourceMethod)
 			throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
@@ -262,7 +262,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	protected RefactoringStatus checkDestinationInterfaces(Optional<IProgressMonitor> monitor)
+	private RefactoringStatus checkDestinationInterfaces(Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
@@ -386,7 +386,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected IType[] getTypesReferencedInMovedMembers(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
+	private IType[] getTypesReferencedInMovedMembers(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		// TODO: Cache this result.
 		final IType[] types = ReferenceFinderUtil.getTypesReferencedIn(new IJavaElement[] { sourceMethod },
@@ -400,7 +400,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return result.toArray(new IType[result.size()]);
 	}
 
-	protected boolean canBeAccessedFrom(IMethod sourceMethod, final IMember member, final IType target,
+	private boolean canBeAccessedFrom(IMethod sourceMethod, final IMember member, final IType target,
 			final ITypeHierarchy hierarchy) throws JavaModelException {
 		Assert.isTrue(!(member instanceof IInitializer));
 		if (member.exists()) {
@@ -606,7 +606,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
 
-	protected RefactoringStatus checkDestinationInterfaceHierarchy(IMethod sourceMethod,
+	private RefactoringStatus checkDestinationInterfaceHierarchy(IMethod sourceMethod,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 		monitor.ifPresent(m -> m.subTask("Checking destination interface hierarchy..."));
@@ -712,7 +712,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		addWarning(status, message, new IJavaElement[] {});
 	}
 
-	protected RefactoringStatus checkDeclaringType(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
+	private RefactoringStatus checkDeclaringType(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 		IType type = sourceMethod.getDeclaringType();
@@ -788,7 +788,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		addUnmigratableMethod(sourceMethod, error);
 	}
 
-	protected RefactoringStatus checkDeclaringTypeHierarchy(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
+	private RefactoringStatus checkDeclaringTypeHierarchy(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
@@ -823,7 +823,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected RefactoringStatus checkCandidateDestinationInterfaces(IMethod sourceMethod,
+	private RefactoringStatus checkCandidateDestinationInterfaces(IMethod sourceMethod,
 			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
@@ -934,7 +934,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected RefactoringStatus checkSourceMethods(Optional<IProgressMonitor> pm) throws JavaModelException {
+	private RefactoringStatus checkSourceMethods(Optional<IProgressMonitor> pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
@@ -1014,8 +1014,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				else { // otherwise,
 						// check accesses in the source method.
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
-				status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
-				status.merge(checkProjectCompliance(sourceMethod));
+					status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
+					status.merge(checkProjectCompliance(sourceMethod));
 				}
 
 				pm.ifPresent(m -> m.worked(1));
@@ -1176,7 +1176,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @param annotationSet
 	 *            The set of annotations to work with.
 	 */
-	protected void removeSpecialAnnotations(Set<IAnnotation> annotationSet) {
+	private void removeSpecialAnnotations(Set<IAnnotation> annotationSet) {
 		// Special case: don't consider the @Override annotation in the source
 		// (the target will never have this) #67.
 		annotationSet.removeIf(a -> a.getElementName().equals(Override.class.getName()));
@@ -1291,15 +1291,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return new RefactoringStatus();
 	}
 
-	protected Set<IMethod> getSourceMethods() {
+	private Set<IMethod> getSourceMethods() {
 		return this.sourceMethods;
 	}
 
-	protected Set<IMethod> getUnmigratableMethods() {
+	private Set<IMethod> getUnmigratableMethods() {
 		return this.unmigratableMethods;
 	}
 
-	protected RefactoringStatus checkSourceMethodBodies(IProgressMonitor pm) throws JavaModelException {
+	private RefactoringStatus checkSourceMethodBodies(IProgressMonitor pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 
@@ -1376,7 +1376,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return getLastRefactoringStatusEntry(status);
 	}
 
-	protected static RefactoringStatus createWarning(String message, IMember member) {
+	private static RefactoringStatus createWarning(String message, IMember member) {
 		return createRefactoringStatus(message, member, RefactoringStatus::createWarningStatus);
 	}
 
@@ -1384,7 +1384,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return createRefactoringStatus(message, member, RefactoringStatus::createErrorStatus);
 	}
 
-	protected static RefactoringStatus createFatalError(String message, IMember member) {
+	private static RefactoringStatus createFatalError(String message, IMember member) {
 		return createRefactoringStatus(message, member, RefactoringStatus::createFatalErrorStatus);
 	}
 
@@ -1401,7 +1401,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *            the progress monitor to use
 	 * @return a status describing the outcome of the operation
 	 */
-	protected RefactoringStatus createWorkingCopyLayer(IProgressMonitor monitor) {
+	private RefactoringStatus createWorkingCopyLayer(IProgressMonitor monitor) {
 		try {
 			monitor.beginTask(Messages.CheckingPreconditions, 1);
 			// TODO ICompilationUnit unit =
@@ -1465,7 +1465,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	protected RefactoringStatus checkProjectCompliance(IMethod sourceMethod) {
+	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) {
 		RefactoringStatus status = new RefactoringStatus();
 		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
 		IJavaProject destinationProject = targetMethod.getJavaProject();
@@ -1626,7 +1626,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		listRewrite.insertLast(modifier, null);
 	}
 
-	protected Map<IMethod, IMethod> getSourceMethodToTargetMethodMap() {
+	private Map<IMethod, IMethod> getSourceMethodToTargetMethodMap() {
 		return sourceMethodToTargetMethodMap;
 	}
 
@@ -1749,11 +1749,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
-	protected Map<IType, ITypeHierarchy> getTypeToTypeHierarchyMap() {
+	private Map<IType, ITypeHierarchy> getTypeToTypeHierarchyMap() {
 		return typeToTypeHierarchyMap;
 	}
 
-	protected ITypeHierarchy getTypeHierarchy(IType type, Optional<IProgressMonitor> monitor)
+	private ITypeHierarchy getTypeHierarchy(IType type, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
 			ITypeHierarchy ret = this.getTypeToTypeHierarchyMap().get(type);
