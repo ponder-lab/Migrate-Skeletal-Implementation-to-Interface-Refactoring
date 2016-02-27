@@ -1452,6 +1452,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// if not, we have a fatal error.
 				status.addFatalError(Messages.NoMethodsHavePassedThePreconditions);
 
+			// TODO:
+			// Checks.addModifiedFilesToChecker(ResourceUtil.getFiles(fChangeManager.getAllCompilationUnits()),
+			// context);
+
 			return status;
 		} catch (Exception e) {
 			JavaPlugin.log(e);
