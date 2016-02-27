@@ -1011,11 +1011,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// ensure that the method has a target.
 				if (this.getSourceMethodToTargetMethodMap().get(sourceMethod) == null)
 					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, sourceMethod);
-				else // otherwise, check accesses in the source method.
+				else { // otherwise,
+						// check accesses in the source method.
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
-
 				status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 				status.merge(checkProjectCompliance(sourceMethod));
+				}
 
 				pm.ifPresent(m -> m.worked(1));
 			}
