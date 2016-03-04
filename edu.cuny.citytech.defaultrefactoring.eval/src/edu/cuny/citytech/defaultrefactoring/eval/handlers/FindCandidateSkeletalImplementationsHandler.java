@@ -47,24 +47,24 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			// opening 5 separate files
 			FileWriter typesWriter = new FileWriter("types.csv");
 			FileWriter classesWriter = new FileWriter("classes.csv");
-			FileWriter abstract_classesWriter = new FileWriter("abstract_classes.csv");
+			FileWriter abstractClassesWriter = new FileWriter("abstract_classes.csv");
 			FileWriter interfacesWriter = new FileWriter("interfaces.csv");
-			FileWriter classes_implementing_interfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
+			FileWriter classesImplementingInterfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
 			FileWriter classesExtendingClassesWriter = new FileWriter("classes_extending_classes.csv");
 
 			// getting the csv file header
 			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
 			String[] classesHeader = { "Fully Qualified Name" };
-			String[] abstract_classesHeder = { "Fully Qualified Name" };
-			String[] interfacesHeder = { "Fully Qualified Name" };
-			String[] classes_implementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
+			String[] abstractClassesHeader = { "Fully Qualified Name" };
+			String[] interfacesHeader = { "Fully Qualified Name" };
+			String[] classesImplementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
 			String[] classesExtendingClassesHeader = { "Source Class FQN", ",", "Target Class FQN" };
 
 			csvHeader(typesWriter, typesHeader);
 			csvHeader(classesWriter, classesHeader);
-			csvHeader(abstract_classesWriter, abstract_classesHeder);
-			csvHeader(interfacesWriter, interfacesHeder);
-			csvHeader(classes_implementing_interfacesWriter, classes_implementing_interfacesHeder);
+			csvHeader(abstractClassesWriter, abstractClassesHeader);
+			csvHeader(interfacesWriter, interfacesHeader);
+			csvHeader(classesImplementingInterfacesWriter, classesImplementing_interfacesHeder);
 			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);
 
 			for (IJavaProject iJavaProject : javaProjects) {
@@ -86,8 +86,8 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 
 								// checking if the class is abstract
 								if (Flags.isAbstract(type.getFlags())) {
-									abstract_classesWriter.append(type.getFullyQualifiedName());
-									abstract_classesWriter.append('\n');
+									abstractClassesWriter.append(type.getFullyQualifiedName());
+									abstractClassesWriter.append('\n');
 								}
 							}
 
@@ -124,10 +124,11 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 									interfacesWriter.append(superInterface.getFullyQualifiedName());
 									interfacesWriter.append('\n');
 
-									classes_implementing_interfacesWriter.append(type.getFullyQualifiedName());
-									classes_implementing_interfacesWriter.append(",");
-									classes_implementing_interfacesWriter.append(superInterface.getFullyQualifiedName() + " ");
-									classes_implementing_interfacesWriter.append('\n');
+									classesImplementingInterfacesWriter.append(type.getFullyQualifiedName());
+									classesImplementingInterfacesWriter.append(",");
+									classesImplementingInterfacesWriter
+											.append(superInterface.getFullyQualifiedName() + " ");
+									classesImplementingInterfacesWriter.append('\n');
 								}
 							}
 						}
@@ -138,9 +139,9 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			// closing the files writer after done writing
 			typesWriter.close();
 			classesWriter.close();
-			abstract_classesWriter.close();
+			abstractClassesWriter.close();
 			interfacesWriter.close();
-			classes_implementing_interfacesWriter.close();
+			classesImplementingInterfacesWriter.close();
 			classesExtendingClassesWriter.close();
 		} catch (JavaModelException | IOException fileException) {
 			JavaPlugin.log(fileException);
@@ -151,7 +152,8 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 	private static void writeType(FileWriter typesWriter, IType type) throws IOException {
 		typesWriter.append(Optional.ofNullable(type.getJavaProject()).map(IJavaElement::getElementName).orElse("NULL"));
 		typesWriter.append(',');
-		typesWriter.append(Optional.ofNullable(type.getCompilationUnit()).map(IJavaElement::getElementName).orElse("NULL"));
+		typesWriter.append(
+				Optional.ofNullable(type.getCompilationUnit()).map(IJavaElement::getElementName).orElse("NULL"));
 		typesWriter.append(',');
 		typesWriter.append(type.getFullyQualifiedName());
 		typesWriter.append('\n');
