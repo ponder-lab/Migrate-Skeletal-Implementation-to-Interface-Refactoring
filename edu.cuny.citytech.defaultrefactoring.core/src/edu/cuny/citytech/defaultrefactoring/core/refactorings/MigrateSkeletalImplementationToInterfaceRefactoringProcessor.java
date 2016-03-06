@@ -193,14 +193,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				pm.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size());
 
-				for (IMethod method : this.getSourceMethods()) {
-					status.merge(checkDeclaringType(method, Optional.of(new SubProgressMonitor(pm, 0))));
-					status.merge(
-							checkCandidateDestinationInterfaces(method, Optional.of(new SubProgressMonitor(pm, 0))));
-					// FIXME: Repeated.
-					// TODO: Also, does not remove the method if there is an
-					// error.
-					status.merge(checkExistence(method, Messages.MethodDoesNotExist));
+				for (IMethod sourceMethod : this.getSourceMethods()) {
+					status.merge(checkDeclaringType(sourceMethod, Optional.of(new SubProgressMonitor(pm, 0))));
+					status.merge(checkCandidateDestinationInterfaces(sourceMethod,
+							Optional.of(new SubProgressMonitor(pm, 0))));
 
 					pm.worked(1);
 				}
@@ -940,7 +936,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
 
 			for (IMethod sourceMethod : this.getSourceMethods()) {
-				// FIXME: Repeated.
 				RefactoringStatus existenceStatus = checkExistence(sourceMethod, Messages.MethodDoesNotExist);
 				if (!existenceStatus.isOK()) {
 					status.merge(existenceStatus);
