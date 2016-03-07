@@ -1414,7 +1414,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws CoreException, OperationCanceledException {
 		try {
 			monitor.beginTask(Messages.CheckingPreconditions, 12);
-			// TODO: clearCaches();
+			clearCaches();
 
 			final RefactoringStatus status = new RefactoringStatus();
 
@@ -1453,6 +1453,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			monitor.done();
 		}
+	}
+
+	private void clearCaches() {
+		// TODO
 	}
 
 	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) {
@@ -1551,6 +1555,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			return new DynamicValidationRefactoringChange(descriptor, getProcessorName(), manager.getAllChanges());
 		} finally {
 			pm.done();
+			this.clearCaches();
 		}
 	}
 
