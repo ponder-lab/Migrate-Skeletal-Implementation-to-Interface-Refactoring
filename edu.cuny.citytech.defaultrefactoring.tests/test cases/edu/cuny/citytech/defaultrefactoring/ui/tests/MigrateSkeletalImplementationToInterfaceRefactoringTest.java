@@ -33,17 +33,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 	private static final String REFACTORING_PATH = "MigrateSkeletalImplementationToInterface/";
 
-	/**
-	 * @param testSuite
-	 * @return
-	 */
 	public static Test setUpTest(Test test) {
 		return new Java18Setup(test);
 	}
 
-	/**
-	 * @return
-	 */
 	public static Test suite() {
 		return setUpTest(new TestSuite(clazz));
 	}
@@ -52,9 +45,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		super(name);
 	}
 
-	/**
-	 * @return the refactoringPath
-	 */
 	@Override
 	public String getRefactoringPath() {
 		return REFACTORING_PATH;
@@ -82,7 +72,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 		IMethod method = (IMethod) element.getParent();
 		assertFailedPrecondition(method);
-
 	}
 
 	public void testConstructor() throws Exception {

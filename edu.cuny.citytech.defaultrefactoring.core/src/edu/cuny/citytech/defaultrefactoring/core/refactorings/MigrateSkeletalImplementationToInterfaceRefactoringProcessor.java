@@ -258,8 +258,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	private RefactoringStatus checkDestinationInterfaces(Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
+	private RefactoringStatus checkDestinationInterfaces(Optional<IProgressMonitor> monitor) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 
@@ -1748,8 +1747,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return typeToTypeHierarchyMap;
 	}
 
-	private ITypeHierarchy getTypeHierarchy(IType type, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
+	private ITypeHierarchy getTypeHierarchy(IType type, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		try {
 			ITypeHierarchy ret = this.getTypeToTypeHierarchyMap().get(type);
 
