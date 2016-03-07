@@ -1437,10 +1437,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (status.hasFatalError())
 				return status;
 
-			// TODO: More checks, perhaps resembling those in
-			// org.eclipse.jdt.internal.corext.refactoring.structure.PullUpRefactoringProcessor.checkFinalConditions(IProgressMonitor,
-			// CheckConditionsContext).
-
 			// check if there are any methods left to migrate.
 			if (this.getUnmigratableMethods().containsAll(this.getSourceMethods()))
 				// if not, we have a fatal error.
