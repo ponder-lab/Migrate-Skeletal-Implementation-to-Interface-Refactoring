@@ -415,8 +415,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMultipleMethods6() throws Exception {
 		// Two eligible methods here but only migrate one of them. Also, the one being
 		// migrated calls the one not being migrated.
-		// FIXME: Should pass per #106.
-		helperFail(new String[] { "m" }, new String[][] { new String[0], new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0], new String[0] });
 	}
 
 	public void testMultipleMethods7() throws Exception {
@@ -653,9 +652,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatCallsAnotherMethod10() throws Exception {
 		// in this example, the source method calls a method declared in the
 		// target interface but defined in the source method's declaring type.
-		// The run time target of the method call remains intact.
-		// TODO: #77. This test should actually pass.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// The run time target of the method call remains intact. Related to
+		// #77.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatCallsAnotherMethod11() throws Exception {
@@ -663,9 +662,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// target interface and the source method's declaring type.
 		// The run time target of the method call remains intact because the
 		// source method's declaring type overrides the default method in the
-		// target interface.
-		// TODO: #77. This test should actually pass.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// target interface. Related to #77.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatCallsAnotherMethod12() throws Exception {
