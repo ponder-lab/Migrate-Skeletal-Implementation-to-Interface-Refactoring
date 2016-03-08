@@ -418,6 +418,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// FIXME: Should pass per #106.
 		helperFail(new String[] { "m" }, new String[][] { new String[0], new String[0] });
 	}
+
+	public void testMultipleMethods7() throws Exception {
+		// Same as 6 but no method definition in the abstract class.
+		helperPass(new String[] { "m" }, new String[][] { new String[0], new String[0] });
+	}
 	
 	// TODO: Also need to check check when the run-time type could be different.
 
