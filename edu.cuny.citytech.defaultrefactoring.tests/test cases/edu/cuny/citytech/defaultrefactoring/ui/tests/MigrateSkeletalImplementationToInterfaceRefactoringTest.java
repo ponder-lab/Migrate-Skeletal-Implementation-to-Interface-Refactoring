@@ -412,6 +412,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0], new String[0] });
 	}
 
+	public void testMultipleMethods6() throws Exception {
+		// Two eligible methods here but only migrate one of them. Also, the one being
+		// migrated calls the one not being migrated.
+		// FIXME: Should pass per #106.
+		helperFail(new String[] { "m" }, new String[][] { new String[0], new String[0] });
+	}
+	
+	// TODO: Also need to check check when the run-time type could be different.
+
 	public void testTargetInterfaceWithMultipleMethods() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
