@@ -264,7 +264,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			monitor.ifPresent(m -> m.beginTask("Checking destination interfaces ...", this.getSourceMethods().size()));
 
 			for (IMethod sourceMethod : this.getSourceMethods()) {
-				// TODO #19
 				final Optional<IType> targetInterface = this.getDestinationInterface(sourceMethod);
 
 				// Can't be null.
