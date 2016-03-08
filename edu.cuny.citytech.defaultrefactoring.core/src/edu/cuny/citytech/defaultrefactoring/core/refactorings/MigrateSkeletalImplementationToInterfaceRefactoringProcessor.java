@@ -47,7 +47,6 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -992,15 +991,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				status.merge(checkExceptions(sourceMethod));
 				status.merge(checkParameters(sourceMethod));
-
-				if (!sourceMethod.getReturnType().equals(Signature.SIG_VOID)) {
-					// return type must be void.
-					// TODO for now. Can't remove this until we allow at
-					// least
-					// one statement.
-					RefactoringStatusEntry entry = addError(status, Messages.NoMethodsWithReturnTypes, sourceMethod);
-					addUnmigratableMethod(sourceMethod, entry);
-				}
 
 				// ensure that the method has a target.
 				if (this.getSourceMethodToTargetMethodMap().get(sourceMethod) == null)
