@@ -862,19 +862,30 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 *             upon Java model problems.
 	 */
-	public static IType[] getCandidateDestinationInterfaces(IMethod method, final Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
+	public static IType[] getCandidateDestinationInterfaces(IMethod sourcMethod,
+			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		try {
 			monitor.ifPresent(m -> m.beginTask("Retrieving candidate types...", IProgressMonitor.UNKNOWN));
 
-			IType[] superInterfaces = getSuperInterfaces(method.getDeclaringType(),
+			IType[] superInterfaces = getSuperInterfaces(sourcMethod.getDeclaringType(),
 					monitor.map(m -> new SubProgressMonitor(m, 1)));
 
-			return Stream.of(superInterfaces).parallel().filter(Objects::nonNull).filter(IJavaElement::exists)
-					.filter(t -> !t.isReadOnly()).filter(t -> !t.isBinary()).filter(t -> {
-						IMethod[] methods = t.findMethods(method);
-						return methods != null && methods.length > 0;
-					}).toArray(IType[]::new);
+			Stream<IType> candidateStream = Stream.of(superInterfaces).parallel().filter(Objects::nonNull)
+					.filter(IJavaElement::exists).filter(t -> !t.isReadOnly()).filter(t -> !t.isBinary());
+
+			Set<IType> ret = new HashSet<>();
+
+			for (Iterator<IType> iterator = candidateStream.iterator(); iterator.hasNext();) {
+				IType superInterface = iterator.next();
+				IMethod[] interfaceMethods = superInterface.findMethods(sourcMethod);
+				if (interfaceMethods != null)
+					// the matching methods cannot already be default.
+					for (IMethod method : interfaceMethods)
+						if (!JdtFlags.isDefaultMethod(method))
+							ret.add(superInterface);
+			}
+
+			return ret.toArray(new IType[ret.size()]);
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
