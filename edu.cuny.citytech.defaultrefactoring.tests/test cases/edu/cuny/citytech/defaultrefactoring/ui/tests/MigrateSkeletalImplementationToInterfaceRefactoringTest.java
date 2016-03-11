@@ -716,4 +716,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// TODO: #84. Should pass.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testMethodWithMultiplePossibleTargets() throws Exception {
+		// TODO: Need to figure out how to resolve ambiguous targets.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
