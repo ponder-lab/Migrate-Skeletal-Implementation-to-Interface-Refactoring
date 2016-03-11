@@ -210,19 +210,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodContainedInTypeWithField7() throws Exception {
 		// Access a package-private static field. Should pass.
 		// TODO: #92.
-//		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		// helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField8() throws Exception {
 		// Same as 7 but public static field.
 		// TODO: #93.
-//		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		// helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField9() throws Exception {
 		// Same as 7 but protected static field. Should pass.
 		// TODO: #94.
-//		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		// helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField10() throws Exception {
@@ -422,8 +422,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// Same as 6 but no method definition in the abstract class.
 		helperPass(new String[] { "m" }, new String[][] { new String[0], new String[0] });
 	}
-	
-	// TODO: Also need to check check when the run-time type could be different.
+
+	// TODO: Also need to test when the run-time type could be different.
 
 	public void testTargetInterfaceWithMultipleMethods() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
