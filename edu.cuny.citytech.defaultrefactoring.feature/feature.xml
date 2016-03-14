@@ -223,6 +223,7 @@ any resulting litigation.
    </license>
 
    <url>
+      <update label="Migrate Skeletal Implementation to Interface Refactoring Update Site" url="https://raw.githubusercontent.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/tree/master/edu.cuny.citytech.defaultrefactoring.updatesite"/>
       <discovery label="Common Eclipse Java Refactoring Framework" url="https://raw.githubusercontent.com/khatchad/Common-Eclipse-Refactoring-Framework/master/edu.cuny.citytech.refactoring.common.updatesite"/>
    </url>
 
