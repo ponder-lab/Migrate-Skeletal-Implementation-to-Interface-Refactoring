@@ -12,7 +12,7 @@ The project includes a maven configuration file using the tycho plug-in. Running
 
 ## Contributing
 
-We are currently seeking new collaborations. If you are interested in contributing, please see refer to our [wiki](wiki) and [issues](issues).
+We are currently seeking new collaborations. If you are interested in contributing, please see refer to our [wiki](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/wiki) and [issues](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues). Please also feel free to visit our [research page](https://openlab.citytech.cuny.edu/interfacerefactoring) to get in touch with the authors.
 
 ## Running the Evaluator
 1. Select a group of projects.
