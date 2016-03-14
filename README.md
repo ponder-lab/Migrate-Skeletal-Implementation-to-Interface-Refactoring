@@ -8,7 +8,7 @@ This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents 
 
 ## Usage
 
-Currently, the prototype refactoring seems to work only via the package explorer (see #66, #2, and #65). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
+Currently, the prototype refactoring seems to work only via the package explorer (see [#66](issues/66), [#2](issues/2), and [#65](issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
 
 ### Installation for Usage
 
