@@ -19,7 +19,7 @@ We are currently seeking new collaborations. If you are interested in contributi
 
 The project includes a maven configuration file using the tycho plug-in. Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common.
 
-## Running the Evaluator
+### Running the Evaluator
 1. Select a group of projects.
 2. Press CMD-3 or CTRL-3 (command dialog).
 3. Search for "Find." You'll see an option to "find candidate skeletal implementers". Choose that option.
