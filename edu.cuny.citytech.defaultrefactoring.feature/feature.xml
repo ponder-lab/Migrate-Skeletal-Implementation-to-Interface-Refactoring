@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="edu.cuny.citytech.migrate.skeletal.implementation.to.interface.refactoring.feature"
+      id="edu.cuny.citytech.migrate.skeletal.implementation.to.interface.refactoring"
       label="Migrate Skeletal Implementation to Interface Refactoring"
-      version="0.1.0.qualifier"
-      provider-name="New York City College of Technology, City University of New York"
-      plugin="edu.cuny.citytech.defaultrefactoring.ui">
+      version="0.1.1.qualifier"
+      provider-name="New York City College of Technology, City University of New York">
 
    <description url="http://openlab.citytech.cuny.edu/interfacerefactoring">
       The skeletal implementation pattern is a software design pattern consisting of defining an abstract class that provides a partial interface implementation. However, since Java allows only single class inheritance, if implementers decide to extend a skeletal implementation, they will not be allowed to extend any other class. Also, discovering the skeletal implementation may require a global analysis. Java 8 enhanced interfaces alleviate these problems by allowing interfaces to contain (default) method implementations, which implementers inherit. Java classes are then free to extend a different class, and a separate abstract class is no longer needed; developers considering implementing an interface need only examine the interface itself. Both of these benefits improve software modularity.
@@ -13,7 +12,7 @@ This prototype refactoring plug-in for Eclipse represents ongoing work in develo
    </description>
 
    <copyright url="http://www.example.com/copyright">
-      [Enter Copyright Description here.]
+      2016 Raffi Khatchadourian. All rights reserved.
    </copyright>
 
    <license url="http://www.example.com/license">
