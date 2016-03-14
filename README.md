@@ -12,7 +12,7 @@ The project includes a maven configuration file using the tycho plug-in. Running
 
 ## Contributing
 
-We are currently seeking new collaborations. If you are interested in contributing, please see refer to our [wiki](../wiki) and [issues](../issues).
+We are currently seeking new collaborations. If you are interested in contributing, please see refer to our [wiki](wiki) and [issues](issues).
 
 ## Running the Evaluator
 1. Select a group of projects.
