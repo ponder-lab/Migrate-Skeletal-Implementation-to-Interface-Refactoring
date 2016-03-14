@@ -6,10 +6,17 @@ The *skeletal implementation pattern* is a software design pattern consisting of
 
 This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents ongoing work in developing an automated refactoring tool that would assist developers in taking advantage of the enhanced interface feature for their legacy Java software.
 
-## Installation for Usage
+## Usage
+
+Currently, the prototype refactoring seems to work only via the package explorer (see #66, #2, and #65). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
+
+### Installation for Usage
 
 A beta version of our tool is available via an Eclipse update site at: https://raw.githubusercontent.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/edu.cuny.citytech.defaultrefactoring.updatesite
 
+### Limitations
+
+The research prototype refactoring is currently very conservative. In this case, while tool should not produce any type-incorrect or semantic-inequivalent code, it may not refactor code that is "safe" to safe to refactor. We plan to relax such constraints in the future.
 
 ## Contributing
 
