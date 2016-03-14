@@ -2,7 +2,7 @@
 <feature
       id="edu.cuny.citytech.migrate.skeletal.implementation.to.interface.refactoring"
       label="Migrate Skeletal Implementation to Interface Refactoring"
-      version="0.1.1.qualifier"
+      version="0.2.0.qualifier"
       provider-name="New York City College of Technology, City University of New York">
 
    <description url="http://openlab.citytech.cuny.edu/interfacerefactoring">
@@ -11,11 +11,11 @@
 This prototype refactoring plug-in for Eclipse represents ongoing work in developing an automated refactoring tool that would assist developers in taking advantage of the enhanced interface feature for their legacy Java software.
    </description>
 
-   <copyright url="http://www.example.com/copyright">
+   <copyright>
       2016 Raffi Khatchadourian. All rights reserved.
    </copyright>
 
-   <license url="http://www.example.com/license">
+   <license>
       Eclipse Public License - v 1.0
 
 THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE PUBLIC
@@ -222,8 +222,8 @@ any resulting litigation.
    </license>
 
    <url>
-      <update label="Migrate Skeletal Implementation to Interface Refactoring Update Site" url="https://raw.githubusercontent.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/tree/master/edu.cuny.citytech.defaultrefactoring.updatesite"/>
-      <discovery label="Common Eclipse Java Refactoring Framework" url="https://raw.githubusercontent.com/khatchad/Common-Eclipse-Refactoring-Framework/master/edu.cuny.citytech.refactoring.common.updatesite"/>
+      <update label="Migrate Skeletal Implementation to Interface Refactoring Update Site" url="https://raw.githubusercontent.com/khatchad/master/Migrate-Skeletal-Implementation-to-Interface-Refactoring/edu.cuny.citytech.defaultrefactoring.updatesite/"/>
+      <discovery label="Common Eclipse Java Refactoring Framework" url="https://raw.githubusercontent.com/khatchad/master/Common-Eclipse-Refactoring-Framework/master/edu.cuny.citytech.refactoring.common.updatesite/"/>
    </url>
 
    <requires>
