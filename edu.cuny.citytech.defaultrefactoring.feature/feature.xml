@@ -251,21 +251,28 @@ any resulting litigation.
          id="edu.cuny.citytech.defaultrefactoring.core"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="1.1.0"
          unpack="false"/>
 
    <plugin
          id="edu.cuny.citytech.defaultrefactoring.ui"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="1.1.0"
          unpack="false"/>
 
    <plugin
          id="edu.cuny.citytech.refactoring.common.core"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="1.1.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="edu.cuny.citytech.refactoring.common.ui"
+         download-size="0"
+         install-size="0"
+         version="1.2.0.qualifier"
          unpack="false"/>
 
 </feature>
