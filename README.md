@@ -6,13 +6,18 @@ The *skeletal implementation pattern* is a software design pattern consisting of
 
 This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents ongoing work in developing an automated refactoring tool that would assist developers in taking advantage of the enhanced interface feature for their legacy Java software.
 
-## Installation for Development
+## Installation for Usage
 
-The project includes a maven configuration file using the tycho plug-in. Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common.
+A beta version of our tool is available via an Eclipse update site at:
+
 
 ## Contributing
 
 We are currently seeking new collaborations. If you are interested in contributing, please see refer to our [wiki](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/wiki) and [issues](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues). Please also feel free to visit our [research page](https://openlab.citytech.cuny.edu/interfacerefactoring) to get in touch with the authors.
+
+### Installation for Development
+
+The project includes a maven configuration file using the tycho plug-in. Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common.
 
 ## Running the Evaluator
 1. Select a group of projects.
