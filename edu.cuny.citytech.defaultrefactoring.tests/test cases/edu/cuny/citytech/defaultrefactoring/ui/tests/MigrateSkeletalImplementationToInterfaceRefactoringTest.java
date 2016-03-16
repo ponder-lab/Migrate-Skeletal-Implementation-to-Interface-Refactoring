@@ -413,7 +413,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMultipleMethods6() throws Exception {
-		// Two eligible methods here but only migrate one of them. Also, the one being
+		// Two eligible methods here but only migrate one of them. Also, the one
+		// being
 		// migrated calls the one not being migrated.
 		helperPass(new String[] { "m" }, new String[][] { new String[0], new String[0] });
 	}
@@ -716,9 +717,32 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// TODO: #84. Should pass.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodWithMultiplePossibleTargets() throws Exception {
 		// TODO: Need to figure out how to resolve ambiguous targets.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithInheritedDefaultMethod() throws Exception {
+		/*
+		 * Suppose that a skeletal implementation A defines a method m() and
+		 * implements two interfaces I and J, each of which declare the same
+		 * method m(). As such, A.m() is an implementation of both I.m() and
+		 * J.m(). Further suppose that I.m() is a default method. In this case,
+		 * A.m() overrides I.m(). If we choose to migrate A.m() to J as a
+		 * default method, then any subclass of A inheriting A.m() will break
+		 * because it must now choose which implementation, either I.m() or
+		 * J.m(), it will inherit.
+		 */
+		// TODO: Correctly failing, yes, but for the wrong reason. We aren't
+		// checking the hierarchy.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithInheritedDefaultMethod2() throws Exception {
+		// Same as above but reverse the interfaces.
+		// TODO: Correctly failing, yes, but for the wrong reason. We aren't
+		// checking the hierarchy.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
