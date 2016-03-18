@@ -621,7 +621,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		status.merge(checkValidClassesInHierarchy(sourceMethod, hierarchy,
 				Messages.DestinationInterfaceHierarchyContainsInvalidClass));
-		status.merge(checkValidInterfacesInHierarchy(sourceMethod, hierarchy,
+		status.merge(checkValidInterfacesInDestinationTypeHierarchy(sourceMethod, hierarchy,
 				Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces));
 		status.merge(checkValidSubtypes(sourceMethod, hierarchy));
 
@@ -666,7 +666,24 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	private RefactoringStatus checkValidInterfacesInHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
+	private RefactoringStatus checkValidInterfacesInDeclaringTypeHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
+			String errorMessage) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		Optional<IType> destinationInterface = getDestinationInterface(sourceMethod);
+
+		// TODO: For now, there should be only one interface in the hierarchy,
+		// and that is the target interface.
+		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).parallel().distinct()
+				.allMatch(i -> i.equals(destinationInterface.orElse(null)));
+
+		if (!containsOnlyValidInterfaces)
+			addError(status, errorMessage, hierarchy.getType());
+
+		return status;
+	}
+
+	private RefactoringStatus checkValidInterfacesInDestinationTypeHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
 			String errorMessage) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
@@ -801,7 +818,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			status.merge(checkValidClassesInHierarchy(sourceMethod, hierarchy,
 					Messages.DeclaringTypeHierarchyContainsInvalidClass));
-			status.merge(checkValidInterfacesInHierarchy(sourceMethod, hierarchy,
+			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, hierarchy,
 					Messages.DeclaringTypeHierarchyContainsInvalidInterface));
 
 			// TODO: For now, the declaring type should have no subtypes.
