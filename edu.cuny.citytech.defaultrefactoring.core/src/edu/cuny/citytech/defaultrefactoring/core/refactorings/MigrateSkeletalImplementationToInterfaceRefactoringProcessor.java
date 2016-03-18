@@ -496,10 +496,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				continue;
 
 			if (!canBeAccessedFrom(sourceMethod, type, destination, hierarchy) && !pulledUpList.contains(type)) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(RefactoringCoreMessages.PullUpRefactoring_type_not_accessible,
-								new String[] { JavaElementLabels.getTextLabel(type,
-										JavaElementLabels.ALL_FULLY_QUALIFIED),
+				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+						RefactoringCoreMessages.PullUpRefactoring_type_not_accessible,
+						new String[] { JavaElementLabels.getTextLabel(type, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addError(message, JavaStatusContext.create(type));
 				this.getUnmigratableMethods().add(sourceMethod);
@@ -532,10 +531,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			boolean isAccessible = pulledUpList.contains(field)
 					|| canBeAccessedFrom(sourceMethod, field, destination, hierarchy) || Flags.isEnum(field.getFlags());
 			if (!isAccessible) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(RefactoringCoreMessages.PullUpRefactoring_field_not_accessible,
-								new String[] { JavaElementLabels.getTextLabel(field,
-										JavaElementLabels.ALL_FULLY_QUALIFIED),
+				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+						RefactoringCoreMessages.PullUpRefactoring_field_not_accessible,
+						new String[] { JavaElementLabels.getTextLabel(field, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addError(message, JavaStatusContext.create(field));
 				this.getUnmigratableMethods().add(sourceMethod);
