@@ -735,14 +735,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		 * J.m(), it will inherit.
 		 */
 		// TODO: Correctly failing, yes, but for the wrong reason. We aren't
-		// checking the hierarchy.
+		// checking the hierarchy. #114.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodWithInheritedDefaultMethod2() throws Exception {
 		// Same as above but reverse the interfaces.
 		// TODO: Correctly failing, yes, but for the wrong reason. We aren't
-		// checking the hierarchy.
+		// checking the hierarchy. #114.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
