@@ -678,7 +678,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.allMatch(i -> i.equals(destinationInterface.orElse(null)));
 
 		if (!containsOnlyValidInterfaces)
-			addError(status, errorMessage, hierarchy.getType());
+			addErrorAndMark(status, errorMessage, sourceMethod, hierarchy.getType());
 
 		return status;
 	}
