@@ -855,6 +855,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * "Pull Up Method To Interface") that is not implemented explicitly. For
 	 * example, there may be a skeletal implementation class that implements all
 	 * the target interface's methods without explicitly declaring so.
+	 * Effectively skeletal?
 	 * 
 	 * @param monitor
 	 *            A progress monitor.
