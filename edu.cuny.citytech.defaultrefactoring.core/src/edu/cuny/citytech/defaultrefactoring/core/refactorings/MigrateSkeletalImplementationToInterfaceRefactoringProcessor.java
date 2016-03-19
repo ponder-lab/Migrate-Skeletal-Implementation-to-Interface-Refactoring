@@ -185,6 +185,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
 		try {
+			this.clearCaches();
+			
 			if (this.getSourceMethods().isEmpty())
 				return RefactoringStatus.createFatalErrorStatus(Messages.MethodsNotSpecified);
 			else {
@@ -1480,6 +1482,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private void clearCaches() {
 		// TODO: #71: Clear caches.
+		getTypeToSuperTypeHierarchyMap().clear();
 	}
 
 	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) {
