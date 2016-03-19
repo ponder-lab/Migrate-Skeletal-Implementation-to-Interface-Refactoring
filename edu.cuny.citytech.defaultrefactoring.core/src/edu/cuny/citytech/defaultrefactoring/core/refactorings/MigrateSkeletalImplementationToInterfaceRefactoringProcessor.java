@@ -684,8 +684,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	private RefactoringStatus checkValidInterfacesInDestinationTypeHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
-			String errorMessage) throws JavaModelException {
+	private RefactoringStatus checkValidInterfacesInDestinationTypeHierarchy(IMethod sourceMethod,
+			final ITypeHierarchy hierarchy, String errorMessage) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		Optional<IType> destinationInterface = getDestinationInterface(sourceMethod);
@@ -1029,8 +1029,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// ensure that the method has a target.
 				if (this.getSourceMethodToTargetMethodMap().get(sourceMethod) == null)
 					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, sourceMethod);
-				else { // otherwise,
-						// check accesses in the source method.
+				else {
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkProjectCompliance(sourceMethod));
