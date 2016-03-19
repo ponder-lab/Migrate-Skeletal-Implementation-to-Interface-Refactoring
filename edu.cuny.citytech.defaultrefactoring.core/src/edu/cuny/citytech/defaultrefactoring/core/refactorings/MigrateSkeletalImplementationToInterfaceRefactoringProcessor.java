@@ -666,19 +666,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	private RefactoringStatus checkValidInterfacesInDeclaringTypeHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
-			String errorMessage) throws JavaModelException {
+	private RefactoringStatus checkValidInterfacesInDeclaringTypeHierarchy(IMethod sourceMethod,
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
-		Optional<IType> destinationInterface = getDestinationInterface(sourceMethod);
+		ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
+		IType[] declaringTypeSuperInterfaces = hierarchy.getAllSuperInterfaces(sourceMethod.getDeclaringType());
 
-		// TODO: For now, there should be only one interface in the hierarchy,
-		// and that is the target interface.
-		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).parallel().distinct()
-				.allMatch(i -> i.equals(destinationInterface.orElse(null)));
+		// the number of methods sourceMethod is implementing.
+		long numberOfImplementedMethods = Arrays.stream(declaringTypeSuperInterfaces).parallel().distinct()
+				.flatMap(i -> Arrays.stream(Optional.ofNullable(i.findMethods(sourceMethod)).orElse(new IMethod[] {})))
+				.count();
 
-		if (!containsOnlyValidInterfaces)
-			addErrorAndMark(status, errorMessage, sourceMethod, hierarchy.getType());
+		if (numberOfImplementedMethods > 1)
+			addErrorAndMark(status, Messages.SourceMethodImplementsMultipleMethods, sourceMethod);
 
 		return status;
 	}
@@ -785,10 +786,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// without this condition but I believe that this is
 			// the particular pattern we are targeting.
 			addErrorAndMark(status, Messages.NoMethodsInTypesThatDontImplementInterfaces, sourceMethod, type);
-		if (type.getSuperInterfaceNames().length > 1)
-			// TODO for now. Let's only deal with a single interface as that
-			// is part of the targeted pattern.
-			addErrorAndMark(status, Messages.NoMethodsInTypesThatExtendMultipleInterfaces, sourceMethod, type);
 		if (!Flags.isAbstract(type.getFlags()))
 			// TODO for now. This follows the target pattern. Maybe we can
 			// relax this but that would require checking for
@@ -818,8 +815,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			status.merge(checkValidClassesInHierarchy(sourceMethod, hierarchy,
 					Messages.DeclaringTypeHierarchyContainsInvalidClass));
-			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, hierarchy,
-					Messages.DeclaringTypeHierarchyContainsInvalidInterface));
+			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, monitor));
 
 			// TODO: For now, the declaring type should have no subtypes.
 			if (hierarchy.getAllSubtypes(sourceMethod.getDeclaringType()).length != 0) {

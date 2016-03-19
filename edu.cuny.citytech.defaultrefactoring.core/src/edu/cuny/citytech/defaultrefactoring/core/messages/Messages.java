@@ -99,6 +99,7 @@ public class Messages extends NLS {
 	public static String SourceMethodHasNoTargetMethod;
 	public static String SourceMethodAccessesInstanceField;
 	public static String DestinationProjectIncompatible;
+	public static String SourceMethodImplementsMultipleMethods;
 
 	static {
 		// initialize resource bundle

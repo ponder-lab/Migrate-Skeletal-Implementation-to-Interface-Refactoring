@@ -745,4 +745,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// checking the hierarchy. #114.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodWithInheritedDefaultMethod3() throws Exception {
+		//Similar to above but with a more complex hierarchy. This one should
+		//pass because the problem is in a sub-interface.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithInheritedDefaultMethod4() throws Exception {
+		//Similar to above but with a more complex hierarchy. This one should
+		//fail because the problem is in a super-interface.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithNoInheritedDefaultMethod() throws Exception {
+		//Should pass because, although multiple interfaces are implemented,
+		//there is no conflict.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
