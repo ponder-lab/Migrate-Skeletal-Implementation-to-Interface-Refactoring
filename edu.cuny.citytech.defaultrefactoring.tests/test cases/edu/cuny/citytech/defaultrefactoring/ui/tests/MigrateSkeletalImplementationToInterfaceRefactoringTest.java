@@ -3,6 +3,7 @@
  */
 package edu.cuny.citytech.defaultrefactoring.ui.tests;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.IBuffer;
@@ -32,6 +33,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	private static final Logger logger = Logger.getLogger(clazz.getName());
 
 	private static final String REFACTORING_PATH = "MigrateSkeletalImplementationToInterface/";
+	
+	static {
+		logger.setLevel(Level.FINER);
+	}
 
 	public static Test setUpTest(Test test) {
 		return new Java18Setup(test);
@@ -747,20 +752,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodWithInheritedDefaultMethod3() throws Exception {
-		//Similar to above but with a more complex hierarchy. This one should
-		//pass because the problem is in a sub-interface.
+		// Similar to above but with a more complex hierarchy. This one should
+		// pass because the problem is in a sub-interface.
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodWithInheritedDefaultMethod4() throws Exception {
-		//Similar to above but with a more complex hierarchy. This one should
-		//fail because the problem is in a super-interface.
+		// Similar to above but with a more complex hierarchy. This one should
+		// fail because the problem is in a super-interface.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodWithNoInheritedDefaultMethod() throws Exception {
-		//Should pass because, although multiple interfaces are implemented,
-		//there is no conflict.
+		// Should pass because, although multiple interfaces are implemented,
+		// there is no conflict.
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
