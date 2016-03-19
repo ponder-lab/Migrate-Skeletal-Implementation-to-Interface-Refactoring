@@ -119,7 +119,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			new GroupCategory("edu.cuny.citytech.defaultrefactoring", //$NON-NLS-1$
 					Messages.CategoryName, Messages.CategoryDescription));
 
-	private Map<IMethod, IMethod> sourceMethodToTargetMethodMap = new HashMap<>();
+	private static Map<IMethod, IMethod> sourceMethodToTargetMethodMap = new HashMap<>();
 
 	/** The code generation settings, or <code>null</code> */
 	private CodeGenerationSettings settings;
@@ -139,7 +139,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
 			final CodeGenerationSettings settings, boolean layer, Optional<IProgressMonitor> monitor)
-					throws JavaModelException {
+			throws JavaModelException {
 		try {
 			this.settings = settings;
 			this.layer = layer;
@@ -148,7 +148,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", this.sourceMethods.size()));
 
 			for (IMethod method : this.sourceMethods) {
-				this.sourceMethodToTargetMethodMap.put(method, getTargetMethod(method, monitor));
+				sourceMethodToTargetMethodMap.put(method, getTargetMethod(method, monitor));
 				monitor.ifPresent(m -> m.worked(1));
 			}
 
@@ -186,7 +186,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws CoreException, OperationCanceledException {
 		try {
 			this.clearCaches();
-			
+
 			if (this.getSourceMethods().isEmpty())
 				return RefactoringStatus.createFatalErrorStatus(Messages.MethodsNotSpecified);
 			else {
@@ -219,7 +219,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		// Ensure that target methods are not already default methods.
 		// For each method to move, add a warning if the associated target
 		// method is already default.
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
 		if (targetMethod != null) {
 			int targetMethodFlags = targetMethod.getFlags();
@@ -237,14 +237,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		RefactoringStatus status = new RefactoringStatus();
 
 		// get the destination interface.
-		IType destinationInterface = this.getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
+		IType destinationInterface = getTargetMethod(sourceMethod, Optional.empty()).getDeclaringType();
 
 		// get the methods declared by the destination interface.
 		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(Arrays.asList(destinationInterface.getMethods()));
 
 		// get the target methods that are declared by the destination
 		// interface.
-		Set<IMethod> targetMethodDeclaredByDestinationInterfaceSet = this.getSourceMethodToTargetMethodMap().values()
+		Set<IMethod> targetMethodDeclaredByDestinationInterfaceSet = getSourceMethodToTargetMethodMap().values()
 				.parallelStream().filter(Objects::nonNull)
 				.filter(m -> m.getDeclaringType().equals(destinationInterface)).collect(Collectors.toSet());
 
@@ -610,13 +610,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
 
-	//TODO: Is this the same as checkDeclaringTypeHierarchy?
+	// TODO: Is this the same as checkDeclaringTypeHierarchy?
 	private RefactoringStatus checkDestinationInterfaceHierarchy(IMethod sourceMethod,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 		monitor.ifPresent(m -> m.subTask("Checking destination interface hierarchy..."));
 
-		IType destinationInterface = this.getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
+		IType destinationInterface = getTargetMethod(sourceMethod,
+				monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))).getDeclaringType();
 
 		final ITypeHierarchy hierarchy = this.getTypeHierarchy(destinationInterface,
 				monitor.map(m -> new SubProgressMonitor(m, 1)));
@@ -660,7 +661,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		// TODO: For now, no subtypes except the declaring type.
 		// FIXME: Really, it should match the declaring type of the method to be
 		// migrated.
-		IType destinationInterface = getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
+		IType destinationInterface = getTargetMethod(sourceMethod, Optional.empty()).getDeclaringType();
 		if (!Stream.of(hierarchy.getAllSubtypes(destinationInterface)).distinct()
 				.allMatch(s -> s.equals(sourceMethod.getDeclaringType())))
 			addError(status, Messages.DestinationInterfaceHierarchyContainsSubtype, destinationInterface);
@@ -703,9 +704,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	private Optional<IType> getDestinationInterface(IMethod sourceMethod) {
-		return Optional.ofNullable(this.getSourceMethodToTargetMethodMap().get(sourceMethod))
-				.map(IMethod::getDeclaringType);
+	private Optional<IType> getDestinationInterface(IMethod sourceMethod) throws JavaModelException {
+		return Optional.ofNullable(getTargetMethod(sourceMethod, Optional.empty())).map(IMethod::getDeclaringType);
 	}
 
 	private RefactoringStatus checkValidClassesInHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
@@ -896,8 +896,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (interfaceMethods != null)
 					// the matching methods cannot already be default.
 					for (IMethod method : interfaceMethods)
-						if (!JdtFlags.isDefaultMethod(method))
-							ret.add(superInterface);
+					if (!JdtFlags.isDefaultMethod(method))
+					ret.add(superInterface);
 			}
 
 			return ret.toArray(new IType[ret.size()]);
@@ -1029,7 +1029,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				status.merge(checkParameters(sourceMethod));
 
 				// ensure that the method has a target.
-				if (this.getSourceMethodToTargetMethodMap().get(sourceMethod) == null)
+				if (getTargetMethod(sourceMethod,
+						pm.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))) == null)
 					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, sourceMethod);
 				else {
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
@@ -1120,7 +1121,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *             If the {@link IAnnotation}s cannot be retrieved.
 	 */
 	private RefactoringStatus checkAnnotations(IMethod sourceMethod) throws JavaModelException {
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
 		if (targetMethod != null && !checkAnnotations(sourceMethod, targetMethod).isOK()) {
 			RefactoringStatus status = RefactoringStatus.createErrorStatus(
@@ -1230,7 +1231,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private RefactoringStatus checkExceptions(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
 		if (targetMethod != null) {
 			Set<String> sourceMethodExceptionTypeSet = getExceptionTypeSet(sourceMethod);
@@ -1262,7 +1263,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 */
 	private RefactoringStatus checkParameters(IMethod sourceMethod) throws JavaModelException {
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
 		// for each parameter.
 		for (int i = 0; i < sourceMethod.getParameters().length; i++) {
@@ -1481,13 +1482,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void clearCaches() {
-		// TODO: #71: Clear caches.
 		getTypeToSuperTypeHierarchyMap().clear();
+		 getSourceMethodToTargetMethodMap().clear();
+		 getTypeToTypeHierarchyMap().clear();
 	}
 
-	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) {
+	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 		IJavaProject destinationProject = targetMethod.getJavaProject();
 
 		if (!JavaModelUtil.is18OrHigher(destinationProject))
@@ -1514,7 +1516,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				return new NullChange(Messages.NoMethodsToMigrate);
 
 			for (IMethod sourceMethod : methods) {
-				IType destinationInterface = getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
+				// Find the target method.
+				IMethod targetMethod = getTargetMethod(sourceMethod,
+						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
+
+				IType destinationInterface = targetMethod.getDeclaringType();
 
 				logInfo("Migrating method: " + getElementLabel(sourceMethod, ALL_FULLY_QUALIFIED) + " to interface: "
 						+ destinationInterface.getFullyQualifiedName());
@@ -1529,8 +1535,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						sourceCompilationUnit);
 				logInfo("Source method declaration: " + sourceMethodDeclaration);
 
-				// Find the target method.
-				IMethod targetMethod = getSourceMethodToTargetMethodMap().get(sourceMethod);
 				MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
 						destinationCompilationUnit);
 
@@ -1647,7 +1651,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		listRewrite.insertLast(modifier, null);
 	}
 
-	private Map<IMethod, IMethod> getSourceMethodToTargetMethodMap() {
+	private static Map<IMethod, IMethod> getSourceMethodToTargetMethodMap() {
 		return sourceMethodToTargetMethodMap;
 	}
 
@@ -1669,19 +1673,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public static IMethod getTargetMethod(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
-		IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
+		IMethod targetMethod = sourceMethodToTargetMethodMap.get(sourceMethod);
 
-		if (sourceMethodTargetInterfaceTargetMethodTable.contains(sourceMethod, destinationInterface))
-			return sourceMethodTargetInterfaceTargetMethodTable.get(sourceMethod, destinationInterface);
-		else {
-			if (destinationInterface == null)
-				return null; // no target method in null destination interfaces.
-			else {
-				IMethod targetMethod = getTargetMethod(sourceMethod, destinationInterface);
+		if (targetMethod == null) {
+			IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
+
+			if (sourceMethodTargetInterfaceTargetMethodTable.contains(sourceMethod, destinationInterface))
+				targetMethod = sourceMethodTargetInterfaceTargetMethodTable.get(sourceMethod, destinationInterface);
+			else if (destinationInterface != null) {
+				targetMethod = findTargetMethod(sourceMethod, destinationInterface);
 				sourceMethodTargetInterfaceTargetMethodTable.put(sourceMethod, destinationInterface, targetMethod);
-				return targetMethod;
 			}
+
+			sourceMethodToTargetMethodMap.put(sourceMethod, targetMethod);
 		}
+		return targetMethod;
 	}
 
 	private static IType getDestinationInterface(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
@@ -1706,7 +1712,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @param
 	 * @return The target method that will be manipulated or null if not found.
 	 */
-	private static IMethod getTargetMethod(IMethod sourceMethod, IType targetInterface) {
+	private static IMethod findTargetMethod(IMethod sourceMethod, IType targetInterface) {
 		if (targetInterface == null)
 			return null; // not found.
 
