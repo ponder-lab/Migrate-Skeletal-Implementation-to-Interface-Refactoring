@@ -1440,7 +1440,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws CoreException, OperationCanceledException {
 		try {
 			monitor.beginTask(Messages.CheckingPreconditions, 12);
-			clearCaches();
 
 			final RefactoringStatus status = new RefactoringStatus();
 
