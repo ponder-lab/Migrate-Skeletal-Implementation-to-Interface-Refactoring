@@ -622,7 +622,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		final ITypeHierarchy hierarchy = this.getTypeHierarchy(destinationInterface,
 				monitor.map(m -> new SubProgressMonitor(m, 1)));
 
-		status.merge(checkValidClassesInHierarchy(sourceMethod, hierarchy,
+		status.merge(checkValidClassesInDestinationTypeHierarchy(sourceMethod, hierarchy,
 				Messages.DestinationInterfaceHierarchyContainsInvalidClass));
 		status.merge(checkValidInterfacesInDestinationTypeHierarchy(sourceMethod, hierarchy,
 				Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces));
@@ -708,8 +708,30 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return Optional.ofNullable(getTargetMethod(sourceMethod, Optional.empty())).map(IMethod::getDeclaringType);
 	}
 
-	private RefactoringStatus checkValidClassesInHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
-			String errorMessage) throws JavaModelException {
+	private RefactoringStatus checkValidClassesInDeclaringTypeHierarchy(IMethod sourceMethod,
+			final ITypeHierarchy hierarchy, String errorMessage) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		// TODO: For now, the only class in the hierarchy should be the
+		// declaring class of the source method and java.lang.Object.
+		List<IType> allClassesAsList = Arrays.asList(hierarchy.getAllClasses());
+
+		// TODO: All the methods to move may not be from the same type. This is
+		// in regards to getDeclaringType(), which only returns one type.
+		boolean containsOnlyValidClasses = allClassesAsList.size() == 2
+				&& allClassesAsList.contains(sourceMethod.getDeclaringType())
+				&& allClassesAsList.contains(hierarchy.getType().getJavaProject().findType("java.lang.Object"));
+
+		if (!containsOnlyValidClasses) {
+			RefactoringStatusEntry error = addError(status, errorMessage, hierarchy.getType());
+			addUnmigratableMethod(sourceMethod, error);
+		}
+
+		return status;
+	}
+
+	private RefactoringStatus checkValidClassesInDestinationTypeHierarchy(IMethod sourceMethod,
+			final ITypeHierarchy hierarchy, String errorMessage) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		// TODO: For now, the only class in the hierarchy should be the
@@ -815,7 +837,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			final ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
 
-			status.merge(checkValidClassesInHierarchy(sourceMethod, hierarchy,
+			status.merge(checkValidClassesInDeclaringTypeHierarchy(sourceMethod, hierarchy,
 					Messages.DeclaringTypeHierarchyContainsInvalidClass));
 			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, monitor));
 
