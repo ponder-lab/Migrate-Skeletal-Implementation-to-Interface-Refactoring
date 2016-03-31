@@ -686,6 +686,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testMethodThatCallsAnotherMethod13() throws Exception {
+		// Source method calls System.out.println(). Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testMethodThatUsesThis() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
