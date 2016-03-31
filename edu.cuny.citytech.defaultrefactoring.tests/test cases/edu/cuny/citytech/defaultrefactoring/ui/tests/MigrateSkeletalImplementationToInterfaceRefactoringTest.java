@@ -586,6 +586,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testDeclaringTypeHierarchyWithInvalidClass4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeHierarchyWithInvalidClass5() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testDeclaringTypeHierarchyWithInvalidInterface() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
