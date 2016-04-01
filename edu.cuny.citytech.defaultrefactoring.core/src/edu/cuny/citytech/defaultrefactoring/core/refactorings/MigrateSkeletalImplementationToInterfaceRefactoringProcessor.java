@@ -669,7 +669,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				Messages.DestinationInterfaceHierarchyContainsInvalidClass));
 		status.merge(checkValidInterfacesInDestinationTypeHierarchy(sourceMethod, hierarchy,
 				Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces));
-		status.merge(checkValidSubtypes(sourceMethod, hierarchy));
 
 		// TODO: For now, no super interfaces.
 		if (hierarchy.getAllSuperInterfaces(destinationInterface).length > 0) {
@@ -693,21 +692,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					destinationInterface);
 			addUnmigratableMethod(sourceMethod, error);
 		}
-
-		return status;
-	}
-
-	private RefactoringStatus checkValidSubtypes(IMethod sourceMethod, final ITypeHierarchy hierarchy)
-			throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-
-		// TODO: For now, no subtypes except the declaring type.
-		// FIXME: Really, it should match the declaring type of the method to be
-		// migrated.
-		IType destinationInterface = getTargetMethod(sourceMethod, Optional.empty()).getDeclaringType();
-		if (!Stream.of(hierarchy.getAllSubtypes(destinationInterface)).distinct()
-				.allMatch(s -> s.equals(sourceMethod.getDeclaringType())))
-			addError(status, Messages.DestinationInterfaceHierarchyContainsSubtype, destinationInterface);
 
 		return status;
 	}
@@ -877,12 +861,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Messages.DeclaringTypeHierarchyContainsInvalidClass));
 			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, monitor));
 
-			// TODO: For now, the declaring type should have no subtypes.
-			if (hierarchy.getAllSubtypes(sourceMethod.getDeclaringType()).length != 0) {
-				RefactoringStatusEntry error = addError(status, Messages.DeclaringTypeContainsSubtype,
-						sourceMethod.getDeclaringType());
-				addUnmigratableMethod(sourceMethod, error);
-			}
 			return status;
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
@@ -1530,8 +1508,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private void clearCaches() {
 		getTypeToSuperTypeHierarchyMap().clear();
-		 getSourceMethodToTargetMethodMap().clear();
-		 getTypeToTypeHierarchyMap().clear();
+		getSourceMethodToTargetMethodMap().clear();
+		getTypeToTypeHierarchyMap().clear();
 	}
 
 	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) throws JavaModelException {
