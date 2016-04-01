@@ -878,7 +878,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, monitor));
 
 			// TODO: For now, the declaring type should have no subtypes.
-			if (hierarchy.getAllSubtypes(sourceMethod.getDeclaringType()).length != 0) {
+			if (declaringTypeHierarchy.getAllSubtypes(sourceMethod.getDeclaringType()).length != 0) {
 				RefactoringStatusEntry error = addError(status, Messages.DeclaringTypeContainsSubtype,
 						sourceMethod.getDeclaringType());
 				addUnmigratableMethod(sourceMethod, error);
