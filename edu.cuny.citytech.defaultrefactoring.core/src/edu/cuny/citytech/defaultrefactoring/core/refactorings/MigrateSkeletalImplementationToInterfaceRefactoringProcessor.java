@@ -546,23 +546,28 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAccessedMethods(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
-			final ITypeHierarchy hierarchy) throws JavaModelException {
+			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws JavaModelException {
 		monitor.ifPresent(m -> m.beginTask(PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
 		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+
 		final IMethod[] accessedMethods = ReferenceFinderUtil.getMethodsReferencedIn(
 				new IJavaElement[] { sourceMethod },
 				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
 
 		final IType destination = getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
 				"Source method: " + sourceMethod + " has no destiantion interface."));
+
 		for (int index = 0; index < accessedMethods.length; index++) {
 			final IMethod method = accessedMethods[index];
+
 			if (!method.exists())
 				continue;
+
 			boolean isAccessible = pulledUpList.contains(method)
-					|| canBeAccessedFrom(sourceMethod, method, destination, hierarchy);
+					|| canBeAccessedFrom(sourceMethod, method, destination, destinationInterfaceSuperTypeHierarchy);
+
 			if (!isAccessible) {
 				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
 						PullUpRefactoring_method_not_accessible,
@@ -582,13 +587,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		try {
 			monitor.ifPresent(
 					m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 4));
-			final ITypeHierarchy hierarchy = getSuperTypeHierarchy(
-					getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
-							"Source method: " + sourceMethod + " has no destination interface.")),
+
+			IType destinationInterface = getDestinationInterface(sourceMethod)
+					.orElseThrow(() -> new IllegalArgumentException(
+							"Source method: " + sourceMethod + " has no destination interface."));
+
+			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy = getSuperTypeHierarchy(destinationInterface,
 					monitor.map(m -> new SubProgressMonitor(m, 1)));
-			result.merge(checkAccessedTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
-			result.merge(checkAccessedFields(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
-			result.merge(checkAccessedMethods(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
+
+			result.merge(checkAccessedTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)),
+					destinationInterfaceSuperTypeHierarchy));
+
+			result.merge(checkAccessedFields(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)),
+					destinationInterfaceSuperTypeHierarchy));
+
+			result.merge(checkAccessedMethods(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)),
+					destinationInterfaceSuperTypeHierarchy));
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
