@@ -33,7 +33,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	private static final Logger logger = Logger.getLogger(clazz.getName());
 
 	private static final String REFACTORING_PATH = "MigrateSkeletalImplementationToInterface/";
-	
+
 	static {
 		logger.setLevel(Level.FINER);
 	}
@@ -694,6 +694,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 	public void testMethodThatCallsAnotherMethod13() throws Exception {
 		// Source method calls System.out.println(). Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod14() throws Exception {
+		// Source method calls a static method. Should pass.
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
