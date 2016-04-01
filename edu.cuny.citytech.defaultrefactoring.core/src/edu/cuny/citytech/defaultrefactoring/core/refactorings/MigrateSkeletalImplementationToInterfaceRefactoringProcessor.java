@@ -871,9 +871,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			RefactoringStatus status = new RefactoringStatus();
 			monitor.ifPresent(m -> m.subTask("Checking declaring type hierarchy..."));
 
-			final ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
+			final ITypeHierarchy declaringTypeHierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
 
-			status.merge(checkValidClassesInDeclaringTypeHierarchy(sourceMethod, hierarchy,
+			status.merge(checkValidClassesInDeclaringTypeHierarchy(sourceMethod, declaringTypeHierarchy,
 					Messages.DeclaringTypeHierarchyContainsInvalidClass));
 			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, monitor));
 
@@ -883,16 +883,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						sourceMethod.getDeclaringType());
 				addUnmigratableMethod(sourceMethod, error);
 			}
-
-			// TODO: For now, only java.lang.Object as the super class.
-			final IType object = hierarchy.getType().getJavaProject().findType("java.lang.Object");
-			if (!Stream.of(hierarchy.getAllSuperclasses(sourceMethod.getDeclaringType())).parallel().distinct()
-					.allMatch(t -> t.equals(object))) {
-				RefactoringStatusEntry error = addError(status, Messages.DeclaringTypeContainsInvalidSupertype,
-						sourceMethod.getDeclaringType());
-				addUnmigratableMethod(sourceMethod, error);
-			}
-
 			return status;
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
