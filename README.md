@@ -1,4 +1,4 @@
-# Migrate Skeletal Implementation to Interface Refactoring [![Build Status](https://travis-ci.org/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring.svg?branch=master)](https://travis-ci.org/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring) [![Coverage Status](https://coveralls.io/repos/khatchad/Java-8-Interface-Refactoring/badge.svg)](https://coveralls.io/r/khatchad/Java-8-Interface-Refactoring)
+# Migrate Skeletal Implementation to Interface Refactoring [![Build Status](https://travis-ci.org/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring.svg?branch=master)](https://travis-ci.org/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring) [![Coverage Status](https://coveralls.io/repos/github/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/badge.svg?branch=master)](https://coveralls.io/github/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring?branch=master)
 
 ![Screenshot](https://openlab.citytech.cuny.edu/interfacerefactoring/files/2011/06/Screen-Shot-2016-03-14-at-11.43.53-PM.png)
 
