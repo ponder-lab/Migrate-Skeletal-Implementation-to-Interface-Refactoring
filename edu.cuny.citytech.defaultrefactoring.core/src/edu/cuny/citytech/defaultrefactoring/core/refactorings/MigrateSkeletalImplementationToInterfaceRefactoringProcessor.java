@@ -575,10 +575,39 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 								getTextLabel(destination, ALL_FULLY_QUALIFIED) });
 				result.addError(message, JavaStatusContext.create(method));
 				this.getUnmigratableMethods().add(sourceMethod);
+			} else if (!JdtFlags.isStatic(method)) {
+				// it's accessible and it's not static but do we have the
+				// correct implicit parameter available?
+				// let's check to see if the method is somewhere in the
+				// hierarchy.
+				IType methodDeclaringType = method.getDeclaringType();
+
+				// is this method declared in a type that is in the declaring
+				// type's super type hierarchy?
+				ITypeHierarchy declaringTypeSuperTypeHierarchy = getSuperTypeHierarchy(sourceMethod.getDeclaringType(),
+						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+
+				if (declaringTypeSuperTypeHierarchy.contains(methodDeclaringType)) {
+					// if so, then we need to check that it is in the
+					// destination interface's super type hierarchy.
+					boolean methodInHiearchy = isMethodInHierarchy(method, destinationInterfaceSuperTypeHierarchy);
+					if (!methodInHiearchy)
+						addErrorAndMark(result, RefactoringCoreMessages.PullUpRefactoring_method_cannot_be_accessed,
+								method, destination);
+				}
 			}
 		}
+
 		monitor.ifPresent(IProgressMonitor::done);
 		return result;
+	}
+
+	private static boolean isMethodInHierarchy(IMethod method, ITypeHierarchy hierarchy) {
+		// TODO: Cache this?
+		return Stream.of(hierarchy.getAllTypes()).parallel().anyMatch(t -> {
+			IMethod[] methods = t.findMethods(method);
+			return methods != null && methods.length > 0;
+		});
 	}
 
 	private RefactoringStatus checkAccesses(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
