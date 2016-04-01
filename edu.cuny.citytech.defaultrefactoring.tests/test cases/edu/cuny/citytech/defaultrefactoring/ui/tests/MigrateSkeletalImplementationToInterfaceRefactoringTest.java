@@ -575,7 +575,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass2() throws Exception {
@@ -642,7 +642,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDeclaringTypeWithInvalidSupertype() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodWithNoTargetMethod() throws Exception {
