@@ -617,6 +617,30 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testDeclaringTypeWithSupertype() throws Exception {
+		// this test has a field in the super type but the method to migrate
+		// does not access it.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeWithSupertype2() throws Exception {
+		// like the first but with access.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeWithSupertype3() throws Exception {
+		// here, class wins but there isn't a call to A.m(), thus preserving
+		// semantics. Still, I feel like we should fail here because we would
+		// changing the method relationships.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeWithSupertype4() throws Exception {
+		// here, class wins and there is a call to A.m(), thus preserving
+		// semantics.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testDeclaringTypeWithInvalidSupertype() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}

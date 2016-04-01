@@ -752,23 +752,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkValidClassesInDeclaringTypeHierarchy(IMethod sourceMethod,
-			final ITypeHierarchy hierarchy, String errorMessage) throws JavaModelException {
+			final ITypeHierarchy declaringTypeHierarchy, String errorMessage) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
-		// TODO: For now, the only class in the hierarchy should be the
-		// declaring class of the source method and java.lang.Object.
-		List<IType> allClassesAsList = Arrays.asList(hierarchy.getAllClasses());
+		IType[] allDeclaringTypeSuperclasses = declaringTypeHierarchy
+				.getAllSuperclasses(sourceMethod.getDeclaringType());
 
-		// TODO: All the methods to move may not be from the same type. This is
-		// in regards to getDeclaringType(), which only returns one type.
-		boolean containsOnlyValidClasses = allClassesAsList.size() == 2
-				&& allClassesAsList.contains(sourceMethod.getDeclaringType())
-				&& allClassesAsList.contains(hierarchy.getType().getJavaProject().findType("java.lang.Object"));
-
-		if (!containsOnlyValidClasses) {
-			RefactoringStatusEntry error = addError(status, errorMessage, hierarchy.getType());
-			addUnmigratableMethod(sourceMethod, error);
-		}
+		// is the source method overriding anything in the declaring type
+		// hierarchy? If so, don't allow the refactoring to proceed #107.
+		if (Stream.of(allDeclaringTypeSuperclasses).parallel().anyMatch(c -> {
+			IMethod[] methods = c.findMethods(sourceMethod);
+			return methods != null && methods.length > 0;
+		}))
+			addErrorAndMark(status, errorMessage, sourceMethod);
 
 		return status;
 	}
@@ -842,9 +838,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.getTypes().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithType, sourceMethod, type);
-		if (type.getSuperclassName() != null)
-			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithSuperType, sourceMethod, type);
 		if (type.getSuperInterfaceNames().length == 0)
 			// TODO enclosing type must implement an interface, at least for
 			// now,
