@@ -2,6 +2,9 @@ package edu.cuny.citytech.defaultrefactoring.eval.handlers;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
+import java.nio.file.PathMatcher;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,12 +16,18 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.text.java.IJavaReconcilingListener;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
+import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
@@ -88,6 +97,19 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 								if (Flags.isAbstract(type.getFlags())) {
 									abstractClassesWriter.append(type.getFullyQualifiedName());
 									abstractClassesWriter.append('\n');
+
+									IMethod[] methods = type.getMethods();
+									for (int x = 0; x < methods.length; x++) {
+										System.out.print(methods[x].getElementName() + "(");
+										ILocalVariable[] parameters = methods[x].getParameters();
+										for (int i = 0; i < parameters.length; i++) {
+											System.out.print(getParamString(parameters[i], methods[i]));
+											if( i != (parameters.length - 1)){
+											System.out.print(",");}
+										}
+										System.out.println(")");
+									}
+
 								}
 							}
 
@@ -114,7 +136,8 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 							if (type.isInterface()) {
 								// write this interface.
 								interfacesWriter.append(type.getFullyQualifiedName());
-								interfacesWriter.append('\n');
+								interfacesWriter.append('\n');															
+								
 							}
 
 							if (type.isClass() && !(type.isEnum()) && allSuperInterfaces.length >= 1) {
@@ -129,6 +152,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 									classesImplementingInterfacesWriter
 											.append(superInterface.getFullyQualifiedName() + " ");
 									classesImplementingInterfacesWriter.append('\n');
+									
 								}
 							}
 						}
@@ -147,6 +171,32 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			JavaPlugin.log(fileException);
 		}
 		return null;
+	}
+
+	private static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
+		IType declaringType = method.getDeclaringType();
+		String name = parameterVariable.getTypeSignature();
+		String simpleName = Signature.getSignatureSimpleName(name);
+		String[][] allResults = declaringType.resolveType(simpleName);
+		String fullName = null;
+		if (allResults != null) {
+			String[] nameParts = allResults[0];
+			if (nameParts != null) {
+				fullName = new String();
+				for (int i = 0; i < nameParts.length; i++) {
+					if (fullName.length() > 0) {
+						fullName += '.';
+					}
+					String part = nameParts[i];
+					if (part != null) {
+						fullName += part;
+					}
+				}
+			}
+		}
+		else
+			fullName = simpleName;
+		return fullName;
 	}
 
 	private static void writeType(FileWriter typesWriter, IType type) throws IOException {
