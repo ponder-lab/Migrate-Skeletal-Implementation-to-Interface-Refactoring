@@ -11,7 +11,8 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.ui,
  org.eclipse.jdt.core
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Bundle-ClassPath: .
+Bundle-ClassPath: .,
+ lib/commons-csv-1.1.jar
 Export-Package: edu.cuny.citytech.defaultrefactoring.eval.handlers,
  edu.cuny.citytech.defaultrefactoring.eval.messages,
  edu.cuny.citytech.defaultrefactoring.ui.plugins
