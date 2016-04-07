@@ -59,7 +59,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			FileWriter abstractClassesWriter = new FileWriter("abstract_classes.csv");
 			FileWriter interfacesWriter = new FileWriter("interfaces.csv");
 			FileWriter classesImplementingInterfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
-			FileWriter classesExtendingClassesWriter = new FileWriter("classes_extending_classes.csv");
+			FileWriter classesExtendingClassesWriter = new FileWriter("classes_extending_classes.csv");			
 
 			// getting the csv file header
 			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
@@ -74,7 +74,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			csvHeader(abstractClassesWriter, abstractClassesHeader);
 			csvHeader(interfacesWriter, interfacesHeader);
 			csvHeader(classesImplementingInterfacesWriter, classesImplementing_interfacesHeder);
-			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);
+			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);			
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -100,17 +100,21 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 
 									IMethod[] methods = type.getMethods();
 									for (int x = 0; x < methods.length; x++) {
-										System.out.print(methods[x].getElementName() + "(");
+										StringBuilder sb = new StringBuilder();
+										sb.append((methods[x].getElementName() + "("));										
 										ILocalVariable[] parameters = methods[x].getParameters();
 										for (int i = 0; i < parameters.length; i++) {
-											System.out.print(getParamString(parameters[i], methods[i]));
+											sb.append(getParamString(parameters[i], methods[i]));											
 											if( i != (parameters.length - 1)){
-											System.out.print(",");}
-										}
-										System.out.println(")");
+												sb.append(",");
+											}											
+										}			
+										sb.append(")\n");
+										System.out.println(sb);										
 									}
 
 								}
+								
 							}
 
 							ITypeHierarchy typeHierarchy = type.newTypeHierarchy(new NullProgressMonitor());
@@ -166,11 +170,13 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			abstractClassesWriter.close();
 			interfacesWriter.close();
 			classesImplementingInterfacesWriter.close();
-			classesExtendingClassesWriter.close();
+			classesExtendingClassesWriter.close();			
 		} catch (JavaModelException | IOException fileException) {
 			JavaPlugin.log(fileException);
 		}
 		return null;
+		
+		
 	}
 
 	private static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
