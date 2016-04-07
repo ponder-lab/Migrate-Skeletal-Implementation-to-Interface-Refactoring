@@ -2,9 +2,6 @@ package edu.cuny.citytech.defaultrefactoring.eval.handlers;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
-import java.nio.file.PathMatcher;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,13 +18,10 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
-import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.text.java.IJavaReconcilingListener;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
-import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
@@ -59,7 +53,8 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			FileWriter abstractClassesWriter = new FileWriter("abstract_classes.csv");
 			FileWriter interfacesWriter = new FileWriter("interfaces.csv");
 			FileWriter classesImplementingInterfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
-			FileWriter classesExtendingClassesWriter = new FileWriter("classes_extending_classes.csv");			
+			FileWriter classesExtendingClassesWriter = new FileWriter("classes_extending_classes.csv");
+			FileWriter methodsWriter = new FileWriter("methods.csv");
 
 			// getting the csv file header
 			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
@@ -68,13 +63,15 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			String[] interfacesHeader = { "Fully Qualified Name" };
 			String[] classesImplementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
 			String[] classesExtendingClassesHeader = { "Source Class FQN", ",", "Target Class FQN" };
+			String[] methodsHeader = { "Method Identifier", ",", "Declaring Type FQN"};
 
 			csvHeader(typesWriter, typesHeader);
 			csvHeader(classesWriter, classesHeader);
 			csvHeader(abstractClassesWriter, abstractClassesHeader);
 			csvHeader(interfacesWriter, interfacesHeader);
 			csvHeader(classesImplementingInterfacesWriter, classesImplementing_interfacesHeder);
-			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);			
+			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);
+			csvHeader(methodsWriter, methodsHeader);
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -86,32 +83,41 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 						for (IType type : allTypes) {
 
 							writeType(typesWriter, type);
+							
+							//loop through all methods in the type.
+							IMethod[] methods = type.getMethods();
+							for (int x = 0; x < methods.length; x++) {
+								StringBuilder sb = new StringBuilder();																				
+								sb.append((methods[x].getElementName()) + "(");
+//								methodsWriter.append(sb + ")\n");
+								ILocalVariable[] parameters = methods[x].getParameters();
+								for (int i = 0; i < parameters.length; i++) {
+									sb.append(getParamString(parameters[i], methods[x]));											
+									if( i != (parameters.length - 1)){
+										sb.append(",");
+									}																																								
+								}
+								sb.append(")");
+								methodsWriter.append(sb);
+								methodsWriter.append(",");
+								methodsWriter.append(type.getFullyQualifiedName());
+								methodsWriter.append("\n");
+								sb.append("\n");								
+								System.out.print(sb);										
+							}
+							
 
 							// getting the class name that are not abstract and
 							// not include enum
 							if (type.isClass() && !(type.isEnum())) {
 								classesWriter.append(type.getFullyQualifiedName());
 								classesWriter.append('\n');
-
+								
+								
 								// checking if the class is abstract
 								if (Flags.isAbstract(type.getFlags())) {
 									abstractClassesWriter.append(type.getFullyQualifiedName());
-									abstractClassesWriter.append('\n');
-
-									IMethod[] methods = type.getMethods();
-									for (int x = 0; x < methods.length; x++) {
-										StringBuilder sb = new StringBuilder();
-										sb.append((methods[x].getElementName() + "("));										
-										ILocalVariable[] parameters = methods[x].getParameters();
-										for (int i = 0; i < parameters.length; i++) {
-											sb.append(getParamString(parameters[i], methods[i]));											
-											if( i != (parameters.length - 1)){
-												sb.append(",");
-											}											
-										}			
-										sb.append(")\n");
-										System.out.println(sb);										
-									}
+									abstractClassesWriter.append('\n');									
 
 								}
 								
@@ -170,7 +176,8 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			abstractClassesWriter.close();
 			interfacesWriter.close();
 			classesImplementingInterfacesWriter.close();
-			classesExtendingClassesWriter.close();			
+			classesExtendingClassesWriter.close();
+			methodsWriter.close();
 		} catch (JavaModelException | IOException fileException) {
 			JavaPlugin.log(fileException);
 		}
