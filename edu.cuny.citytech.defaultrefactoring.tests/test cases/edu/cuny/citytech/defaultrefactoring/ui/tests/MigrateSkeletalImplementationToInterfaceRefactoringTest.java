@@ -583,6 +583,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass3() throws Exception {
+		// TODO: #128
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
