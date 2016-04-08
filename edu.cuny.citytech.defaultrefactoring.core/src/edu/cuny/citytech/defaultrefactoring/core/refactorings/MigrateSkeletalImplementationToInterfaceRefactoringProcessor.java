@@ -727,7 +727,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkValidClassesInDeclaringTypeHierarchy(IMethod sourceMethod,
-			final ITypeHierarchy declaringTypeHierarchy, String errorMessage) throws JavaModelException {
+			final ITypeHierarchy declaringTypeHierarchy) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		IType[] allDeclaringTypeSuperclasses = declaringTypeHierarchy
@@ -739,7 +739,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			IMethod[] methods = c.findMethods(sourceMethod);
 			return methods != null && methods.length > 0;
 		}))
-			addErrorAndMark(status, errorMessage, sourceMethod);
+			addErrorAndMark(status, Messages.SourceMethodOverridesMethod, sourceMethod);
 
 		return status;
 	}
@@ -826,8 +826,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			final ITypeHierarchy declaringTypeHierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
 
-			status.merge(checkValidClassesInDeclaringTypeHierarchy(sourceMethod, declaringTypeHierarchy,
-					Messages.DeclaringTypeHierarchyContainsInvalidClass));
+			status.merge(checkValidClassesInDeclaringTypeHierarchy(sourceMethod, declaringTypeHierarchy));
 			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, monitor));
 
 			return status;

@@ -100,6 +100,7 @@ public class Messages extends NLS {
 	public static String SourceMethodAccessesInstanceField;
 	public static String DestinationProjectIncompatible;
 	public static String SourceMethodImplementsMultipleMethods;
+	public static String SourceMethodOverridesMethod;
 
 	static {
 		// initialize resource bundle
