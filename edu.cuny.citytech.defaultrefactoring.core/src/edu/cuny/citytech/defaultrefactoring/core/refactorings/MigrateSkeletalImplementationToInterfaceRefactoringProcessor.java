@@ -268,7 +268,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			for (IMethod sourceMethod : this.getSourceMethods()) {
 				final Optional<IType> targetInterface = this.getDestinationInterface(sourceMethod);
 
-				// Can't be null.
+				// Can't be empty.
 				if (!targetInterface.isPresent()) {
 					RefactoringStatusEntry error = addError(status, Messages.NoDestinationInterface);
 					addUnmigratableMethod(sourceMethod, error);
@@ -653,7 +653,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
 
-	// TODO: Is this the same as checkDeclaringTypeHierarchy?
+	// TODO: Is this the same as checkDeclaringTypeHierarchy? 
+	// RK: Probably not.
 	private RefactoringStatus checkDestinationInterfaceHierarchy(IMethod sourceMethod,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
@@ -669,6 +670,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces));
 
 		// TODO: For now, no super interfaces.
+        // TODO: This is repeated.
 		if (hierarchy.getAllSuperInterfaces(destinationInterface).length > 0) {
 			RefactoringStatusEntry error = addError(status,
 					Messages.DestinationInterfaceHierarchyContainsSuperInterface, destinationInterface);
@@ -845,7 +847,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithNoCandidateTargetTypes, sourceMethod,
 					sourceMethod.getDeclaringType());
 		else if (interfaces.length > 1)
-			// TODO For now, let's make sure there's only one candidate type.
+			// TODO For now, let's make sure there's only one candidate type #129.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithMultipleCandidateTargetTypes, sourceMethod,
 					sourceMethod.getDeclaringType());
 
