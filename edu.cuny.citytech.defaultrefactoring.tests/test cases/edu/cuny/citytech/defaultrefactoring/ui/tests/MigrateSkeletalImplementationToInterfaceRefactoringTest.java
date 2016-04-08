@@ -834,6 +834,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testMethodThatSkipsType4() throws Exception {
+		// This one should fail due to type checking.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testMethodThatDoesntSkipType() throws Exception {
 		// "control"
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
