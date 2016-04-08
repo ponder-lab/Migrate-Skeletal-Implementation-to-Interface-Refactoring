@@ -521,7 +521,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testDestinationInterfaceHierarchyWithInvalidClass2() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testDestinationInterfaceHierarchyWithInvalidClass3() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
@@ -816,6 +816,31 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithNoInheritedDefaultMethod() throws Exception {
 		// Should pass because, although multiple interfaces are implemented,
 		// there is no conflict.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatSkipsType() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatSkipsType2() throws Exception {
+		// Like above but this one implement interface directly.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatSkipsType3() throws Exception {
+		// Here, B doesn't explicitly implement the interface but we still have the 
+		// same problem.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatDoesntSkipType() throws Exception {
+		// "control"
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatDoesntSkipType2() throws Exception {
+		// "control"
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
