@@ -682,15 +682,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			addUnmigratableMethod(sourceMethod, error);
 		}
 
-		// TODO: For now, the destination interface can only be implemented by
-		// the source class.
-		if (!Stream.of(hierarchy.getImplementingClasses(destinationInterface)).parallel().distinct()
-				.allMatch(c -> c.equals(sourceMethod.getDeclaringType()))) {
-			RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceHasInvalidImplementingClass,
-					destinationInterface);
-			addUnmigratableMethod(sourceMethod, error);
-		}
-
 		return status;
 	}
 
