@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -55,7 +57,8 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			FileWriter classesImplementingInterfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
 			FileWriter classesExtendingClassesWriter = new FileWriter("classes_extending_classes.csv");
 			FileWriter methodsWriter = new FileWriter("methods.csv");
-
+			
+			
 			// getting the csv file header
 			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
 			String[] classesHeader = { "Fully Qualified Name" };
@@ -63,15 +66,15 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			String[] interfacesHeader = { "Fully Qualified Name" };
 			String[] classesImplementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
 			String[] classesExtendingClassesHeader = { "Source Class FQN", ",", "Target Class FQN" };
-			String[] methodsHeader = { "Method Identifier", ",", "Declaring Type FQN"};
-
+			String[] methodsHeader = { "Method Identifier", "Declaring Type FQN"};
+			CSVPrinter metPrinter = new CSVPrinter(methodsWriter, CSVFormat.EXCEL.withHeader(methodsHeader));
+			
 			csvHeader(typesWriter, typesHeader);
 			csvHeader(classesWriter, classesHeader);
 			csvHeader(abstractClassesWriter, abstractClassesHeader);
 			csvHeader(interfacesWriter, interfacesHeader);
 			csvHeader(classesImplementingInterfacesWriter, classesImplementing_interfacesHeder);
-			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);
-			csvHeader(methodsWriter, methodsHeader);
+			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);			
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -97,11 +100,8 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 										sb.append(",");
 									}																																								
 								}
-								sb.append(")");
-								methodsWriter.append(sb);
-								methodsWriter.append(",");
-								methodsWriter.append(type.getFullyQualifiedName());
-								methodsWriter.append("\n");
+								sb.append(")");																
+								metPrinter.printRecord(sb, type.getFullyQualifiedName());																
 								sb.append("\n");								
 								System.out.print(sb);										
 							}
@@ -177,7 +177,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			interfacesWriter.close();
 			classesImplementingInterfacesWriter.close();
 			classesExtendingClassesWriter.close();
-			methodsWriter.close();
+			metPrinter.close();
 		} catch (JavaModelException | IOException fileException) {
 			JavaPlugin.log(fileException);
 		}
