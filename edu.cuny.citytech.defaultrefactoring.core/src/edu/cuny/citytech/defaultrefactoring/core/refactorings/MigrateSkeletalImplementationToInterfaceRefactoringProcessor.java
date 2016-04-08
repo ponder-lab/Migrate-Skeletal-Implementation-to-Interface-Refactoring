@@ -653,7 +653,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
 
-	// TODO: Is this the same as checkDeclaringTypeHierarchy? 
+	// TODO: Is this the same as checkDeclaringTypeHierarchy?
 	// RK: Probably not.
 	private RefactoringStatus checkDestinationInterfaceHierarchy(IMethod sourceMethod,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
@@ -670,7 +670,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces));
 
 		// TODO: For now, no super interfaces.
-        // TODO: This is repeated.
+		// TODO: This is repeated.
 		if (hierarchy.getAllSuperInterfaces(destinationInterface).length > 0) {
 			RefactoringStatusEntry error = addError(status,
 					Messages.DestinationInterfaceHierarchyContainsSuperInterface, destinationInterface);
@@ -712,7 +712,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		Optional<IType> destinationInterface = getDestinationInterface(sourceMethod);
 
 		// TODO: For now, there should be only one interface in the hierarchy,
-		// and that is the target interface.
+		// and that is the target interface #130.
 		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).parallel().distinct()
 				.allMatch(i -> i.equals(destinationInterface.orElse(null)));
 
@@ -846,7 +846,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithNoCandidateTargetTypes, sourceMethod,
 					sourceMethod.getDeclaringType());
 		else if (interfaces.length > 1)
-			// TODO For now, let's make sure there's only one candidate type #129.
+			// TODO: For now, let's make sure there's only one candidate type
+			// #129.
 			addErrorAndMark(status, Messages.NoMethodsInTypesWithMultipleCandidateTargetTypes, sourceMethod,
 					sourceMethod.getDeclaringType());
 
