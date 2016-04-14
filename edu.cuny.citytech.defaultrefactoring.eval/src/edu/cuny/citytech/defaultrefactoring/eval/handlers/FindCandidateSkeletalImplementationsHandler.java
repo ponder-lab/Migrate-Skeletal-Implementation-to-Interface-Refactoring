@@ -57,24 +57,27 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			FileWriter classesImplementingInterfacesWriter = new FileWriter("classes_implementing_interfaces.csv");
 			FileWriter classesExtendingClassesWriter = new FileWriter("classes_extending_classes.csv");
 			FileWriter methodsWriter = new FileWriter("methods.csv");
-			
-			
+
 			// getting the csv file header
-			String[] typesHeader = { "Project Name", ",", "CompilationUnit", ",", "Fully Qualified Name" };
+			String[] typesHeader = { "Project Name", "CompilationUnit", "Fully Qualified Name" };
 			String[] classesHeader = { "Fully Qualified Name" };
 			String[] abstractClassesHeader = { "Fully Qualified Name" };
 			String[] interfacesHeader = { "Fully Qualified Name" };
-			String[] classesImplementing_interfacesHeder = { "Class FQN", ",", "Interface FQN" };
-			String[] classesExtendingClassesHeader = { "Source Class FQN", ",", "Target Class FQN" };
-			String[] methodsHeader = { "Method Identifier", "Declaring Type FQN"};
+			String[] classesImplementing_interfacesHeder = { "Class FQN", "Interface FQN" };
+			String[] classesExtendingClassesHeader = { "Source Class FQN", "Target Class FQN" };
+			String[] methodsHeader = { "Method Identifier", "Declaring Type FQN" };
+
+			CSVPrinter typesPrinter = new CSVPrinter(typesWriter, CSVFormat.EXCEL.withHeader(typesHeader));
+			CSVPrinter classesPrinter = new CSVPrinter(classesWriter, CSVFormat.EXCEL.withHeader(classesHeader));
+			CSVPrinter abstractClassesPrinter = new CSVPrinter(abstractClassesWriter,
+					CSVFormat.EXCEL.withHeader(abstractClassesHeader));
+			CSVPrinter interfacesPrinter = new CSVPrinter(interfacesWriter,
+					CSVFormat.EXCEL.withHeader(interfacesHeader));
+			CSVPrinter classesImplementingInterfacesPrinter = new CSVPrinter(classesImplementingInterfacesWriter,
+					CSVFormat.EXCEL.withHeader(classesImplementing_interfacesHeder));
+			CSVPrinter classesExtendingClassesPrinter = new CSVPrinter(classesExtendingClassesWriter,
+					CSVFormat.EXCEL.withHeader(classesExtendingClassesHeader));
 			CSVPrinter metPrinter = new CSVPrinter(methodsWriter, CSVFormat.EXCEL.withHeader(methodsHeader));
-			
-			csvHeader(typesWriter, typesHeader);
-			csvHeader(classesWriter, classesHeader);
-			csvHeader(abstractClassesWriter, abstractClassesHeader);
-			csvHeader(interfacesWriter, interfacesHeader);
-			csvHeader(classesImplementingInterfacesWriter, classesImplementing_interfacesHeder);
-			csvHeader(classesExtendingClassesWriter, classesExtendingClassesHeader);			
 
 			for (IJavaProject iJavaProject : javaProjects) {
 				IPackageFragment[] packageFragments = iJavaProject.getPackageFragments();
@@ -85,42 +88,35 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 						IType[] allTypes = iCompilationUnit.getAllTypes();
 						for (IType type : allTypes) {
 
-							writeType(typesWriter, type);
-							
-							//loop through all methods in the type.
+							writeType(typesPrinter, type);
+
+							// loop through all methods in the type.
 							IMethod[] methods = type.getMethods();
 							for (int x = 0; x < methods.length; x++) {
-								StringBuilder sb = new StringBuilder();																				
-								sb.append((methods[x].getElementName()) + "(");
-//								methodsWriter.append(sb + ")\n");
+								StringBuilder sb = new StringBuilder();
+								sb.append((methods[x].getElementName()) + "(");							
 								ILocalVariable[] parameters = methods[x].getParameters();
 								for (int i = 0; i < parameters.length; i++) {
-									sb.append(getParamString(parameters[i], methods[x]));											
-									if( i != (parameters.length - 1)){
+									sb.append(getParamString(parameters[i], methods[x]));
+									if (i != (parameters.length - 1)) {
 										sb.append(",");
-									}																																								
+									}
 								}
-								sb.append(")");																
-								metPrinter.printRecord(sb, type.getFullyQualifiedName());																
+								sb.append(")");
+								metPrinter.printRecord(sb, type.getFullyQualifiedName());
 								sb.append("\n");								
-								System.out.print(sb);										
 							}
-							
 
 							// getting the class name that are not abstract and
 							// not include enum
 							if (type.isClass() && !(type.isEnum())) {
-								classesWriter.append(type.getFullyQualifiedName());
-								classesWriter.append('\n');
-								
-								
+								classesPrinter.printRecord(type.getFullyQualifiedName());
+
 								// checking if the class is abstract
 								if (Flags.isAbstract(type.getFlags())) {
-									abstractClassesWriter.append(type.getFullyQualifiedName());
-									abstractClassesWriter.append('\n');									
-
+									abstractClassesPrinter.printRecord(type.getFullyQualifiedName());
 								}
-								
+
 							}
 
 							ITypeHierarchy typeHierarchy = type.newTypeHierarchy(new NullProgressMonitor());
@@ -130,13 +126,11 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 								if (superClass.isClass()) { // just to be sure.
 									// write out the super class to the types
 									// file.
-									writeType(typesWriter, superClass);
+									writeType(typesPrinter, superClass);
 
 									// write out the relation.
-									classesExtendingClassesWriter.append(type.getFullyQualifiedName());
-									classesExtendingClassesWriter.append(",");
-									classesExtendingClassesWriter.append(superClass.getFullyQualifiedName());
-									classesExtendingClassesWriter.append("\n");
+									classesExtendingClassesPrinter.printRecord(type.getFullyQualifiedName(),
+											superClass.getFullyQualifiedName());
 								}
 
 							// getting all the implemented interface
@@ -145,24 +139,19 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 							// getting all the interface full qualified name
 							if (type.isInterface()) {
 								// write this interface.
-								interfacesWriter.append(type.getFullyQualifiedName());
-								interfacesWriter.append('\n');															
-								
+								interfacesPrinter.printRecord(type.getFullyQualifiedName());
+
 							}
 
 							if (type.isClass() && !(type.isEnum()) && allSuperInterfaces.length >= 1) {
 								for (IType superInterface : allSuperInterfaces) {
-									writeType(typesWriter, superInterface);
+									writeType(typesPrinter, superInterface);
 
-									interfacesWriter.append(superInterface.getFullyQualifiedName());
-									interfacesWriter.append('\n');
+									interfacesPrinter.printRecord(superInterface.getFullyQualifiedName());
 
-									classesImplementingInterfacesWriter.append(type.getFullyQualifiedName());
-									classesImplementingInterfacesWriter.append(",");
-									classesImplementingInterfacesWriter
-											.append(superInterface.getFullyQualifiedName() + " ");
-									classesImplementingInterfacesWriter.append('\n');
-									
+									classesImplementingInterfacesPrinter.printRecord(type.getFullyQualifiedName(),
+											superInterface.getFullyQualifiedName());
+
 								}
 							}
 						}
@@ -172,18 +161,17 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 
 			// closing the files writer after done writing
 			typesWriter.close();
-			classesWriter.close();
-			abstractClassesWriter.close();
-			interfacesWriter.close();
-			classesImplementingInterfacesWriter.close();
-			classesExtendingClassesWriter.close();
+			classesPrinter.close();
+			abstractClassesPrinter.close();
+			interfacesPrinter.close();
+			classesImplementingInterfacesPrinter.close();
+			classesExtendingClassesPrinter.close();
 			metPrinter.close();
 		} catch (JavaModelException | IOException fileException) {
 			JavaPlugin.log(fileException);
 		}
 		return null;
-		
-		
+
 	}
 
 	private static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
@@ -206,33 +194,15 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 					}
 				}
 			}
-		}
-		else
+		} else
 			fullName = simpleName;
 		return fullName;
 	}
 
-	private static void writeType(FileWriter typesWriter, IType type) throws IOException {
-		typesWriter.append(Optional.ofNullable(type.getJavaProject()).map(IJavaElement::getElementName).orElse("NULL"));
-		typesWriter.append(',');
-		typesWriter.append(
-				Optional.ofNullable(type.getCompilationUnit()).map(IJavaElement::getElementName).orElse("NULL"));
-		typesWriter.append(',');
-		typesWriter.append(type.getFullyQualifiedName());
-		typesWriter.append('\n');
-	}
-
-	/**
-	 * this method create header for the csv file
-	 * 
-	 * @param typesWriter
-	 * @param typesHeader
-	 * @throws IOException
-	 */
-	protected void csvHeader(FileWriter typesWriter, String[] typesHeader) throws IOException {
-		for (int i = 0; i < typesHeader.length; i++) {
-			typesWriter.append(typesHeader[i]);
-		}
-		typesWriter.append('\n');
+	private static void writeType(CSVPrinter typesPrinter, IType type) throws IOException {
+		typesPrinter.printRecord(
+				Optional.ofNullable(type.getJavaProject()).map(IJavaElement::getElementName).orElse("NULL"),
+				Optional.ofNullable(type.getCompilationUnit()).map(IJavaElement::getElementName).orElse("NULL"),
+				type.getFullyQualifiedName());
 	}
 }
