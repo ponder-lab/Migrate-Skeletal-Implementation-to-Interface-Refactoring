@@ -601,10 +601,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
-	public void testDeclaringTypeHierarchyWithInvalidInterface2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
 	public void testDeclaringTypeHierarchyWithInvalidInterface3() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
