@@ -302,7 +302,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces2() throws Exception {
@@ -495,7 +495,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceThatExtendsInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceWithTypeParameters() throws Exception {
@@ -527,7 +527,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass4() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass5() throws Exception {
@@ -535,15 +535,27 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceHierarchyWithInvalidInterface4() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceHierarchyWithInvalidInterface5() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceHierarchyWithInvalidInterface6() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMultipleDestinationInterfaces() throws Exception {
@@ -551,7 +563,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMultipleDestinationInterfaces2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMultipleDestinationInterfaces3() throws Exception {
@@ -559,15 +571,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceHierarchyWithSubtype() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithSuperInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceWithExtendingInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass() throws Exception {
@@ -598,11 +610,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidInterface3() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeWithSubtype() throws Exception {

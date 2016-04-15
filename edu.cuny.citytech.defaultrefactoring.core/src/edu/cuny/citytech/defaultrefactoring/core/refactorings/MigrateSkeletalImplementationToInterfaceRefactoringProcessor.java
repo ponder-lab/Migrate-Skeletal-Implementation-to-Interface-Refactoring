@@ -336,13 +336,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
-				// TODO: For now, no super interfaces.
-				if (targetInterface.get().getSuperInterfaceNames().length != 0) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceExtendsInterface,
-							targetInterface.get());
-					addUnmigratableMethod(sourceMethod, error);
-				}
-
 				// TODO: For now, no type parameters.
 				if (targetInterface.get().getTypeParameters().length != 0) {
 					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceDeclaresTypeParameters,
@@ -373,8 +366,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
-				status.merge(checkDestinationInterfaceHierarchy(sourceMethod,
-						monitor.map(m -> new SubProgressMonitor(m, 1))));
 				status.merge(checkDestinationInterfaceTargetMethods(sourceMethod));
 
 				monitor.ifPresent(m -> m.worked(1));
@@ -653,40 +644,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
 
-	// TODO: Is this the same as checkDeclaringTypeHierarchy?
-	// RK: Probably not.
-	private RefactoringStatus checkDestinationInterfaceHierarchy(IMethod sourceMethod,
-			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-		monitor.ifPresent(m -> m.subTask("Checking destination interface hierarchy..."));
-
-		IType destinationInterface = getTargetMethod(sourceMethod,
-				monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))).getDeclaringType();
-
-		final ITypeHierarchy hierarchy = this.getTypeHierarchy(destinationInterface,
-				monitor.map(m -> new SubProgressMonitor(m, 1)));
-
-		status.merge(checkValidInterfacesInDestinationTypeHierarchy(sourceMethod, hierarchy,
-				Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces));
-
-		// TODO: For now, no super interfaces.
-		// TODO: This is repeated.
-		if (hierarchy.getAllSuperInterfaces(destinationInterface).length > 0) {
-			RefactoringStatusEntry error = addError(status,
-					Messages.DestinationInterfaceHierarchyContainsSuperInterface, destinationInterface);
-			addUnmigratableMethod(sourceMethod, error);
-		}
-
-		// TODO: For now, no extending interfaces.
-		if (hierarchy.getExtendingInterfaces(destinationInterface).length > 0) {
-			RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceHasExtendingInterface,
-					destinationInterface);
-			addUnmigratableMethod(sourceMethod, error);
-		}
-
-		return status;
-	}
-
 	private RefactoringStatus checkValidInterfacesInDeclaringTypeHierarchy(IMethod sourceMethod,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
@@ -701,23 +658,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		if (numberOfImplementedMethods > 1)
 			addErrorAndMark(status, Messages.SourceMethodImplementsMultipleMethods, sourceMethod);
-
-		return status;
-	}
-
-	private RefactoringStatus checkValidInterfacesInDestinationTypeHierarchy(IMethod sourceMethod,
-			final ITypeHierarchy hierarchy, String errorMessage) throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-
-		Optional<IType> destinationInterface = getDestinationInterface(sourceMethod);
-
-		// TODO: For now, there should be only one interface in the hierarchy,
-		// and that is the target interface #130.
-		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).parallel().distinct()
-				.allMatch(i -> i.equals(destinationInterface.orElse(null)));
-
-		if (!containsOnlyValidInterfaces)
-			addError(status, errorMessage, hierarchy.getType());
 
 		return status;
 	}
