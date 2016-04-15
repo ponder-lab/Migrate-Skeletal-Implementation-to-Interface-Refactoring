@@ -26,7 +26,7 @@ We are currently seeking new collaborations. If you are interested in contributi
 
 ### Installation for Development
 
-The project includes a maven configuration file using the tycho plug-in. Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common.
+The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common and the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**.
 
 ### Running the Evaluator
 1. Select a group of projects.
