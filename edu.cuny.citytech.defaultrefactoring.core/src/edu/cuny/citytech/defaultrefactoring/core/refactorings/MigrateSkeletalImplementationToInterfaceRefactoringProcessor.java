@@ -232,33 +232,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
-	private RefactoringStatus checkDestinationInterfaceOnlyDeclaresTargetMethods(IMethod sourceMethod)
-			throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-
-		// get the destination interface.
-		IType destinationInterface = getTargetMethod(sourceMethod, Optional.empty()).getDeclaringType();
-
-		// get the methods declared by the destination interface.
-		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(Arrays.asList(destinationInterface.getMethods()));
-
-		// get the target methods that are declared by the destination
-		// interface.
-		Set<IMethod> targetMethodDeclaredByDestinationInterfaceSet = getSourceMethodToTargetMethodMap().values()
-				.parallelStream().filter(Objects::nonNull)
-				.filter(m -> m.getDeclaringType().equals(destinationInterface)).collect(Collectors.toSet());
-
-		// TODO: For now, the target interface must only contain the target
-		// methods.
-		if (!destinationInterfaceMethodsSet.equals(targetMethodDeclaredByDestinationInterfaceSet)) {
-			RefactoringStatusEntry error = addError(status,
-					Messages.DestinationInterfaceMustOnlyDeclareTheMethodToMigrate, destinationInterface);
-			addUnmigratableMethod(sourceMethod, error);
-		}
-
-		return status;
-	}
-
 	private RefactoringStatus checkDestinationInterfaces(Optional<IProgressMonitor> monitor) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
