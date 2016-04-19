@@ -160,7 +160,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			}
 
 			// closing the files writer after done writing
-			typesWriter.close();
+			typesPrinter.close();
 			classesPrinter.close();
 			abstractClassesPrinter.close();
 			interfacesPrinter.close();
