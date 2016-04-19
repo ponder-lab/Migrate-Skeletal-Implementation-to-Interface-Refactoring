@@ -1,8 +1,9 @@
 package edu.cuny.citytech.defaultrefactoring.eval.handlers;
 
+import static edu.cuny.citytech.defaultrefactoring.eval.utils.Util.getSelectedJavaProjectsFromEvent;
+
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.csv.CSVFormat;
@@ -15,17 +16,14 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.util.SelectionUtil;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.ui.handlers.HandlerUtil;
+
+import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -41,11 +39,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 	 */
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		ISelection currentSelection = HandlerUtil.getCurrentSelectionChecked(event);
-
-		List<?> list = SelectionUtil.toList(currentSelection);
-		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject)
-				.toArray(length -> new IJavaProject[length]);
+		IJavaProject[] javaProjects = getSelectedJavaProjectsFromEvent(event);
 
 		try {
 
@@ -94,7 +88,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 							IMethod[] methods = type.getMethods();
 							for (int x = 0; x < methods.length; x++) {
 								IMethod method = methods[x];
-								String methodIdentifier = getMethodIdentifier(method);
+								String methodIdentifier = Util.getMethodIdentifier(method);
 								metPrinter.printRecord(methodIdentifier, type.getFullyQualifiedName());
 							}
 
@@ -163,45 +157,6 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 		}
 		return null;
 
-	}
-
-	private static String getMethodIdentifier(IMethod method) throws JavaModelException {
-		StringBuilder sb = new StringBuilder();
-		sb.append((method.getElementName()) + "(");
-		ILocalVariable[] parameters = method.getParameters();
-		for (int i = 0; i < parameters.length; i++) {
-			sb.append(getParamString(parameters[i], method));
-			if (i != (parameters.length - 1)) {
-				sb.append(",");
-			}
-		}
-		sb.append(")");
-		return sb.toString();
-	}
-
-	private static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
-		IType declaringType = method.getDeclaringType();
-		String name = parameterVariable.getTypeSignature();
-		String simpleName = Signature.getSignatureSimpleName(name);
-		String[][] allResults = declaringType.resolveType(simpleName);
-		String fullName = null;
-		if (allResults != null) {
-			String[] nameParts = allResults[0];
-			if (nameParts != null) {
-				fullName = new String();
-				for (int i = 0; i < nameParts.length; i++) {
-					if (fullName.length() > 0) {
-						fullName += '.';
-					}
-					String part = nameParts[i];
-					if (part != null) {
-						fullName += part;
-					}
-				}
-			}
-		} else
-			fullName = simpleName;
-		return fullName;
 	}
 
 	private static void writeType(CSVPrinter typesPrinter, IType type) throws IOException {
