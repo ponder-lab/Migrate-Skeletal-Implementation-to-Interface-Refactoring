@@ -31,15 +31,23 @@ public final class Util {
 	private Util() {
 	}
 
-	public static Refactoring createRefactoring(IJavaProject project, IMethod[] methods, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(project);
-		MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor(
-				methods, settings, monitor);
+	public static ProcessorBasedRefactoring createRefactoring(IJavaProject project, IMethod[] methods,
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
+		MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = createMigrateSkeletalImplementationToInterfaceRefactoringProcessor(
+				project, methods, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
-	public static Refactoring createRefactoring(IMethod[] methods, Optional<IProgressMonitor> monitor) throws JavaModelException {
+	public static MigrateSkeletalImplementationToInterfaceRefactoringProcessor createMigrateSkeletalImplementationToInterfaceRefactoringProcessor(
+			IJavaProject project, IMethod[] methods, Optional<IProgressMonitor> monitor) throws JavaModelException {
+		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(project);
+		MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor(
+				methods, settings, monitor);
+		return processor;
+	}
+
+	public static ProcessorBasedRefactoring createRefactoring(IMethod[] methods, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		IJavaProject project = null;
 
 		if (methods != null && methods.length > 0)
@@ -48,11 +56,11 @@ public final class Util {
 		return createRefactoring(project, methods, monitor);
 	}
 
-	public static Refactoring createRefactoring(IMethod[] methods) throws JavaModelException {
+	public static ProcessorBasedRefactoring createRefactoring(IMethod[] methods) throws JavaModelException {
 		return createRefactoring(methods, Optional.empty());
 	}
 
-	public static Refactoring createRefactoring() throws JavaModelException {
+	public static ProcessorBasedRefactoring createRefactoring() throws JavaModelException {
 		RefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor();
 		return new ProcessorBasedRefactoring(processor);
 	}
