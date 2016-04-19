@@ -104,7 +104,6 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 								}
 								sb.append(")");
 								metPrinter.printRecord(sb, type.getFullyQualifiedName());
-								sb.append("\n");								
 							}
 
 							// getting the class name that are not abstract and
