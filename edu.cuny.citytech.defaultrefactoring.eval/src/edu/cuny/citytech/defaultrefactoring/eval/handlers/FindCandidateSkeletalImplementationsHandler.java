@@ -93,17 +93,9 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 							// loop through all methods in the type.
 							IMethod[] methods = type.getMethods();
 							for (int x = 0; x < methods.length; x++) {
-								StringBuilder sb = new StringBuilder();
-								sb.append((methods[x].getElementName()) + "(");							
-								ILocalVariable[] parameters = methods[x].getParameters();
-								for (int i = 0; i < parameters.length; i++) {
-									sb.append(getParamString(parameters[i], methods[x]));
-									if (i != (parameters.length - 1)) {
-										sb.append(",");
-									}
-								}
-								sb.append(")");
-								metPrinter.printRecord(sb, type.getFullyQualifiedName());
+								IMethod method = methods[x];
+								String methodIdentifier = getMethodIdentifier(method);
+								metPrinter.printRecord(methodIdentifier, type.getFullyQualifiedName());
 							}
 
 							// getting the class name that are not abstract and
@@ -171,6 +163,20 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 		}
 		return null;
 
+	}
+
+	private static String getMethodIdentifier(IMethod method) throws JavaModelException {
+		StringBuilder sb = new StringBuilder();
+		sb.append((method.getElementName()) + "(");
+		ILocalVariable[] parameters = method.getParameters();
+		for (int i = 0; i < parameters.length; i++) {
+			sb.append(getParamString(parameters[i], method));
+			if (i != (parameters.length - 1)) {
+				sb.append(",");
+			}
+		}
+		sb.append(")");
+		return sb.toString();
 	}
 
 	private static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
