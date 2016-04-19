@@ -29,7 +29,9 @@ We are currently seeking new collaborations. If you are interested in contributi
 The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common, the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. The latter three can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
 
 ### Running the Evaluator
+
+#### Finding Candidate Skeletal Implementers
 1. Select a group of projects.
 2. Press CMD-3 or CTRL-3 (command dialog).
-3. Search for "Find." You'll see an option to "find candidate skeletal implementers". Choose that option.
+3. Search for "candidate." You'll see an option to "find candidate skeletal implementers". Choose that option.
 4. A set of `.csv` files will appear in the working directory.
