@@ -961,13 +961,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				}
 
 				status.merge(checkExceptions(sourceMethod));
-				status.merge(checkParameters(sourceMethod));
 
 				// ensure that the method has a target.
 				if (getTargetMethod(sourceMethod,
 						pm.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))) == null)
 					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, sourceMethod);
 				else {
+					status.merge(checkParameters(sourceMethod));
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkProjectCompliance(sourceMethod));
