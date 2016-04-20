@@ -176,9 +176,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	@Override
 	public Object[] getElements() {
+		return getMigratableMethods().toArray();
+	}
+
+	public Set<IMethod> getMigratableMethods() {
 		Set<IMethod> difference = new HashSet<>(this.getSourceMethods());
 		difference.removeAll(this.getUnmigratableMethods());
-		return difference.toArray();
+		return difference;
 	}
 
 	@Override
