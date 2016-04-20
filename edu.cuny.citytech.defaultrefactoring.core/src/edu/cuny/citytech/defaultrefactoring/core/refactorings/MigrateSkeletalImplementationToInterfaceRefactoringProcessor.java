@@ -1227,7 +1227,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return this.sourceMethods;
 	}
 
-	private Set<IMethod> getUnmigratableMethods() {
+	public Set<IMethod> getUnmigratableMethods() {
 		return this.unmigratableMethods;
 	}
 
