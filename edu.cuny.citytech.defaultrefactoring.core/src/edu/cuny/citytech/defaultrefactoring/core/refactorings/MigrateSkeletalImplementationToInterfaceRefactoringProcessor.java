@@ -143,7 +143,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		try {
 			this.settings = settings;
 			this.layer = layer;
-			this.sourceMethods = new HashSet<>(Arrays.asList(methods));
+			Collections.addAll(this.getSourceMethods(), methods);
 
 			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", this.sourceMethods.size()));
 
