@@ -148,8 +148,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", methods.length));
 
-				getSourceMethodToTargetMethodMap().put(method, getTargetMethod(method, monitor));
 			for (IMethod method : methods) {
+				// this will populate the map if needed.
+				getTargetMethod(method, monitor);
 				monitor.ifPresent(m -> m.worked(1));
 			}
 
