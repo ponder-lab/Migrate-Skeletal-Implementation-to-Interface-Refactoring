@@ -148,7 +148,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", this.sourceMethods.size()));
 
 			for (IMethod method : this.sourceMethods) {
-				sourceMethodToTargetMethodMap.put(method, getTargetMethod(method, monitor));
+				getSourceMethodToTargetMethodMap().put(method, getTargetMethod(method, monitor));
 				monitor.ifPresent(m -> m.worked(1));
 			}
 
@@ -1224,7 +1224,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private Set<IMethod> getSourceMethods() {
-		return this.sourceMethods;
+		return getSourceMethodToTargetMethodMap().keySet();
 	}
 
 	public Set<IMethod> getUnmigratableMethods() {
@@ -1584,19 +1584,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public static IMethod getTargetMethod(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
-		IMethod targetMethod = sourceMethodToTargetMethodMap.get(sourceMethod);
+		IMethod targetMethod = getSourceMethodToTargetMethodMap().get(sourceMethod);
 
 		if (targetMethod == null) {
 			IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
 
-			if (sourceMethodTargetInterfaceTargetMethodTable.contains(sourceMethod, destinationInterface))
-				targetMethod = sourceMethodTargetInterfaceTargetMethodTable.get(sourceMethod, destinationInterface);
+			if (getSourceMethodTargetInterfaceTargetMethodTable().contains(sourceMethod, destinationInterface))
+				targetMethod = getSourceMethodTargetInterfaceTargetMethodTable().get(sourceMethod, destinationInterface);
 			else if (destinationInterface != null) {
 				targetMethod = findTargetMethod(sourceMethod, destinationInterface);
-				sourceMethodTargetInterfaceTargetMethodTable.put(sourceMethod, destinationInterface, targetMethod);
+				getSourceMethodTargetInterfaceTargetMethodTable().put(sourceMethod, destinationInterface, targetMethod);
 			}
 
-			sourceMethodToTargetMethodMap.put(sourceMethod, targetMethod);
+			getSourceMethodToTargetMethodMap().put(sourceMethod, targetMethod);
 		}
 		return targetMethod;
 	}
@@ -1710,5 +1710,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	public RefactoringParticipant[] loadParticipants(RefactoringStatus status, SharableParticipants sharedParticipants)
 			throws CoreException {
 		return new RefactoringParticipant[0];
+	}
+
+	private static Table<IMethod, IType, IMethod> getSourceMethodTargetInterfaceTargetMethodTable() {
+		return sourceMethodTargetInterfaceTargetMethodTable;
 	}
 }
