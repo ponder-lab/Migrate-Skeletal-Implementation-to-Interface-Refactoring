@@ -120,7 +120,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			new GroupCategory("edu.cuny.citytech.defaultrefactoring", //$NON-NLS-1$
 					Messages.CategoryName, Messages.CategoryDescription));
 
-	private static Map<IMethod, IMethod> sourceMethodToTargetMethodMap = new HashMap<>();
+	private static Map<IMethod, IMethod> methodToTargetMethodMap = new HashMap<>();
 
 	/** The code generation settings, or <code>null</code> */
 	private CodeGenerationSettings settings;
@@ -128,8 +128,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/** Does the refactoring use a working copy layer? */
 	private final boolean layer;
 
-	private static Table<IMethod, IType, IMethod> sourceMethodTargetInterfaceTargetMethodTable = HashBasedTable
-			.create();
+	private static Table<IMethod, IType, IMethod> methodTargetInterfaceTargetMethodTable = HashBasedTable.create();
 
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
@@ -1396,7 +1395,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private void clearCaches() {
 		getTypeToSuperTypeHierarchyMap().clear();
-		getSourceMethodToTargetMethodMap().clear();
+		getMethodToTargetMethodMap().clear();
 		getTypeToTypeHierarchyMap().clear();
 	}
 
@@ -1564,8 +1563,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		listRewrite.insertLast(modifier, null);
 	}
 
-	private static Map<IMethod, IMethod> getSourceMethodToTargetMethodMap() {
-		return sourceMethodToTargetMethodMap;
+	private static Map<IMethod, IMethod> getMethodToTargetMethodMap() {
+		return methodToTargetMethodMap;
 	}
 
 	/**
@@ -1586,20 +1585,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public static IMethod getTargetMethod(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
-		IMethod targetMethod = getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getMethodToTargetMethodMap().get(sourceMethod);
 
 		if (targetMethod == null) {
 			IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
 
-			if (getSourceMethodTargetInterfaceTargetMethodTable().contains(sourceMethod, destinationInterface))
-				targetMethod = getSourceMethodTargetInterfaceTargetMethodTable().get(sourceMethod,
-						destinationInterface);
+			if (getMethodTargetInterfaceTargetMethodTable().contains(sourceMethod, destinationInterface))
+				targetMethod = getMethodTargetInterfaceTargetMethodTable().get(sourceMethod, destinationInterface);
 			else if (destinationInterface != null) {
 				targetMethod = findTargetMethod(sourceMethod, destinationInterface);
-				getSourceMethodTargetInterfaceTargetMethodTable().put(sourceMethod, destinationInterface, targetMethod);
+				getMethodTargetInterfaceTargetMethodTable().put(sourceMethod, destinationInterface, targetMethod);
 			}
 
-			getSourceMethodToTargetMethodMap().put(sourceMethod, targetMethod);
+			getMethodToTargetMethodMap().put(sourceMethod, targetMethod);
 		}
 		return targetMethod;
 	}
@@ -1715,7 +1713,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return new RefactoringParticipant[0];
 	}
 
-	private static Table<IMethod, IType, IMethod> getSourceMethodTargetInterfaceTargetMethodTable() {
-		return sourceMethodTargetInterfaceTargetMethodTable;
+	private static Table<IMethod, IType, IMethod> getMethodTargetInterfaceTargetMethodTable() {
+		return methodTargetInterfaceTargetMethodTable;
 	}
 }
