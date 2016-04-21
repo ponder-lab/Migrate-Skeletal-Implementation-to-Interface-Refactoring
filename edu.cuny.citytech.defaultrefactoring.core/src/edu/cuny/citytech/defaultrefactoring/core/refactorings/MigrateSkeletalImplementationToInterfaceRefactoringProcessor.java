@@ -1590,7 +1590,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
 
 			if (getSourceMethodTargetInterfaceTargetMethodTable().contains(sourceMethod, destinationInterface))
-				targetMethod = getSourceMethodTargetInterfaceTargetMethodTable().get(sourceMethod, destinationInterface);
+				targetMethod = getSourceMethodTargetInterfaceTargetMethodTable().get(sourceMethod,
+						destinationInterface);
 			else if (destinationInterface != null) {
 				targetMethod = findTargetMethod(sourceMethod, destinationInterface);
 				getSourceMethodTargetInterfaceTargetMethodTable().put(sourceMethod, destinationInterface, targetMethod);
