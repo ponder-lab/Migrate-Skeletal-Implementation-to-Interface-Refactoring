@@ -145,10 +145,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			this.layer = layer;
 			Collections.addAll(this.getSourceMethods(), methods);
 
-			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", this.sourceMethods.size()));
+			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", methods.length));
 
-			for (IMethod method : this.sourceMethods) {
 				getSourceMethodToTargetMethodMap().put(method, getTargetMethod(method, monitor));
+			for (IMethod method : methods) {
 				monitor.ifPresent(m -> m.worked(1));
 			}
 
