@@ -529,27 +529,27 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				"Source method: " + sourceMethod + " has no destiantion interface."));
 
 		for (int index = 0; index < accessedMethods.length; index++) {
-			final IMethod method = accessedMethods[index];
+			final IMethod accessedMethod = accessedMethods[index];
 
-			if (!method.exists())
+			if (!accessedMethod.exists())
 				continue;
 
-			boolean isAccessible = pulledUpList.contains(method)
-					|| canBeAccessedFrom(sourceMethod, method, destination, destinationInterfaceSuperTypeHierarchy);
+			boolean isAccessible = pulledUpList.contains(accessedMethod) || canBeAccessedFrom(sourceMethod,
+					accessedMethod, destination, destinationInterfaceSuperTypeHierarchy);
 
 			if (!isAccessible) {
 				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
 						PullUpRefactoring_method_not_accessible,
-						new String[] { getTextLabel(method, ALL_FULLY_QUALIFIED),
+						new String[] { getTextLabel(accessedMethod, ALL_FULLY_QUALIFIED),
 								getTextLabel(destination, ALL_FULLY_QUALIFIED) });
-				result.addError(message, JavaStatusContext.create(method));
+				result.addError(message, JavaStatusContext.create(accessedMethod));
 				this.getUnmigratableMethods().add(sourceMethod);
-			} else if (!JdtFlags.isStatic(method)) {
+			} else if (!JdtFlags.isStatic(accessedMethod)) {
 				// it's accessible and it's not static but do we have the
 				// correct implicit parameter available?
 				// let's check to see if the method is somewhere in the
 				// hierarchy.
-				IType methodDeclaringType = method.getDeclaringType();
+				IType methodDeclaringType = accessedMethod.getDeclaringType();
 
 				// is this method declared in a type that is in the declaring
 				// type's super type hierarchy?
@@ -559,10 +559,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (declaringTypeSuperTypeHierarchy.contains(methodDeclaringType)) {
 					// if so, then we need to check that it is in the
 					// destination interface's super type hierarchy.
-					boolean methodInHiearchy = isMethodInHierarchy(method, destinationInterfaceSuperTypeHierarchy);
-					if (!methodInHiearchy)
-						addErrorAndMark(result, RefactoringCoreMessages.PullUpRefactoring_method_cannot_be_accessed,
-								method, destination);
+					boolean methodInHiearchy = isMethodInHierarchy(accessedMethod,
+							destinationInterfaceSuperTypeHierarchy);
+					if (!methodInHiearchy) {
+						addErrorAndMark(result, Messages.MethodCannotBeAccessed, sourceMethod, accessedMethod,
+								destination);
+					}
 				}
 			}
 		}
@@ -1048,6 +1050,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void addUnmigratableMethod(IMethod method, Object reason) {
+		try {
+			// sanity check.
+			if (method.getDeclaringType().isInterface())
+				throw new IllegalArgumentException(
+						String.format("Unmigratable method: %s is declared in an interface", method.getElementName()));
+		} catch (JavaModelException e) {
+			throw new RuntimeException(e);
+		}
 		this.getUnmigratableMethods().add(method);
 		this.logInfo(
 				"Method " + getElementLabel(method, ALL_FULLY_QUALIFIED) + " is not migratable because: " + reason);
