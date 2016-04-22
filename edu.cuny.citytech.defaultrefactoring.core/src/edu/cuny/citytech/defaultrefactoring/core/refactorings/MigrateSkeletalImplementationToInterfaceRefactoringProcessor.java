@@ -1427,12 +1427,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
 
-			// the input methods as a set.
-			Set<IMethod> methods = new HashSet<>(this.getSourceMethods().parallelStream()
-					.filter(m -> m instanceof IMethod).map(m -> m).collect(Collectors.toSet()));
-
-			// remove all the unmigratable methods.
-			methods.removeAll(this.unmigratableMethods);
+			Set<IMethod> methods = this.getMigratableMethods();
 
 			if (methods.isEmpty())
 				return new NullChange(Messages.NoMethodsToMigrate);
@@ -1680,7 +1675,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	@Override
 	public boolean isApplicable() throws CoreException {
 		return RefactoringAvailabilityTester.isInterfaceMigrationAvailable(getSourceMethods().parallelStream()
-				.filter(m -> !this.unmigratableMethods.contains(m)).toArray(IMethod[]::new), Optional.empty());
+				.filter(m -> !this.getUnmigratableMethods().contains(m)).toArray(IMethod[]::new), Optional.empty());
 	}
 
 	/**
