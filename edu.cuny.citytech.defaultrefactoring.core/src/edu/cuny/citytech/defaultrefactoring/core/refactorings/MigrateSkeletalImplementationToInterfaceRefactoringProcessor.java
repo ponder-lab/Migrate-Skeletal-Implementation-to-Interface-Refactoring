@@ -107,7 +107,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private Set<IMethod> sourceMethods = new HashSet<>();
 
-	private Set<IMethod> unmigratableMethods = new HashSet<>();
+	private Set<IMethod> unmigratableMethods = new UnmigratableMethodSet(sourceMethods);
 
 	private static final String FUNCTIONAL_INTERFACE_ANNOTATION_NAME = "FunctionalInterface";
 
@@ -1050,14 +1050,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void addUnmigratableMethod(IMethod method, Object reason) {
-		try {
-			// sanity check.
-			if (method.getDeclaringType().isInterface())
-				throw new IllegalArgumentException(
-						String.format("Unmigratable method: %s is declared in an interface", method.getElementName()));
-		} catch (JavaModelException e) {
-			throw new RuntimeException(e);
-		}
 		this.getUnmigratableMethods().add(method);
 		this.logInfo(
 				"Method " + getElementLabel(method, ALL_FULLY_QUALIFIED) + " is not migratable because: " + reason);
