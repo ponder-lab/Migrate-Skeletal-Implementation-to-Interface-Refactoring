@@ -9,10 +9,14 @@ Bundle-Localization: bundle
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.jdt.ui,
- org.eclipse.jdt.core
+ org.eclipse.jdt.core,
+ org.eclipse.ltk.core.refactoring,
+ edu.cuny.citytech.refactoring.common.core;bundle-version="1.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: .,
  lib/commons-csv-1.1.jar
 Export-Package: edu.cuny.citytech.defaultrefactoring.eval.handlers,
  edu.cuny.citytech.defaultrefactoring.eval.messages,
  edu.cuny.citytech.defaultrefactoring.ui.plugins
+Import-Package: edu.cuny.citytech.defaultrefactoring.core.refactorings,
+ edu.cuny.citytech.defaultrefactoring.core.utils

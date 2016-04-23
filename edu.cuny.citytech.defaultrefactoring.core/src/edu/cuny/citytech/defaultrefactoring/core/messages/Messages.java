@@ -20,6 +20,9 @@ public class Messages extends NLS {
 	public static String CompilingSource;
 	public static String CreatingChange;
 	public static String CUContainsCompileErrors;
+	public static String NoMethodsHavePassedThePreconditions;
+	public static String NoMethodsToMigrate;
+
 	public static String MethodDoesNotExist;
 	public static String PreconditionFailed;
 	public static String RefactoringNotPossible;
@@ -93,15 +96,12 @@ public class Messages extends NLS {
 	public static String AnnotationMismatch;
 	public static String AnnotationNameMismatch;
 	public static String AnnotationValueMismatch;
-	public static String NoMethodsHavePassedThePreconditions;
-	public static String NoMethodsToMigrate;
 	public static String NoMethodsInAnnotationTypes;
 	public static String SourceMethodHasNoTargetMethod;
 	public static String SourceMethodAccessesInstanceField;
 	public static String DestinationProjectIncompatible;
 	public static String SourceMethodImplementsMultipleMethods;
 	public static String SourceMethodOverridesMethod;
-	public static String MethodCannotBeAccessed;
 
 	static {
 		// initialize resource bundle

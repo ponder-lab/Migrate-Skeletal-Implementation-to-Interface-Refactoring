@@ -49,7 +49,8 @@ public final class RefactoringAvailabilityTester {
 	public static boolean isInterfaceMigrationAvailable(IMethod[] methods, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		if (methods != null && methods.length != 0) {
-			// FIXME: This seems wrong.
+			// FIXME: This seems wrong. There should be a look up here and use
+			// getDeclaringType() on each method.
 			final IType type = getTopLevelType(methods);
 
 			if (type != null && getMigratableSkeletalImplementations(type, monitor).length != 0)
