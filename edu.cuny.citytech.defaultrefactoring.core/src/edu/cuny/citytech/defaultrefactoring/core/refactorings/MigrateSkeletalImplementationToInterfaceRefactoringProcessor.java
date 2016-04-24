@@ -93,8 +93,6 @@ import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.messages.PreconditionFailure;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 
-// TODO: Are we checking the target interface? I think that the target interface should be completely empty for now.
-
 /**
  * The activator class controls the plug-in life cycle
  * 
