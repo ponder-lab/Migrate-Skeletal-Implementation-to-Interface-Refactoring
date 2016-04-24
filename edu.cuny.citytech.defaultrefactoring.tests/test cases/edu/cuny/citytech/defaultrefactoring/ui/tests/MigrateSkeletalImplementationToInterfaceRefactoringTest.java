@@ -851,4 +851,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// "control"
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testComplicatedHierarchy() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
