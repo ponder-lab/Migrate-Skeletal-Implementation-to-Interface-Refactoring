@@ -464,7 +464,31 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceWithFields() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields3() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields5() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields6() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields7() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	/**

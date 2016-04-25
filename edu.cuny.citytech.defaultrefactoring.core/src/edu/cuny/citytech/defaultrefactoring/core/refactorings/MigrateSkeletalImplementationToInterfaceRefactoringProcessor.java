@@ -299,18 +299,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
-				// TODO: For now, no fields. I suppose that the reason we don't
-				// allow this for now is because the source method may access
-				// fields of the same name? But, when we perform the migration,
-				// we should fully qualify the name of the accessed field, so, I
-				// think, that this shouldn't be a problem.
-				// TODO: Are we actually doing that in createChange?
-				if (targetInterface.get().getFields().length != 0) {
-					RefactoringStatusEntry error = addError(status, sourceMethod,
-							PreconditionFailure.DestinationInterfaceDeclaresFields, targetInterface.get());
-					addUnmigratableMethod(sourceMethod, error);
-				}
-
 				// TODO: For now, no type parameters.
 				if (targetInterface.get().getTypeParameters().length != 0) {
 					RefactoringStatusEntry error = addError(status, sourceMethod,
@@ -493,8 +481,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (!field.exists())
 				continue;
 
-			if (!Flags.isStatic(field.getFlags())) { // if it's an instance
-														// field
+			// if it's an instance field
+			if (!Flags.isStatic(field.getFlags()) && !field.getDeclaringType().isInterface()) {
 				// TODO: But what if it's a public instance field? More tests?
 				// What if I access System.out? #141.
 				// TODO: Also, are we making this twice? #140.
