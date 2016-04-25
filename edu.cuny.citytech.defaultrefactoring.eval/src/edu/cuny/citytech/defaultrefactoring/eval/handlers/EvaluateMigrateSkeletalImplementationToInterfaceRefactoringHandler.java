@@ -17,9 +17,11 @@ import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
@@ -27,6 +29,7 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
@@ -69,6 +72,10 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						new String[] { "method", "type FQN", "severity", "code", "plug-in id", "message" });
 
 				for (IJavaProject javaProject : javaProjects) {
+					if (!javaProject.isStructureKnown())
+						throw new IllegalStateException(
+								String.format("Project: %s should compile beforehand.", javaProject.getElementName()));
+
 					resultsPrinter.print(javaProject.getElementName());
 
 					/*
@@ -102,8 +109,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							"Migratable methods before preconditions: " + processor.getMigratableMethods().size());
 
 					// run the precondition checking.
-					RefactoringStatus status = new ProcessorBasedRefactoring(processor)
-							.checkAllConditions(new NullProgressMonitor());
+					ProcessorBasedRefactoring processorBasedRefactoring = new ProcessorBasedRefactoring(processor);
+					RefactoringStatus status = processorBasedRefactoring.checkAllConditions(new NullProgressMonitor());
 
 					System.out.println(
 							"Original methods after preconditions: " + interfaceMigrationAvailableMethods.size());
@@ -154,6 +161,18 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						// entry.getSeverity(), entry.getCode(),
 						// entry.getPluginId(), entry.getMessage());
 					}
+
+					// actually perform the refactoring.
+					Change change = processorBasedRefactoring
+							.createChange(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+					change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+
+					if (!javaProject.isConsistent())
+						javaProject.makeConsistent(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+
+					if (!javaProject.isStructureKnown())
+						throw new IllegalStateException(String.format("Project: %s should compile after refactoring.",
+								javaProject.getElementName()));
 
 					// end the record.
 					resultsPrinter.println();
