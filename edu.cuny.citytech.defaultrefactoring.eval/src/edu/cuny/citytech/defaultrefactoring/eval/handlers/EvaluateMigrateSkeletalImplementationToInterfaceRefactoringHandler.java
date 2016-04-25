@@ -157,9 +157,6 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						errorPrinter.printRecord(Util.getMethodIdentifier(failedMethod),
 								failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getSeverity(),
 								entry.getCode(), entry.getPluginId(), entry.getMessage());
-						// errorPrinter.printRecord("NULL", "NULL",
-						// entry.getSeverity(), entry.getCode(),
-						// entry.getPluginId(), entry.getMessage());
 					}
 
 					// actually perform the refactoring.
