@@ -557,8 +557,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					boolean methodInHiearchy = isMethodInHierarchy(accessedMethod,
 							destinationInterfaceSuperTypeHierarchy);
 					if (!methodInHiearchy) {
-						addErrorAndMark(result, PreconditionFailure.MethodNotAccessible, sourceMethod, accessedMethod,
-								destination);
+						final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+								PreconditionFailure.MethodNotAccessible.getMessage(),
+								new String[] { getTextLabel(accessedMethod, ALL_FULLY_QUALIFIED),
+										getTextLabel(destination, ALL_FULLY_QUALIFIED) });
+						result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedMethod),
+								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+								PreconditionFailure.MethodNotAccessible.ordinal(), sourceMethod);
+						this.getUnmigratableMethods().add(sourceMethod);
 					}
 				}
 			}
