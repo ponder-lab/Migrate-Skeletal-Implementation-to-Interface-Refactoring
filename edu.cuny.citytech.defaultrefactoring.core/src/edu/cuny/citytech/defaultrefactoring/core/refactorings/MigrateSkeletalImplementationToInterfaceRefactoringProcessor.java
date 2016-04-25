@@ -413,6 +413,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// target of the method doesn't change.
 					// TODO: For now, let's just say no.
 					return false;
+					// TODO: How often is this happening? #142
 				}
 				// if it's public, the answer is yes.
 				if (JdtFlags.isPublic(member))
@@ -486,7 +487,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// TODO: But what if it's a public instance field? More tests?
 				// What if I access System.out? #141.
 				// TODO: Also, are we making this twice? #140.
-				addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField, sourceMethod, field);
+					addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField, sourceMethod, field);
 			}
 
 			boolean isAccessible = pulledUpList.contains(field)
