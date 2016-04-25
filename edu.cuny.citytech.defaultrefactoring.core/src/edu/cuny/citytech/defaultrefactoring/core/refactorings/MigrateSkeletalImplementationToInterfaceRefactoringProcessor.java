@@ -1485,8 +1485,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// TODO: Do we need to worry about preserving ordering of the
 				// modifiers?
 
-				// TODO: Should I be using JdtFlags instead of Flags?
-
 				// if the source method is strictfp.
 				// FIXME: Actually, I think we need to check that, in the
 				// case the target method isn't already strictfp, that the other
@@ -1570,7 +1568,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void removeMethod(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
-		// TODO: Do I need an edit group??
+		// TODO: Do we need an edit group??
 		rewrite.remove(methodDeclaration, null);
 	}
 
