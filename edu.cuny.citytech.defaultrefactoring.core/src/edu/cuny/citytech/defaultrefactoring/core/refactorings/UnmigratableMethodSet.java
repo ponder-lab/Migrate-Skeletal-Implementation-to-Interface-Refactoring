@@ -2,11 +2,12 @@ package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.eclipse.jdt.core.IMethod;
 
-class UnmigratableMethodSet extends HashSet<IMethod> {
+class UnmigratableMethodSet extends LinkedHashSet<IMethod> {
 
 	private static final long serialVersionUID = -2882770464986650890L;
 
