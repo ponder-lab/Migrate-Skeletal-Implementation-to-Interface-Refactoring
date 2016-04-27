@@ -165,6 +165,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							.createChange(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
 					change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
 
+					// ensure that we can build the project.
 					if (!javaProject.isConsistent())
 						javaProject.makeConsistent(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
 
