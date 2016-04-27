@@ -933,4 +933,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithSuperReference2() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodWithAbstractTargetMethod() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }

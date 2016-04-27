@@ -1696,6 +1696,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// Change the target method to default.
 					convertToDefault(targetMethodDeclaration, destinationRewrite);
 
+					// Remove any abstract modifiers from the target method as
+					// both abstract and default are not allowed.
+					removeAbstractness(targetMethodDeclaration, destinationRewrite);
+
 					// TODO: Do we need to worry about preserving ordering of
 					// the
 					// modifiers?
@@ -1795,6 +1799,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		addModifierKeyword(methodDeclaration, ModifierKeyword.DEFAULT_KEYWORD, rewrite);
 	}
 
+	private void removeAbstractness(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
+		removeModifierKeyword(methodDeclaration, ModifierKeyword.ABSTRACT_KEYWORD, rewrite);
+	}
+
 	private void convertToStrictFP(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
 		addModifierKeyword(methodDeclaration, ModifierKeyword.STRICTFP_KEYWORD, rewrite);
 	}
@@ -1804,6 +1812,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		Modifier modifier = rewrite.getAST().newModifier(modifierKeyword);
 		ListRewrite listRewrite = rewrite.getListRewrite(methodDeclaration, methodDeclaration.getModifiersProperty());
 		listRewrite.insertLast(modifier, null);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void removeModifierKeyword(MethodDeclaration methodDeclaration, ModifierKeyword modifierKeyword,
+			ASTRewrite rewrite) {
+		ListRewrite listRewrite = rewrite.getListRewrite(methodDeclaration, methodDeclaration.getModifiersProperty());
+		listRewrite.getOriginalList().stream().filter(o -> o instanceof Modifier).map(Modifier.class::cast)
+				.filter(m -> ((Modifier) m).getKeyword().equals(modifierKeyword)).findAny()
+				.ifPresent(m -> listRewrite.remove((ASTNode) m, null));
 	}
 
 	private static Map<IMethod, IMethod> getMethodToTargetMethodMap() {
