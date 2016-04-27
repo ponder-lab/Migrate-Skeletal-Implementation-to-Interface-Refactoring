@@ -925,4 +925,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithCallsToObjectMethods4() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodWithSuperReference() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithSuperReference2() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }

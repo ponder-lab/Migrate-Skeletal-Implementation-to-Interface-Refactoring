@@ -58,6 +58,10 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
+import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
+import org.eclipse.jdt.core.dom.SuperFieldAccess;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
+import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -1269,12 +1273,40 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Block body = declaration.getBody();
 
 					if (body != null) {
-						// check for calls to particular jav.lang.Object methods
-						// #144.
 						body.accept(new ASTVisitor() {
 
 							@Override
+							public boolean visit(SuperConstructorInvocation node) {
+								addSuperReferenceErrorAndMark(status, sourceMethod);
+								return super.visit(node);
+							}
+
+							private void addSuperReferenceErrorAndMark(RefactoringStatus status, IMethod sourceMethod) {
+								addErrorAndMark(status, PreconditionFailure.MethodContainsSuperReference, sourceMethod);
+							}
+
+							@Override
+							public boolean visit(SuperFieldAccess node) {
+								addSuperReferenceErrorAndMark(status, sourceMethod);
+								return super.visit(node);
+							}
+
+							@Override
+							public boolean visit(SuperMethodInvocation node) {
+								addSuperReferenceErrorAndMark(status, sourceMethod);
+								return super.visit(node);
+							}
+
+							@Override
+							public boolean visit(SuperMethodReference node) {
+								addSuperReferenceErrorAndMark(status, sourceMethod);
+								return super.visit(node);
+							}
+
+							@Override
 							public boolean visit(MethodInvocation node) {
+								// check for calls to particular jav.lang.Object
+								// methods #144.
 								IMethodBinding methodBinding = node.resolveMethodBinding();
 
 								if (methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
