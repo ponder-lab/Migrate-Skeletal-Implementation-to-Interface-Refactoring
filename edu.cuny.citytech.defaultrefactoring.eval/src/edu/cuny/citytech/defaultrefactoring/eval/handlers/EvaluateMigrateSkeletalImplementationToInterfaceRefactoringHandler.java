@@ -62,8 +62,9 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 			try {
 				IJavaProject[] javaProjects = Util.getSelectedJavaProjectsFromEvent(event);
 
-				resultsPrinter = createCSVPrinter("results.csv", new String[] { "subject", "#methods",
-						"#migration available methods", "#migratable methods", "#failed preconditions" });
+				resultsPrinter = createCSVPrinter("results.csv",
+						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
+								"#failed preconditions", "#methods after refactoring" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
 						new String[] { "method", "type FQN" });
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
@@ -170,6 +171,9 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					if (!javaProject.isStructureKnown())
 						throw new IllegalStateException(String.format("Project: %s should compile after refactoring.",
 								javaProject.getElementName()));
+
+					// count the new number of methods.
+					resultsPrinter.print(getAllMethods(javaProject).size());
 
 					// end the record.
 					resultsPrinter.println();
