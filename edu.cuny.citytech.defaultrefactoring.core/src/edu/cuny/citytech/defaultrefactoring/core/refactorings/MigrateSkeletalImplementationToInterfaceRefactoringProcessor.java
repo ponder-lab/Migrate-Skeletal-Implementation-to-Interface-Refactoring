@@ -730,11 +730,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// the particular pattern we are targeting.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesThatDontImplementInterfaces, sourceMethod,
 					type);
-		if (!Flags.isAbstract(type.getFlags()))
-			// TODO for now. This follows the target pattern. Maybe we can
-			// relax this but that would require checking for
-			// instantiations.
-			addErrorAndMark(status, PreconditionFailure.NoMethodsInConcreteTypes, sourceMethod, type);
 		if (Flags.isStatic(type.getFlags()))
 			// TODO no static types for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInStaticTypes, sourceMethod, type);
