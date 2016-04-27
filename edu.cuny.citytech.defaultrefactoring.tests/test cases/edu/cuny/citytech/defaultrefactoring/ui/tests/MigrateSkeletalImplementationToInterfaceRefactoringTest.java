@@ -909,4 +909,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
 				new String[][] { new String[0] }, new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodWithCallsToObjectMethods() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithCallsToObjectMethods2() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithCallsToObjectMethods3() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithCallsToObjectMethods4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }

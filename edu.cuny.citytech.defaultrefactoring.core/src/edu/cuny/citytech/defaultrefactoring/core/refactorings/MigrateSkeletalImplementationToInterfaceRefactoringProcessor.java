@@ -50,9 +50,12 @@ import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTMatcher;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -1255,25 +1258,41 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private RefactoringStatus checkSourceMethodBodies(Optional<IProgressMonitor> pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
+			pm.ifPresent(m -> m.beginTask("Checking source method bodies ...", this.getSourceMethods().size()));
 
 			Iterator<IMethod> it = this.getSourceMethods().iterator();
 			while (it.hasNext()) {
-				IMethod method = it.next();
-				MethodDeclaration declaration = getMethodDeclaration(method, pm);
+				IMethod sourceMethod = it.next();
+				MethodDeclaration declaration = getMethodDeclaration(sourceMethod, pm);
 
 				if (declaration != null) {
 					Block body = declaration.getBody();
 
 					if (body != null) {
-						@SuppressWarnings("rawtypes")
-						List statements = body.statements();
+						// check for calls to particular jav.lang.Object methods
+						// #144.
+						body.accept(new ASTVisitor() {
 
-						if (!statements.isEmpty()) {
-							// TODO for now.
-							RefactoringStatusEntry entry = addError(status, method,
-									PreconditionFailure.NoMethodsWithStatements, method);
-							addUnmigratableMethod(method, entry);
-						}
+							@Override
+							public boolean visit(MethodInvocation node) {
+								IMethodBinding methodBinding = node.resolveMethodBinding();
+
+								if (methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
+									IMethod calledObjectMethod = (IMethod) methodBinding.getJavaElement();
+
+									try {
+										if (Flags.isProtected(calledObjectMethod.getFlags())) {
+											addErrorAndMark(status,
+													PreconditionFailure.MethodContainsCallToProtectedObjectMethod,
+													sourceMethod, calledObjectMethod);
+										}
+									} catch (JavaModelException e) {
+										throw new RuntimeException(e);
+									}
+								}
+								return super.visit(node);
+							}
+						});
 					}
 				}
 				pm.ifPresent(m -> m.worked(1));
@@ -1400,6 +1419,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				throw new OperationCanceledException();
 
 			status.merge(checkSourceMethods(Optional.of(new SubProgressMonitor(monitor, 1))));
+			if (status.hasFatalError())
+				return status;
+			if (monitor.isCanceled())
+				throw new OperationCanceledException();
+
+			status.merge(checkSourceMethodBodies(Optional.of(new SubProgressMonitor(monitor, 1))));
 			if (status.hasFatalError())
 				return status;
 			if (monitor.isCanceled())
@@ -1695,7 +1720,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
 		CompilationUnit compilationUnit = this.typeRootToCompilationUnitMap.get(root);
 		if (compilationUnit == null) {
-			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, false, pm);
+			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, true, pm);
 			this.typeRootToCompilationUnitMap.put(root, compilationUnit);
 		}
 		return compilationUnit;

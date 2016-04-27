@@ -93,7 +93,8 @@ public enum PreconditionFailure {
 	TypeVariable2NotAvailable(RefactoringCoreMessages.PullUpRefactoring_Type_variable2_not_available),
 	TypeVariable3NotAvailable(RefactoringCoreMessages.PullUpRefactoring_Type_variable3_not_available),
 	TypeVariablesNotAvailable(RefactoringCoreMessages.PullUpRefactoring_Type_variables_not_available),
-	TargetMethodHasMultipleSourceMethods(Messages.TargetMethodHasMultipleSourceMethods);
+	TargetMethodHasMultipleSourceMethods(Messages.TargetMethodHasMultipleSourceMethods),
+	MethodContainsCallToProtectedObjectMethod(Messages.MethodContainsCallToProtectedObjectMethod);
 
 	private String message;
 

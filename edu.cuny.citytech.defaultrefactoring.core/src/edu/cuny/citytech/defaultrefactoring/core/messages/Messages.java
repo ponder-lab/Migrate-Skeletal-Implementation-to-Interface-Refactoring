@@ -103,6 +103,7 @@ public class Messages extends NLS {
 	public static String SourceMethodImplementsMultipleMethods;
 	public static String SourceMethodOverridesMethod;
 	public static String TargetMethodHasMultipleSourceMethods;
+	public static String MethodContainsCallToProtectedObjectMethod;
 
 	static {
 		// initialize resource bundle
