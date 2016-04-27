@@ -12,6 +12,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -102,7 +104,7 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
 
-	private Set<IMethod> sourceMethods = new HashSet<>();
+	private Set<IMethod> sourceMethods = new LinkedHashSet<>();
 
 	private Set<IMethod> unmigratableMethods = new UnmigratableMethodSet(sourceMethods);
 
@@ -178,7 +180,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	public Set<IMethod> getMigratableMethods() {
-		Set<IMethod> difference = new HashSet<>(this.getSourceMethods());
+		Set<IMethod> difference = new LinkedHashSet<>(this.getSourceMethods());
 		difference.removeAll(this.getUnmigratableMethods());
 		return difference;
 	}
