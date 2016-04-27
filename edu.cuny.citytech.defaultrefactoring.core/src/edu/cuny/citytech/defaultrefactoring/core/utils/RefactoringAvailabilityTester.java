@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -28,14 +29,23 @@ public final class RefactoringAvailabilityTester {
 
 	public static boolean isInterfaceMigrationAvailable(IMethod method, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
+		return isInterfaceMigrationAvailable(method, true, monitor);
+	}
+
+	public static boolean isInterfaceMigrationAvailable(IMethod method, boolean allowConcreteClasses,
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		if (!Checks.isAvailable(method))
 			return false;
 		if (method.isConstructor())
 			return false;
 
 		final IType declaring = method.getDeclaringType();
-		if (declaring != null && declaring.isInterface())
-			return false; // Method is already in an interface.
+		if (declaring != null) {
+			if (declaring.isInterface())
+				return false; // Method is already in an interface
+			else if (!allowConcreteClasses && !Flags.isAbstract(declaring.getFlags()))
+				return false; // no concrete types allowed.
+		}
 
 		// ensure that there is a target method.
 		IMethod targetMethod = MigrateSkeletalImplementationToInterfaceRefactoringProcessor.getTargetMethod(method,
