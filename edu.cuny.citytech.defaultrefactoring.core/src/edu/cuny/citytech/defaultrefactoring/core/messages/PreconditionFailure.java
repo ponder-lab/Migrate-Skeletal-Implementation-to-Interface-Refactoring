@@ -92,7 +92,8 @@ public enum PreconditionFailure {
 	TypeVariableNotAvailable(RefactoringCoreMessages.PullUpRefactoring_Type_variable_not_available),
 	TypeVariable2NotAvailable(RefactoringCoreMessages.PullUpRefactoring_Type_variable2_not_available),
 	TypeVariable3NotAvailable(RefactoringCoreMessages.PullUpRefactoring_Type_variable3_not_available),
-	TypeVariablesNotAvailable(RefactoringCoreMessages.PullUpRefactoring_Type_variables_not_available);
+	TypeVariablesNotAvailable(RefactoringCoreMessages.PullUpRefactoring_Type_variables_not_available),
+	TargetMethodHasMultipleSourceMethods(Messages.TargetMethodHasMultipleSourceMethods);
 
 	private String message;
 

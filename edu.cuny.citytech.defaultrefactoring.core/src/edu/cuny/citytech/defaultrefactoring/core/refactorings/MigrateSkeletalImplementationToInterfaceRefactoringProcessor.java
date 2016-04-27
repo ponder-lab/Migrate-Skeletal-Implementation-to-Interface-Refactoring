@@ -48,6 +48,7 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTMatcher;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -489,7 +490,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// TODO: But what if it's a public instance field? More tests?
 				// What if I access System.out? #141.
 				// TODO: Also, are we making this twice? #140.
-					addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField, sourceMethod, field);
+				addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField, sourceMethod, field);
 			}
 
 			boolean isAccessible = pulledUpList.contains(field)
@@ -1251,17 +1252,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return this.unmigratableMethods;
 	}
 
-	private RefactoringStatus checkSourceMethodBodies(IProgressMonitor pm) throws JavaModelException {
+	private RefactoringStatus checkSourceMethodBodies(Optional<IProgressMonitor> pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 
 			Iterator<IMethod> it = this.getSourceMethods().iterator();
 			while (it.hasNext()) {
 				IMethod method = it.next();
-				ITypeRoot root = method.getCompilationUnit();
-				CompilationUnit unit = this.getCompilationUnit(root, new SubProgressMonitor(pm, 1));
-
-				MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
+				MethodDeclaration declaration = getMethodDeclaration(method, pm);
 
 				if (declaration != null) {
 					Block body = declaration.getBody();
@@ -1278,12 +1276,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						}
 					}
 				}
-				pm.worked(1);
+				pm.ifPresent(m -> m.worked(1));
 			}
 			return status;
 		} finally {
-			pm.done();
+			pm.ifPresent(IProgressMonitor::done);
 		}
+	}
+
+	private MethodDeclaration getMethodDeclaration(IMethod method, Optional<IProgressMonitor> pm)
+			throws JavaModelException {
+		ITypeRoot root = method.getCompilationUnit();
+		CompilationUnit unit = this.getCompilationUnit(root,
+				new SubProgressMonitor(pm.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
+		MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
+		return declaration;
 	}
 
 	private static void addWarning(RefactoringStatus status, IMethod sourceMethod, PreconditionFailure failure,
@@ -1402,6 +1409,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			status.merge(checkDestinationInterfaces(Optional.of(new SubProgressMonitor(monitor, 1))));
 			if (status.hasFatalError())
 				return status;
+			if (monitor.isCanceled())
+				throw new OperationCanceledException();
+
+			status.merge(checkTargetMethods(Optional.of(new SubProgressMonitor(monitor, 1))));
 
 			// check if there are any methods left to migrate.
 			if (this.getUnmigratableMethods().containsAll(this.getSourceMethods()))
@@ -1419,6 +1430,155 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		} finally {
 			monitor.done();
 		}
+	}
+
+	private RefactoringStatus checkTargetMethods(Optional<IProgressMonitor> monitor) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		// first, create a map of target methods to their set of migratable
+		// source methods.
+		Map<IMethod, Set<IMethod>> targetMethodToMigratableSourceMethodsMap = createTargetMethodToMigratableSourceMethodsMap(
+				monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+
+		monitor.ifPresent(m -> m.beginTask("Checking target methods ...",
+				targetMethodToMigratableSourceMethodsMap.keySet().size()));
+
+		// for each target method.
+		for (IMethod targetMethod : targetMethodToMigratableSourceMethodsMap.keySet()) {
+			Set<IMethod> migratableSourceMethods = targetMethodToMigratableSourceMethodsMap.get(targetMethod);
+
+			// if the target method is associated with multiple source methods.
+			if (migratableSourceMethods.size() > 1) {
+				// we need to decide which of the source methods will be
+				// migrated and which will not. We'll build equivalence sets to
+				// see which of the source method bodies are the same. Then,
+				// we'll pick the largest equivalence set to migrate. That will
+				// reduce the greatest number of methods in the system. The
+				// other sets will become unmigratable. Those methods will just
+				// override the new default method.
+
+				// build the equivalence sets using a union–find data structure
+				// (MakeSet).
+				Set<Set<IMethod>> equivalenceSets = createEquivalenceSets(migratableSourceMethods);
+
+				// merge the sets.
+				mergeEquivalenceSets(equivalenceSets, monitor);
+
+				// find the largest set size.
+				equivalenceSets.stream().map(s -> s.size()).max(Integer::compareTo)
+						// find the first set with this size.
+						.flatMap(size -> equivalenceSets.stream().filter(s -> s.size() == size).findFirst()).ifPresent(
+								// for all of the methods in the other sets ...
+								fls -> equivalenceSets.stream().filter(s -> s != fls).flatMap(s -> s.stream())
+										// mark them as unmigratable.
+										.forEach(m -> addErrorAndMark(status,
+												PreconditionFailure.TargetMethodHasMultipleSourceMethods, m,
+												targetMethod)));
+			}
+			monitor.ifPresent(m -> m.worked(1));
+		}
+
+		monitor.ifPresent(IProgressMonitor::done);
+		return status;
+	}
+
+	private void mergeEquivalenceSets(Set<Set<IMethod>> equivalenceSets, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		// A map of methods to their equivalence set.
+		Map<IMethod, Set<IMethod>> methodToEquivalenceSetMap = new LinkedHashMap<>();
+		for (Set<IMethod> set : equivalenceSets) {
+			for (IMethod method : set) {
+				methodToEquivalenceSetMap.put(method, set);
+			}
+		}
+
+		monitor.ifPresent(
+				m -> m.beginTask("Merging method equivalence sets ...", methodToEquivalenceSetMap.keySet().size()));
+
+		for (IMethod method : methodToEquivalenceSetMap.keySet()) {
+			for (IMethod otherMethod : methodToEquivalenceSetMap.keySet()) {
+				if (method != otherMethod) {
+					Set<IMethod> methodSet = methodToEquivalenceSetMap.get(method); // Find(method)
+					Set<IMethod> otherMethodSet = methodToEquivalenceSetMap.get(otherMethod); // Find(otherMethod)
+
+					// if they are different sets and the elements are
+					// equivalent.
+					if (methodSet != otherMethodSet && isEquivalent(method, otherMethod,
+							monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)))) {
+						// Union(Find(method), Find(otherMethod))
+						methodSet.addAll(otherMethodSet);
+						equivalenceSets.remove(otherMethodSet);
+
+						// update the map.
+						for (IMethod methodInOtherMethodSet : otherMethodSet) {
+							methodToEquivalenceSetMap.put(methodInOtherMethodSet, methodSet);
+						}
+					}
+				}
+			}
+			monitor.ifPresent(m -> m.worked(1));
+		}
+
+		monitor.ifPresent(IProgressMonitor::done);
+	}
+
+	private boolean isEquivalent(IMethod method, IMethod otherMethod, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		monitor.ifPresent(m -> m.beginTask("Checking method equivalence ...", 2));
+
+		MethodDeclaration methodDeclaration = this.getMethodDeclaration(method,
+				monitor.map(m -> new SubProgressMonitor(m, 1)));
+
+		MethodDeclaration otherMethodDeclaration = this.getMethodDeclaration(otherMethod,
+				monitor.map(m -> new SubProgressMonitor(m, 1)));
+
+		monitor.ifPresent(IProgressMonitor::done);
+
+		Block methodDeclarationBody = methodDeclaration.getBody();
+		Block otherMethodDeclarationBody = otherMethodDeclaration.getBody();
+
+		boolean match = methodDeclarationBody.subtreeMatch(new ASTMatcher(), otherMethodDeclarationBody);
+		return match;
+	}
+
+	private static Set<Set<IMethod>> createEquivalenceSets(Set<IMethod> migratableSourceMethods) {
+		Set<Set<IMethod>> ret = new LinkedHashSet<>();
+
+		migratableSourceMethods.stream().forEach(m -> {
+			Set<IMethod> set = new LinkedHashSet<>();
+			set.add(m);
+			ret.add(set);
+		});
+
+		return ret;
+	}
+
+	private Map<IMethod, Set<IMethod>> createTargetMethodToMigratableSourceMethodsMap(
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
+		Map<IMethod, Set<IMethod>> ret = new LinkedHashMap<>();
+		Set<IMethod> migratableMethods = this.getMigratableMethods();
+
+		monitor.ifPresent(m -> m.beginTask("Finding migratable source methods for each target method ...",
+				migratableMethods.size()));
+
+		for (IMethod sourceMethod : migratableMethods) {
+			IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
+
+			ret.compute(targetMethod, (k, v) -> {
+				if (v == null) {
+					Set<IMethod> sourceMethodSet = new LinkedHashSet<>();
+					sourceMethodSet.add(sourceMethod);
+					return sourceMethodSet;
+				} else {
+					v.add(sourceMethod);
+					return v;
+				}
+			});
+			monitor.ifPresent(m -> m.worked(1));
+		}
+
+		monitor.ifPresent(IProgressMonitor::done);
+		return ret;
 	}
 
 	private void clearCaches() {
@@ -1445,52 +1605,62 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
 
-			Set<IMethod> methods = this.getMigratableMethods();
+			Set<IMethod> migratableMethods = this.getMigratableMethods();
 
-			if (methods.isEmpty())
+			if (migratableMethods.isEmpty())
 				return new NullChange(Messages.NoMethodsToMigrate);
 
-			for (IMethod sourceMethod : methods) {
-				// Find the target method.
-				IMethod targetMethod = getTargetMethod(sourceMethod,
-						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
+			// the set of target methods that we transformed to default methods.
+			Set<IMethod> transformedTargetMethods = new HashSet<>(migratableMethods.size());
 
-				IType destinationInterface = targetMethod.getDeclaringType();
-
-				logInfo("Migrating method: " + getElementLabel(sourceMethod, ALL_FULLY_QUALIFIED) + " to interface: "
-						+ destinationInterface.getFullyQualifiedName());
-
-				CompilationUnit destinationCompilationUnit = this.getCompilationUnit(destinationInterface.getTypeRoot(),
-						pm);
-				ASTRewrite destinationRewrite = getASTRewrite(destinationCompilationUnit);
-
+			for (IMethod sourceMethod : migratableMethods) {
+				// get the source method declaration.
 				CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
-
 				MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod,
 						sourceCompilationUnit);
 				logInfo("Source method declaration: " + sourceMethodDeclaration);
 
-				MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
-						destinationCompilationUnit);
+				// Find the target method.
+				IMethod targetMethod = getTargetMethod(sourceMethod,
+						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
 
-				// tack on the source method body to the target method.
-				copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+				// if we have not already transformed this method
+				if (!transformedTargetMethods.contains(targetMethod)) {
+					IType destinationInterface = targetMethod.getDeclaringType();
 
-				// Change the target method to default.
-				convertToDefault(targetMethodDeclaration, destinationRewrite);
+					logInfo("Migrating method: " + getElementLabel(sourceMethod, ALL_FULLY_QUALIFIED)
+							+ " to interface: " + destinationInterface.getFullyQualifiedName());
 
-				// TODO: Do we need to worry about preserving ordering of the
-				// modifiers?
+					CompilationUnit destinationCompilationUnit = this
+							.getCompilationUnit(destinationInterface.getTypeRoot(), pm);
+					ASTRewrite destinationRewrite = getASTRewrite(destinationCompilationUnit);
 
-				// if the source method is strictfp.
-				// FIXME: Actually, I think we need to check that, in the
-				// case the target method isn't already strictfp, that the other
-				// methods in the hierarchy are.
-				if ((Flags.isStrictfp(sourceMethod.getFlags())
-						|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
-						&& !Flags.isStrictfp(targetMethod.getFlags()))
-					// change the target method to strictfp.
-					convertToStrictFP(targetMethodDeclaration, destinationRewrite);
+					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
+							destinationCompilationUnit);
+
+					// tack on the source method body to the target method.
+					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+
+					// Change the target method to default.
+					convertToDefault(targetMethodDeclaration, destinationRewrite);
+
+					// TODO: Do we need to worry about preserving ordering of
+					// the
+					// modifiers?
+
+					// if the source method is strictfp.
+					// FIXME: Actually, I think we need to check that, in the
+					// case the target method isn't already strictfp, that the
+					// other
+					// methods in the hierarchy are.
+					if ((Flags.isStrictfp(sourceMethod.getFlags())
+							|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
+							&& !Flags.isStrictfp(targetMethod.getFlags()))
+						// change the target method to strictfp.
+						convertToStrictFP(targetMethodDeclaration, destinationRewrite);
+
+					transformedTargetMethods.add(targetMethod);
+				}
 
 				// Remove the source method.
 				ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);

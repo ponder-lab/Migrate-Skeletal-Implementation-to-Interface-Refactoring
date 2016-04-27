@@ -879,4 +879,34 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testComplicatedHierarchy() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods2() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods4() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods5() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] }, new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodWithTargetThatHasMultipleSourceMethods6() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] }, new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
