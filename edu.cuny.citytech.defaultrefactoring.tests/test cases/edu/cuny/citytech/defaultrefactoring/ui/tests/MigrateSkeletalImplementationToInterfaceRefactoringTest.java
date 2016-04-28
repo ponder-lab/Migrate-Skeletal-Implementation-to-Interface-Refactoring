@@ -955,11 +955,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 	
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
 	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy2() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy3() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }
