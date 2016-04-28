@@ -6,9 +6,10 @@ interface I {
 
 abstract class A implements I {
 	int f;
-	
+
 	@Override
 	public void m() {
-		int g = new A() {}.f;
+		int g = new A() {
+		}.f;
 	}
 }

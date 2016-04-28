@@ -7,5 +7,5 @@ interface I {
 }
 
 class A implements I {
-	int f;	
+	int f;
 }
