@@ -53,6 +53,8 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -64,6 +66,12 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.core.search.SearchMatch;
+import org.eclipse.jdt.core.search.SearchParticipant;
+import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
@@ -478,39 +486,98 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAccessedFields(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
-			final ITypeHierarchy hierarchy) throws JavaModelException {
+			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws CoreException {
 		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
 		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+
 		final IField[] accessedFields = ReferenceFinderUtil.getFieldsReferencedIn(new IJavaElement[] { sourceMethod },
 				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
 
-		final IType destination = getDestinationInterface(sourceMethod).get();
-		for (int i = 0; i < accessedFields.length; i++) {
-			final IField field = accessedFields[i];
-			if (!field.exists())
+		final IType destination = getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
+				"Source method: " + sourceMethod + " has no destiantion interface."));
+
+		for (int index = 0; index < accessedFields.length; index++) {
+			final IField accessedField = accessedFields[index];
+
+			if (!accessedField.exists())
 				continue;
 
-			// if it's an instance field
-			if (!Flags.isStatic(field.getFlags()) && !field.getDeclaringType().isInterface()) {
-				// TODO: But what if it's a public instance field? More tests?
-				// What if I access System.out? #141.
-				// TODO: Also, are we making this twice? #140.
-				addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField, sourceMethod, field);
-			}
+			boolean isAccessible = pulledUpList.contains(accessedField) || canBeAccessedFrom(sourceMethod,
+					accessedField, destination, destinationInterfaceSuperTypeHierarchy)
+					|| Flags.isEnum(accessedField.getFlags());
 
-			boolean isAccessible = pulledUpList.contains(field)
-					|| canBeAccessedFrom(sourceMethod, field, destination, hierarchy) || Flags.isEnum(field.getFlags());
 			if (!isAccessible) {
 				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
 						PreconditionFailure.FieldNotAccessible.getMessage(),
-						new String[] { JavaElementLabels.getTextLabel(field, JavaElementLabels.ALL_FULLY_QUALIFIED),
+						new String[] {
+								JavaElementLabels.getTextLabel(accessedField, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
-				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(field),
+				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedField),
 						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
 						PreconditionFailure.FieldNotAccessible.ordinal(), sourceMethod);
 				this.getUnmigratableMethods().add(sourceMethod);
+			} else if (!JdtFlags.isStatic(accessedField) && !accessedField.getDeclaringType().isInterface()) {
+				// it's accessible and it's an instance field.
+				// Let's decide if the source method is accessing it from this
+				// object or another. If it's from this object, we fail.
+				// First, find all references of the accessed field in the
+				// source method.
+				new SearchEngine().search(
+						SearchPattern.createPattern(accessedField, IJavaSearchConstants.REFERENCES,
+								SearchPattern.R_EXACT_MATCH),
+						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
+						SearchEngine.createJavaSearchScope(new IJavaElement[] { sourceMethod }), new SearchRequestor() {
+
+							@Override
+							public void acceptSearchMatch(SearchMatch match) throws CoreException {
+								// get the AST node corresponding to the field
+								// access. It should be some kind of name
+								// (simple of qualified).
+								ASTNode node = ASTNodeSearchUtil
+										.getAstNode(match,
+												getCompilationUnit(((IMember) match.getElement()).getTypeRoot(),
+														new SubProgressMonitor(
+																monitor.orElseGet(NullProgressMonitor::new),
+																IProgressMonitor.UNKNOWN)));
+
+								// examine the node's parent.
+								ASTNode parent = node.getParent();
+
+								switch (parent.getNodeType()) {
+								case ASTNode.FIELD_ACCESS: {
+									FieldAccess fieldAccess = (FieldAccess) parent;
+
+									// the expression is the LHS of the
+									// selection operator.
+									Expression expression = fieldAccess.getExpression();
+
+									if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION)
+										// either there is nothing on the LHS
+										// (not likely) or it's this, in which
+										// case we fail.
+										addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField,
+												sourceMethod, accessedField);
+									break;
+								}
+								case ASTNode.SUPER_FIELD_ACCESS: {
+									// super will also tell us that it's an
+									// instance field access.
+									addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField,
+											sourceMethod, accessedField);
+									break;
+								}
+								default: {
+									// it must be an unqualified field access,
+									// meaning that it's an instance method.
+									addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField,
+											sourceMethod, accessedField);
+								}
+								}
+							}
+						},
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
 			}
 		}
 		monitor.ifPresent(IProgressMonitor::done);
@@ -593,7 +660,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAccesses(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
+			throws CoreException {
 		final RefactoringStatus result = new RefactoringStatus();
 		try {
 			monitor.ifPresent(
@@ -886,7 +953,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private RefactoringStatus checkSourceMethods(Optional<IProgressMonitor> pm) throws JavaModelException {
+	private RefactoringStatus checkSourceMethods(Optional<IProgressMonitor> pm) throws CoreException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
