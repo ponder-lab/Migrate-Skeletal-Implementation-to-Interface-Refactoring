@@ -937,4 +937,29 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithAbstractTargetMethod() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfADifferentType() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType() throws Exception {
+		//control of the above.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
 }
