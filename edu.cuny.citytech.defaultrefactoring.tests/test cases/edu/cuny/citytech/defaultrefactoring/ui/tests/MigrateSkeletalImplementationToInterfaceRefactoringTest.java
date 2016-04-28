@@ -3,6 +3,7 @@
  */
 package edu.cuny.citytech.defaultrefactoring.ui.tests;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.IBuffer;
@@ -32,6 +33,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	private static final Logger logger = Logger.getLogger(clazz.getName());
 
 	private static final String REFACTORING_PATH = "MigrateSkeletalImplementationToInterface/";
+
+	static {
+		logger.setLevel(Level.FINER);
+	}
 
 	public static Test setUpTest(Test test) {
 		return new Java18Setup(test);
@@ -289,7 +294,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodContainedInTypeWithSuperTypes() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeThatImplementsMultipleInterfaces() throws Exception {
@@ -297,7 +302,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces2() throws Exception {
@@ -313,7 +318,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodDeclaredInConcreteType() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodDeclaredInStaticType() throws Exception {
@@ -459,7 +464,31 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceWithFields() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields3() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields5() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields6() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceWithFields7() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	/**
@@ -490,7 +519,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceThatExtendsInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceWithTypeParameters() throws Exception {
@@ -510,19 +539,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass3() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass4() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass5() throws Exception {
@@ -530,15 +559,27 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceHierarchyWithInvalidInterface4() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceHierarchyWithInvalidInterface5() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDestinationInterfaceHierarchyWithInvalidInterface6() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMultipleDestinationInterfaces() throws Exception {
@@ -546,7 +587,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMultipleDestinationInterfaces2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMultipleDestinationInterfaces3() throws Exception {
@@ -554,51 +595,82 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceHierarchyWithSubtype() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithSuperInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceWithExtendingInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
-	public void testDestinationInterfaceWithInvalidImplementingClass() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass3() throws Exception {
+		// TODO: #128
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeHierarchyWithInvalidClass4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeHierarchyWithInvalidClass5() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeHierarchyWithInvalidClass6() throws Exception {
+		// here, we're testing a case where the called method is in both
+		// of the declaring type and destination interface hierarchies.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidInterface() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
-	public void testDeclaringTypeHierarchyWithInvalidInterface2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidInterface3() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeWithSubtype() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeWithSupertype() throws Exception {
+		// this test has a field in the super type but the method to migrate
+		// does not access it.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeWithSupertype2() throws Exception {
+		// like the first but with access.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeWithSupertype3() throws Exception {
+		// here, class wins but there isn't a call to A.m(), thus preserving
+		// semantics. Still, I feel like we should fail here because we would
+		// changing the method relationships.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testDeclaringTypeWithSupertype4() throws Exception {
+		// here, class wins and there is a call to A.m(), thus preserving
+		// semantics.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeWithInvalidSupertype() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodWithNoTargetMethod() throws Exception {
@@ -673,6 +745,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testMethodThatCallsAnotherMethod13() throws Exception {
+		// Source method calls System.out.println(). Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatCallsAnotherMethod14() throws Exception {
+		// Source method calls a static method. Should pass.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testMethodThatUsesThis() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
@@ -735,14 +817,124 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		 * J.m(), it will inherit.
 		 */
 		// TODO: Correctly failing, yes, but for the wrong reason. We aren't
-		// checking the hierarchy.
+		// checking the hierarchy. #114.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodWithInheritedDefaultMethod2() throws Exception {
 		// Same as above but reverse the interfaces.
 		// TODO: Correctly failing, yes, but for the wrong reason. We aren't
-		// checking the hierarchy.
+		// checking the hierarchy. #114.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithInheritedDefaultMethod3() throws Exception {
+		// Similar to above but with a more complex hierarchy. This one should
+		// pass because the problem is in a sub-interface.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithInheritedDefaultMethod4() throws Exception {
+		// Similar to above but with a more complex hierarchy. This one should
+		// fail because the problem is in a super-interface.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithNoInheritedDefaultMethod() throws Exception {
+		// Should pass because, although multiple interfaces are implemented,
+		// there is no conflict.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatSkipsType() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatSkipsType2() throws Exception {
+		// Like above but this one implement interface directly.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatSkipsType3() throws Exception {
+		// Here, B doesn't explicitly implement the interface but we still have the 
+		// same problem.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatSkipsType4() throws Exception {
+		// This one should fail due to type checking.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatDoesntSkipType() throws Exception {
+		// "control"
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatDoesntSkipType2() throws Exception {
+		// "control"
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testComplicatedHierarchy() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods2() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods4() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+
+	public void testMethodWithTargetThatHasMultipleSourceMethods5() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] }, new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodWithTargetThatHasMultipleSourceMethods6() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] }, new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithCallsToObjectMethods() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithCallsToObjectMethods2() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithCallsToObjectMethods3() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithCallsToObjectMethods4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithSuperReference() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithSuperReference2() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodWithAbstractTargetMethod() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 }

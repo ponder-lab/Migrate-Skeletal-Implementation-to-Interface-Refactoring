@@ -1,7 +1,5 @@
 package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
-import static org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements;
-import static org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages.PullUpRefactoring_method_not_accessible;
 import static org.eclipse.jdt.ui.JavaElementLabels.ALL_FULLY_QUALIFIED;
 import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 import static org.eclipse.jdt.ui.JavaElementLabels.getTextLabel;
@@ -9,10 +7,13 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getTextLabel;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,12 +48,20 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTMatcher;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
+import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
+import org.eclipse.jdt.core.dom.SuperFieldAccess;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
+import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -91,9 +100,8 @@ import com.google.common.collect.Table;
 
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
+import edu.cuny.citytech.defaultrefactoring.core.messages.PreconditionFailure;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
-
-// TODO: Are we checking the target interface? I think that the target interface should be completely empty for now.
 
 /**
  * The activator class controls the plug-in life cycle
@@ -104,9 +112,9 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
 
-	private Set<IMethod> sourceMethods = new HashSet<>();
+	private Set<IMethod> sourceMethods = new LinkedHashSet<>();
 
-	private Set<IMethod> unmigratableMethods = new HashSet<>();
+	private Set<IMethod> unmigratableMethods = new UnmigratableMethodSet(sourceMethods);
 
 	private static final String FUNCTIONAL_INTERFACE_ANNOTATION_NAME = "FunctionalInterface";
 
@@ -119,7 +127,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			new GroupCategory("edu.cuny.citytech.defaultrefactoring", //$NON-NLS-1$
 					Messages.CategoryName, Messages.CategoryDescription));
 
-	private Map<IMethod, IMethod> sourceMethodToTargetMethodMap = new HashMap<>();
+	private static Map<IMethod, IMethod> methodToTargetMethodMap = new HashMap<>();
 
 	/** The code generation settings, or <code>null</code> */
 	private CodeGenerationSettings settings;
@@ -127,8 +135,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/** Does the refactoring use a working copy layer? */
 	private final boolean layer;
 
-	private static Table<IMethod, IType, IMethod> sourceMethodTargetInterfaceTargetMethodTable = HashBasedTable
-			.create();
+	private static Table<IMethod, IType, IMethod> methodTargetInterfaceTargetMethodTable = HashBasedTable.create();
 
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
@@ -139,16 +146,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
 			final CodeGenerationSettings settings, boolean layer, Optional<IProgressMonitor> monitor)
-					throws JavaModelException {
+			throws JavaModelException {
 		try {
 			this.settings = settings;
 			this.layer = layer;
-			this.sourceMethods = new HashSet<>(Arrays.asList(methods));
+			Collections.addAll(this.getSourceMethods(), methods);
 
-			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", this.sourceMethods.size()));
+			monitor.ifPresent(m -> m.beginTask("Finding target methods ...", methods.length));
 
-			for (IMethod method : this.sourceMethods) {
-				this.sourceMethodToTargetMethodMap.put(method, getTargetMethod(method, monitor));
+			for (IMethod method : methods) {
+				// this will populate the map if needed.
+				getTargetMethod(method, monitor);
 				monitor.ifPresent(m -> m.worked(1));
 			}
 
@@ -176,15 +184,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	@Override
 	public Object[] getElements() {
-		Set<IMethod> difference = new HashSet<>(this.getSourceMethods());
+		return getMigratableMethods().toArray();
+	}
+
+	public Set<IMethod> getMigratableMethods() {
+		Set<IMethod> difference = new LinkedHashSet<>(this.getSourceMethods());
 		difference.removeAll(this.getUnmigratableMethods());
-		return difference.toArray();
+		return difference;
 	}
 
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
 		try {
+			this.clearCaches();
+
 			if (this.getSourceMethods().isEmpty())
 				return RefactoringStatus.createFatalErrorStatus(Messages.MethodsNotSpecified);
 			else {
@@ -217,43 +231,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		// Ensure that target methods are not already default methods.
 		// For each method to move, add a warning if the associated target
 		// method is already default.
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
 		if (targetMethod != null) {
 			int targetMethodFlags = targetMethod.getFlags();
 
 			if (Flags.isDefaultMethod(targetMethodFlags)) {
-				RefactoringStatusEntry entry = addError(status, Messages.TargetMethodIsAlreadyDefault, targetMethod);
+				RefactoringStatusEntry entry = addError(status, sourceMethod,
+						PreconditionFailure.TargetMethodIsAlreadyDefault, targetMethod);
 				addUnmigratableMethod(sourceMethod, entry);
 			}
 		}
-		return status;
-	}
-
-	private RefactoringStatus checkDestinationInterfaceOnlyDeclaresTargetMethods(IMethod sourceMethod)
-			throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-
-		// get the destination interface.
-		IType destinationInterface = this.getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
-
-		// get the methods declared by the destination interface.
-		Set<IMethod> destinationInterfaceMethodsSet = new HashSet<>(Arrays.asList(destinationInterface.getMethods()));
-
-		// get the target methods that are declared by the destination
-		// interface.
-		Set<IMethod> targetMethodDeclaredByDestinationInterfaceSet = this.getSourceMethodToTargetMethodMap().values()
-				.parallelStream().filter(Objects::nonNull)
-				.filter(m -> m.getDeclaringType().equals(destinationInterface)).collect(Collectors.toSet());
-
-		// TODO: For now, the target interface must only contain the target
-		// methods.
-		if (!destinationInterfaceMethodsSet.equals(targetMethodDeclaredByDestinationInterfaceSet)) {
-			RefactoringStatusEntry error = addError(status,
-					Messages.DestinationInterfaceMustOnlyDeclareTheMethodToMigrate, destinationInterface);
-			addUnmigratableMethod(sourceMethod, error);
-		}
-
 		return status;
 	}
 
@@ -266,30 +254,29 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			for (IMethod sourceMethod : this.getSourceMethods()) {
 				final Optional<IType> targetInterface = this.getDestinationInterface(sourceMethod);
 
-				// Can't be null.
+				// Can't be empty.
 				if (!targetInterface.isPresent()) {
-					RefactoringStatusEntry error = addError(status, Messages.NoDestinationInterface);
-					addUnmigratableMethod(sourceMethod, error);
+					addErrorAndMark(status, PreconditionFailure.NoDestinationInterface, sourceMethod);
 					return status;
 				}
 
 				// Must be a pure interface.
 				if (!isPureInterface(targetInterface.get())) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationTypeMustBePureInterface,
-							targetInterface.get());
+					RefactoringStatusEntry error = addError(status, sourceMethod,
+							PreconditionFailure.DestinationTypeMustBePureInterface, targetInterface.get());
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
 				// Make sure it exists.
 				RefactoringStatus existence = checkExistence(targetInterface.get(),
-						Messages.DestinationInterfaceDoesNotExist);
+						PreconditionFailure.DestinationInterfaceDoesNotExist);
 				status.merge(existence);
 				if (!existence.isOK())
 					addUnmigratableMethod(sourceMethod, existence.getEntryWithHighestSeverity());
 
 				// Make sure we can write to it.
 				RefactoringStatus writabilitiy = checkWritabilitiy(targetInterface.get(),
-						Messages.DestinationInterfaceNotWritable);
+						PreconditionFailure.DestinationInterfaceNotWritable);
 				status.merge(writabilitiy);
 				if (!writabilitiy.isOK())
 					addUnmigratableMethod(sourceMethod, writabilitiy.getEntryWithHighestSeverity());
@@ -302,63 +289,44 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				// TODO: For now, no annotated target interfaces.
 				if (targetInterface.get().getAnnotations().length != 0) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceHasAnnotations,
-							targetInterface.get());
+					RefactoringStatusEntry error = addError(status, sourceMethod,
+							PreconditionFailure.DestinationInterfaceHasAnnotations, targetInterface.get());
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
 				// #35: The target interface should not be a
 				// @FunctionalInterface.
 				if (isInterfaceFunctional(targetInterface.get())) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceIsFunctional,
-							targetInterface.get());
+					RefactoringStatusEntry error = addError(status, sourceMethod,
+							PreconditionFailure.DestinationInterfaceIsFunctional, targetInterface.get());
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
 				// TODO: For now, only top-level types.
 				if (targetInterface.get().getDeclaringType() != null) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceIsNotTopLevel,
-							targetInterface.get());
-					addUnmigratableMethod(sourceMethod, error);
-				}
-
-				// TODO: For now, no fields. I suppose that the reason we don't
-				// allow this for now is because the source method may access
-				// fields of the same name? But, when we perform the migration,
-				// we should fully qualify the name of the accessed field, so, I
-				// think, that this shouldn't be a problem.
-				// TODO: Are we actually doing that in createChange?
-				if (targetInterface.get().getFields().length != 0) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceDeclaresFields,
-							targetInterface.get());
-					addUnmigratableMethod(sourceMethod, error);
-				}
-
-				// TODO: For now, no super interfaces.
-				if (targetInterface.get().getSuperInterfaceNames().length != 0) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceExtendsInterface,
-							targetInterface.get());
+					RefactoringStatusEntry error = addError(status, sourceMethod,
+							PreconditionFailure.DestinationInterfaceIsNotTopLevel, targetInterface.get());
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
 				// TODO: For now, no type parameters.
 				if (targetInterface.get().getTypeParameters().length != 0) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceDeclaresTypeParameters,
-							targetInterface.get());
+					RefactoringStatusEntry error = addError(status, sourceMethod,
+							PreconditionFailure.DestinationInterfaceDeclaresTypeParameters, targetInterface.get());
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
 				// TODO: For now, no member types.
 				if (targetInterface.get().getTypes().length != 0) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceDeclaresMemberTypes,
-							targetInterface.get());
+					RefactoringStatusEntry error = addError(status, sourceMethod,
+							PreconditionFailure.DestinationInterfaceDeclaresMemberTypes, targetInterface.get());
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
 				// TODO: For now, no member interfaces.
 				if (targetInterface.get().isMember()) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceIsMember,
-							targetInterface.get());
+					RefactoringStatusEntry error = addError(status, sourceMethod,
+							PreconditionFailure.DestinationInterfaceIsMember, targetInterface.get());
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
@@ -366,13 +334,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// also strictfp #42.
 				if (Flags.isStrictfp(targetInterface.get().getFlags())
 						&& !allMethodsToMoveInTypeAreStrictFP(sourceMethod.getDeclaringType())) {
-					RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceIsStrictFP,
-							targetInterface.get());
+					RefactoringStatusEntry error = addError(status, sourceMethod,
+							PreconditionFailure.DestinationInterfaceIsStrictFP, targetInterface.get());
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
-				status.merge(checkDestinationInterfaceHierarchy(sourceMethod,
-						monitor.map(m -> new SubProgressMonitor(m, 1))));
 				status.merge(checkDestinationInterfaceTargetMethods(sourceMethod));
 
 				monitor.ifPresent(m -> m.worked(1));
@@ -457,6 +423,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// target of the method doesn't change.
 					// TODO: For now, let's just say no.
 					return false;
+					// TODO: How often is this happening? #142
 				}
 				// if it's public, the answer is yes.
 				if (JdtFlags.isPublic(member))
@@ -496,12 +463,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				continue;
 
 			if (!canBeAccessedFrom(sourceMethod, type, destination, hierarchy) && !pulledUpList.contains(type)) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(RefactoringCoreMessages.PullUpRefactoring_type_not_accessible,
-								new String[] { JavaElementLabels.getTextLabel(type,
-										JavaElementLabels.ALL_FULLY_QUALIFIED),
+				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+						PreconditionFailure.TypeNotAccessible.getMessage(),
+						new String[] { JavaElementLabels.getTextLabel(type, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
-				result.addError(message, JavaStatusContext.create(type));
+				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(type),
+						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+						PreconditionFailure.TypeNotAccessible.ordinal(), sourceMethod);
 				this.getUnmigratableMethods().add(sourceMethod);
 			}
 		}
@@ -524,20 +492,24 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (!field.exists())
 				continue;
 
-			if (!Flags.isStatic(field.getFlags())) { // if it's an instance
-														// field
-				addErrorAndMark(result, Messages.SourceMethodAccessesInstanceField, sourceMethod, field);
+			// if it's an instance field
+			if (!Flags.isStatic(field.getFlags()) && !field.getDeclaringType().isInterface()) {
+				// TODO: But what if it's a public instance field? More tests?
+				// What if I access System.out? #141.
+				// TODO: Also, are we making this twice? #140.
+				addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField, sourceMethod, field);
 			}
 
 			boolean isAccessible = pulledUpList.contains(field)
 					|| canBeAccessedFrom(sourceMethod, field, destination, hierarchy) || Flags.isEnum(field.getFlags());
 			if (!isAccessible) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(RefactoringCoreMessages.PullUpRefactoring_field_not_accessible,
-								new String[] { JavaElementLabels.getTextLabel(field,
-										JavaElementLabels.ALL_FULLY_QUALIFIED),
+				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+						PreconditionFailure.FieldNotAccessible.getMessage(),
+						new String[] { JavaElementLabels.getTextLabel(field, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
-				result.addError(message, JavaStatusContext.create(field));
+				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(field),
+						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+						PreconditionFailure.FieldNotAccessible.ordinal(), sourceMethod);
 				this.getUnmigratableMethods().add(sourceMethod);
 			}
 		}
@@ -546,34 +518,78 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAccessedMethods(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
-			final ITypeHierarchy hierarchy) throws JavaModelException {
-		monitor.ifPresent(m -> m.beginTask(PullUpRefactoring_checking_referenced_elements, 2));
+			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws JavaModelException {
+		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
 		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+
 		final IMethod[] accessedMethods = ReferenceFinderUtil.getMethodsReferencedIn(
 				new IJavaElement[] { sourceMethod },
 				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
 
 		final IType destination = getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
 				"Source method: " + sourceMethod + " has no destiantion interface."));
+
 		for (int index = 0; index < accessedMethods.length; index++) {
-			final IMethod method = accessedMethods[index];
-			if (!method.exists())
+			final IMethod accessedMethod = accessedMethods[index];
+
+			if (!accessedMethod.exists())
 				continue;
-			boolean isAccessible = pulledUpList.contains(method)
-					|| canBeAccessedFrom(sourceMethod, method, destination, hierarchy);
+
+			boolean isAccessible = pulledUpList.contains(accessedMethod) || canBeAccessedFrom(sourceMethod,
+					accessedMethod, destination, destinationInterfaceSuperTypeHierarchy);
+
 			if (!isAccessible) {
 				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
-						PullUpRefactoring_method_not_accessible,
-						new String[] { getTextLabel(method, ALL_FULLY_QUALIFIED),
+						PreconditionFailure.MethodNotAccessible.getMessage(),
+						new String[] { getTextLabel(accessedMethod, ALL_FULLY_QUALIFIED),
 								getTextLabel(destination, ALL_FULLY_QUALIFIED) });
-				result.addError(message, JavaStatusContext.create(method));
+				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedMethod),
+						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+						PreconditionFailure.MethodNotAccessible.ordinal(), sourceMethod);
 				this.getUnmigratableMethods().add(sourceMethod);
+			} else if (!JdtFlags.isStatic(accessedMethod)) {
+				// it's accessible and it's not static but do we have the
+				// correct implicit parameter available?
+				// let's check to see if the method is somewhere in the
+				// hierarchy.
+				IType methodDeclaringType = accessedMethod.getDeclaringType();
+
+				// is this method declared in a type that is in the declaring
+				// type's super type hierarchy?
+				ITypeHierarchy declaringTypeSuperTypeHierarchy = getSuperTypeHierarchy(sourceMethod.getDeclaringType(),
+						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+
+				if (declaringTypeSuperTypeHierarchy.contains(methodDeclaringType)) {
+					// if so, then we need to check that it is in the
+					// destination interface's super type hierarchy.
+					boolean methodInHiearchy = isMethodInHierarchy(accessedMethod,
+							destinationInterfaceSuperTypeHierarchy);
+					if (!methodInHiearchy) {
+						final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+								PreconditionFailure.MethodNotAccessible.getMessage(),
+								new String[] { getTextLabel(accessedMethod, ALL_FULLY_QUALIFIED),
+										getTextLabel(destination, ALL_FULLY_QUALIFIED) });
+						result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedMethod),
+								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+								PreconditionFailure.MethodNotAccessible.ordinal(), sourceMethod);
+						this.getUnmigratableMethods().add(sourceMethod);
+					}
+				}
 			}
 		}
+
 		monitor.ifPresent(IProgressMonitor::done);
 		return result;
+	}
+
+	private static boolean isMethodInHierarchy(IMethod method, ITypeHierarchy hierarchy) {
+		// TODO: Cache this?
+		return Stream.of(hierarchy.getAllTypes()).parallel().anyMatch(t -> {
+			IMethod[] methods = t.findMethods(method);
+			return methods != null && methods.length > 0;
+		});
 	}
 
 	private RefactoringStatus checkAccesses(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
@@ -582,13 +598,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		try {
 			monitor.ifPresent(
 					m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 4));
-			final ITypeHierarchy hierarchy = getSuperTypeHierarchy(
-					getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
-							"Source method: " + sourceMethod + " has no destination interface.")),
+
+			IType destinationInterface = getDestinationInterface(sourceMethod)
+					.orElseThrow(() -> new IllegalArgumentException(
+							"Source method: " + sourceMethod + " has no destination interface."));
+
+			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy = getSuperTypeHierarchy(destinationInterface,
 					monitor.map(m -> new SubProgressMonitor(m, 1)));
-			result.merge(checkAccessedTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
-			result.merge(checkAccessedFields(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
-			result.merge(checkAccessedMethods(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)), hierarchy));
+
+			result.merge(checkAccessedTypes(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)),
+					destinationInterfaceSuperTypeHierarchy));
+
+			result.merge(checkAccessedFields(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)),
+					destinationInterfaceSuperTypeHierarchy));
+
+			result.merge(checkAccessedMethods(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)),
+					destinationInterfaceSuperTypeHierarchy));
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
@@ -610,110 +635,48 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				.anyMatch(s -> s.contains(FUNCTIONAL_INTERFACE_ANNOTATION_NAME));
 	}
 
-	private RefactoringStatus checkDestinationInterfaceHierarchy(IMethod sourceMethod,
+	private RefactoringStatus checkValidInterfacesInDeclaringTypeHierarchy(IMethod sourceMethod,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
-		monitor.ifPresent(m -> m.subTask("Checking destination interface hierarchy..."));
 
-		IType destinationInterface = this.getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
+		ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
+		IType[] declaringTypeSuperInterfaces = hierarchy.getAllSuperInterfaces(sourceMethod.getDeclaringType());
 
-		final ITypeHierarchy hierarchy = this.getTypeHierarchy(destinationInterface,
-				monitor.map(m -> new SubProgressMonitor(m, 1)));
+		// the number of methods sourceMethod is implementing.
+		long numberOfImplementedMethods = Arrays.stream(declaringTypeSuperInterfaces).parallel().distinct()
+				.flatMap(i -> Arrays.stream(Optional.ofNullable(i.findMethods(sourceMethod)).orElse(new IMethod[] {})))
+				.count();
 
-		status.merge(checkValidClassesInHierarchy(sourceMethod, hierarchy,
-				Messages.DestinationInterfaceHierarchyContainsInvalidClass));
-		status.merge(checkValidInterfacesInHierarchy(sourceMethod, hierarchy,
-				Messages.DestinationInterfaceHierarchyContainsInvalidInterfaces));
-		status.merge(checkValidSubtypes(sourceMethod, hierarchy));
-
-		// TODO: For now, no super interfaces.
-		if (hierarchy.getAllSuperInterfaces(destinationInterface).length > 0) {
-			RefactoringStatusEntry error = addError(status,
-					Messages.DestinationInterfaceHierarchyContainsSuperInterface, destinationInterface);
-			addUnmigratableMethod(sourceMethod, error);
-		}
-
-		// TODO: For now, no extending interfaces.
-		if (hierarchy.getExtendingInterfaces(destinationInterface).length > 0) {
-			RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceHasExtendingInterface,
-					destinationInterface);
-			addUnmigratableMethod(sourceMethod, error);
-		}
-
-		// TODO: For now, the destination interface can only be implemented by
-		// the source class.
-		if (!Stream.of(hierarchy.getImplementingClasses(destinationInterface)).parallel().distinct()
-				.allMatch(c -> c.equals(sourceMethod.getDeclaringType()))) {
-			RefactoringStatusEntry error = addError(status, Messages.DestinationInterfaceHasInvalidImplementingClass,
-					destinationInterface);
-			addUnmigratableMethod(sourceMethod, error);
-		}
+		if (numberOfImplementedMethods > 1)
+			addErrorAndMark(status, PreconditionFailure.SourceMethodImplementsMultipleMethods, sourceMethod);
 
 		return status;
 	}
 
-	private RefactoringStatus checkValidSubtypes(IMethod sourceMethod, final ITypeHierarchy hierarchy)
-			throws JavaModelException {
+	private Optional<IType> getDestinationInterface(IMethod sourceMethod) throws JavaModelException {
+		return Optional.ofNullable(getTargetMethod(sourceMethod, Optional.empty())).map(IMethod::getDeclaringType);
+	}
+
+	private RefactoringStatus checkValidClassesInDeclaringTypeHierarchy(IMethod sourceMethod,
+			final ITypeHierarchy declaringTypeHierarchy) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
-		// TODO: For now, no subtypes except the declaring type.
-		// FIXME: Really, it should match the declaring type of the method to be
-		// migrated.
-		IType destinationInterface = getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
-		if (!Stream.of(hierarchy.getAllSubtypes(destinationInterface)).distinct()
-				.allMatch(s -> s.equals(sourceMethod.getDeclaringType())))
-			addError(status, Messages.DestinationInterfaceHierarchyContainsSubtype, destinationInterface);
+		IType[] allDeclaringTypeSuperclasses = declaringTypeHierarchy
+				.getAllSuperclasses(sourceMethod.getDeclaringType());
+
+		// is the source method overriding anything in the declaring type
+		// hierarchy? If so, don't allow the refactoring to proceed #107.
+		if (Stream.of(allDeclaringTypeSuperclasses).parallel().anyMatch(c -> {
+			IMethod[] methods = c.findMethods(sourceMethod);
+			return methods != null && methods.length > 0;
+		}))
+			addErrorAndMark(status, PreconditionFailure.SourceMethodOverridesMethod, sourceMethod);
 
 		return status;
 	}
 
-	private RefactoringStatus checkValidInterfacesInHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
-			String errorMessage) throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-
-		Optional<IType> destinationInterface = getDestinationInterface(sourceMethod);
-
-		// TODO: For now, there should be only one interface in the hierarchy,
-		// and that is the target interface.
-		boolean containsOnlyValidInterfaces = Stream.of(hierarchy.getAllInterfaces()).parallel().distinct()
-				.allMatch(i -> i.equals(destinationInterface.orElse(null)));
-
-		if (!containsOnlyValidInterfaces)
-			addError(status, errorMessage, hierarchy.getType());
-
-		return status;
-	}
-
-	private Optional<IType> getDestinationInterface(IMethod sourceMethod) {
-		return Optional.ofNullable(this.getSourceMethodToTargetMethodMap().get(sourceMethod))
-				.map(IMethod::getDeclaringType);
-	}
-
-	private RefactoringStatus checkValidClassesInHierarchy(IMethod sourceMethod, final ITypeHierarchy hierarchy,
-			String errorMessage) throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-
-		// TODO: For now, the only class in the hierarchy should be the
-		// declaring class of the source method and java.lang.Object.
-		List<IType> allClassesAsList = Arrays.asList(hierarchy.getAllClasses());
-
-		// TODO: All the methods to move may not be from the same type. This is
-		// in regards to getDeclaringType(), which only returns one type.
-		boolean containsOnlyValidClasses = allClassesAsList.size() == 2
-				&& allClassesAsList.contains(sourceMethod.getDeclaringType())
-				&& allClassesAsList.contains(hierarchy.getType().getJavaProject().findType("java.lang.Object"));
-
-		if (!containsOnlyValidClasses) {
-			RefactoringStatusEntry error = addError(status, errorMessage, hierarchy.getType());
-			addUnmigratableMethod(sourceMethod, error);
-		}
-
-		return status;
-	}
-
-	@SuppressWarnings("unused")
-	private void addWarning(RefactoringStatus status, String message) {
-		addWarning(status, message, new IJavaElement[] {});
+	private void addWarning(RefactoringStatus status, IMethod sourceMethod, PreconditionFailure failure) {
+		addWarning(status, sourceMethod, failure, new IJavaElement[] {});
 	}
 
 	private RefactoringStatus checkDeclaringType(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
@@ -723,44 +686,41 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		if (type.isEnum())
 			// TODO: For now. It might be okay to have an enum.
-			addErrorAndMark(status, Messages.NoMethodsInEnums, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInEnums, sourceMethod, type);
 		if (type.isAnnotation())
-			addErrorAndMark(status, Messages.NoMethodsInAnnotationTypes, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInAnnotationTypes, sourceMethod, type);
 		if (type.isInterface())
-			addErrorAndMark(status, Messages.NoMethodsInInterfaces, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInInterfaces, sourceMethod, type);
 		if (type.isBinary())
-			addErrorAndMark(status, Messages.NoMethodsInBinaryTypes, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInBinaryTypes, sourceMethod, type);
 		if (type.isReadOnly())
-			addErrorAndMark(status, Messages.NoMethodsInReadOnlyTypes, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInReadOnlyTypes, sourceMethod, type);
 		if (type.isAnonymous())
-			addErrorAndMark(status, Messages.NoMethodsInAnonymousTypes, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInAnonymousTypes, sourceMethod, type);
 		if (type.isLambda())
 			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInLambdas, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInLambdas, sourceMethod, type);
 		if (type.isLocal())
 			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInLocals, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInLocals, sourceMethod, type);
 		if (type.isMember())
 			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInMemberTypes, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInMemberTypes, sourceMethod, type);
 		if (!type.isClass())
 			// TODO for now.
-			addErrorAndMark(status, Messages.MethodsOnlyInClasses, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.MethodsOnlyInClasses, sourceMethod, type);
 		if (type.getAnnotations().length != 0)
 			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInAnnotatedTypes, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInAnnotatedTypes, sourceMethod, type);
 		if (type.getInitializers().length != 0)
 			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithInitializers, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithInitializers, sourceMethod, type);
 		if (type.getTypeParameters().length != 0)
 			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithTypeParameters, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithTypeParameters, sourceMethod, type);
 		if (type.getTypes().length != 0)
 			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithType, sourceMethod, type);
-		if (type.getSuperclassName() != null)
-			// TODO for now.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithSuperType, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithType, sourceMethod, type);
 		if (type.getSuperInterfaceNames().length == 0)
 			// TODO enclosing type must implement an interface, at least for
 			// now,
@@ -768,27 +728,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// it is probably possible to still perform the refactoring
 			// without this condition but I believe that this is
 			// the particular pattern we are targeting.
-			addErrorAndMark(status, Messages.NoMethodsInTypesThatDontImplementInterfaces, sourceMethod, type);
-		if (type.getSuperInterfaceNames().length > 1)
-			// TODO for now. Let's only deal with a single interface as that
-			// is part of the targeted pattern.
-			addErrorAndMark(status, Messages.NoMethodsInTypesThatExtendMultipleInterfaces, sourceMethod, type);
-		if (!Flags.isAbstract(type.getFlags()))
-			// TODO for now. This follows the target pattern. Maybe we can
-			// relax this but that would require checking for
-			// instantiations.
-			addErrorAndMark(status, Messages.NoMethodsInConcreteTypes, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesThatDontImplementInterfaces, sourceMethod,
+					type);
 		if (Flags.isStatic(type.getFlags()))
 			// TODO no static types for now.
-			addErrorAndMark(status, Messages.NoMethodsInStaticTypes, sourceMethod, type);
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInStaticTypes, sourceMethod, type);
 
 		status.merge(checkDeclaringTypeHierarchy(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1))));
 
 		return status;
 	}
 
-	private void addErrorAndMark(RefactoringStatus status, String message, IMethod sourceMethod, IMember... related) {
-		RefactoringStatusEntry error = addError(status, message, sourceMethod, related);
+	private void addErrorAndMark(RefactoringStatus status, PreconditionFailure failure, IMethod sourceMethod,
+			IMember... related) {
+		RefactoringStatusEntry error = addError(status, sourceMethod, failure, sourceMethod, related);
 		addUnmigratableMethod(sourceMethod, error);
 	}
 
@@ -798,28 +751,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			RefactoringStatus status = new RefactoringStatus();
 			monitor.ifPresent(m -> m.subTask("Checking declaring type hierarchy..."));
 
-			final ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
+			final ITypeHierarchy declaringTypeHierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
 
-			status.merge(checkValidClassesInHierarchy(sourceMethod, hierarchy,
-					Messages.DeclaringTypeHierarchyContainsInvalidClass));
-			status.merge(checkValidInterfacesInHierarchy(sourceMethod, hierarchy,
-					Messages.DeclaringTypeHierarchyContainsInvalidInterface));
-
-			// TODO: For now, the declaring type should have no subtypes.
-			if (hierarchy.getAllSubtypes(sourceMethod.getDeclaringType()).length != 0) {
-				RefactoringStatusEntry error = addError(status, Messages.DeclaringTypeContainsSubtype,
-						sourceMethod.getDeclaringType());
-				addUnmigratableMethod(sourceMethod, error);
-			}
-
-			// TODO: For now, only java.lang.Object as the super class.
-			final IType object = hierarchy.getType().getJavaProject().findType("java.lang.Object");
-			if (!Stream.of(hierarchy.getAllSuperclasses(sourceMethod.getDeclaringType())).parallel().distinct()
-					.allMatch(t -> t.equals(object))) {
-				RefactoringStatusEntry error = addError(status, Messages.DeclaringTypeContainsInvalidSupertype,
-						sourceMethod.getDeclaringType());
-				addUnmigratableMethod(sourceMethod, error);
-			}
+			status.merge(checkValidClassesInDeclaringTypeHierarchy(sourceMethod, declaringTypeHierarchy));
+			status.merge(checkValidInterfacesInDeclaringTypeHierarchy(sourceMethod, monitor));
 
 			return status;
 		} finally {
@@ -835,11 +770,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				monitor.map(m -> new SubProgressMonitor(m, 1)));
 
 		if (interfaces.length == 0)
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithNoCandidateTargetTypes, sourceMethod,
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithNoCandidateTargetTypes, sourceMethod,
 					sourceMethod.getDeclaringType());
 		else if (interfaces.length > 1)
-			// TODO For now, let's make sure there's only one candidate type.
-			addErrorAndMark(status, Messages.NoMethodsInTypesWithMultipleCandidateTargetTypes, sourceMethod,
+			// TODO: For now, let's make sure there's only one candidate type
+			// #129.
+			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithMultipleCandidateTargetTypes, sourceMethod,
 					sourceMethod.getDeclaringType());
 
 		return status;
@@ -855,6 +791,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * "Pull Up Method To Interface") that is not implemented explicitly. For
 	 * example, there may be a skeletal implementation class that implements all
 	 * the target interface's methods without explicitly declaring so.
+	 * Effectively skeletal?
 	 * 
 	 * @param monitor
 	 *            A progress monitor.
@@ -881,8 +818,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (interfaceMethods != null)
 					// the matching methods cannot already be default.
 					for (IMethod method : interfaceMethods)
-						if (!JdtFlags.isDefaultMethod(method))
-							ret.add(superInterface);
+					if (!JdtFlags.isDefaultMethod(method))
+					ret.add(superInterface);
 			}
 
 			return ret.toArray(new IType[ret.size()]);
@@ -955,13 +892,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
 
 			for (IMethod sourceMethod : this.getSourceMethods()) {
-				RefactoringStatus existenceStatus = checkExistence(sourceMethod, Messages.MethodDoesNotExist);
+				RefactoringStatus existenceStatus = checkExistence(sourceMethod,
+						PreconditionFailure.MethodDoesNotExist);
 				if (!existenceStatus.isOK()) {
 					status.merge(existenceStatus);
 					addUnmigratableMethod(sourceMethod, existenceStatus.getEntryWithHighestSeverity());
 				}
 
-				RefactoringStatus writabilityStatus = checkWritabilitiy(sourceMethod, Messages.CantChangeMethod);
+				RefactoringStatus writabilityStatus = checkWritabilitiy(sourceMethod,
+						PreconditionFailure.CantChangeMethod);
 				if (!writabilityStatus.isOK()) {
 					status.merge(writabilityStatus);
 					addUnmigratableMethod(sourceMethod, writabilityStatus.getEntryWithHighestSeverity());
@@ -974,7 +913,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				}
 
 				if (sourceMethod.isConstructor()) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoConstructors, sourceMethod);
+					RefactoringStatusEntry entry = addError(status, sourceMethod, PreconditionFailure.NoConstructors,
+							sourceMethod);
 					addUnmigratableMethod(sourceMethod, entry);
 				}
 
@@ -983,41 +923,47 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// synchronized methods aren't allowed in interfaces (even
 				// if they're default).
 				if (Flags.isSynchronized(sourceMethod.getFlags())) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoSynchronizedMethods, sourceMethod);
+					RefactoringStatusEntry entry = addError(status, sourceMethod,
+							PreconditionFailure.NoSynchronizedMethods, sourceMethod);
 					addUnmigratableMethod(sourceMethod, entry);
 				}
 				if (Flags.isStatic(sourceMethod.getFlags())) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoStaticMethods, sourceMethod);
+					RefactoringStatusEntry entry = addError(status, sourceMethod, PreconditionFailure.NoStaticMethods,
+							sourceMethod);
 					addUnmigratableMethod(sourceMethod, entry);
 				}
 				if (Flags.isAbstract(sourceMethod.getFlags())) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoAbstractMethods, sourceMethod);
+					RefactoringStatusEntry entry = addError(status, sourceMethod, PreconditionFailure.NoAbstractMethods,
+							sourceMethod);
 					addUnmigratableMethod(sourceMethod, entry);
 				}
 				// final methods aren't allowed in interfaces.
 				if (Flags.isFinal(sourceMethod.getFlags())) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoFinalMethods, sourceMethod);
+					RefactoringStatusEntry entry = addError(status, sourceMethod, PreconditionFailure.NoFinalMethods,
+							sourceMethod);
 					addUnmigratableMethod(sourceMethod, entry);
 				}
 				// native methods don't have bodies. As such, they can't
 				// be skeletal implementors.
 				if (JdtFlags.isNative(sourceMethod)) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoNativeMethods, sourceMethod);
+					RefactoringStatusEntry entry = addError(status, sourceMethod, PreconditionFailure.NoNativeMethods,
+							sourceMethod);
 					addUnmigratableMethod(sourceMethod, entry);
 				}
 				if (sourceMethod.isLambdaMethod()) {
-					RefactoringStatusEntry entry = addError(status, Messages.NoLambdaMethods, sourceMethod);
+					RefactoringStatusEntry entry = addError(status, sourceMethod, PreconditionFailure.NoLambdaMethods,
+							sourceMethod);
 					addUnmigratableMethod(sourceMethod, entry);
 				}
 
 				status.merge(checkExceptions(sourceMethod));
-				status.merge(checkParameters(sourceMethod));
 
 				// ensure that the method has a target.
-				if (this.getSourceMethodToTargetMethodMap().get(sourceMethod) == null)
-					addErrorAndMark(status, Messages.SourceMethodHasNoTargetMethod, sourceMethod);
-				else { // otherwise,
-						// check accesses in the source method.
+				if (getTargetMethod(sourceMethod,
+						pm.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))) == null)
+					addErrorAndMark(status, PreconditionFailure.SourceMethodHasNoTargetMethod, sourceMethod);
+				else {
+					status.merge(checkParameters(sourceMethod));
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkProjectCompliance(sourceMethod));
@@ -1055,31 +1001,39 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					case 0:
 						break;
 					case 1:
-						status.addError(
-								String.format(RefactoringCoreMessages.PullUpRefactoring_Type_variable_not_available,
-										unmapped[0], superClassLabel),
-								JavaStatusContext.create(member));
+						status.addEntry(RefactoringStatus.ERROR,
+								String.format(PreconditionFailure.TypeVariableNotAvailable.getMessage(), unmapped[0],
+										superClassLabel),
+								JavaStatusContext.create(member),
+								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+								PreconditionFailure.TypeVariableNotAvailable.ordinal(), sourceMethod);
 						addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
 						break;
 					case 2:
-						status.addError(
-								String.format(RefactoringCoreMessages.PullUpRefactoring_Type_variable2_not_available,
-										unmapped[0], unmapped[1], superClassLabel),
-								JavaStatusContext.create(member));
+						status.addEntry(RefactoringStatus.ERROR,
+								String.format(PreconditionFailure.TypeVariable2NotAvailable.getMessage(), unmapped[0],
+										unmapped[1], superClassLabel),
+								JavaStatusContext.create(member),
+								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+								PreconditionFailure.TypeVariable2NotAvailable.ordinal(), sourceMethod);
 						addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
 						break;
 					case 3:
-						status.addError(
-								String.format(RefactoringCoreMessages.PullUpRefactoring_Type_variable3_not_available,
-										unmapped[0], unmapped[1], unmapped[2], superClassLabel),
-								JavaStatusContext.create(member));
+						status.addEntry(RefactoringStatus.ERROR,
+								String.format(PreconditionFailure.TypeVariable3NotAvailable.getMessage(), unmapped[0],
+										unmapped[1], unmapped[2], superClassLabel),
+								JavaStatusContext.create(member),
+								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+								PreconditionFailure.TypeVariable3NotAvailable.ordinal(), sourceMethod);
 						addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
 						break;
 					default:
-						status.addError(
-								String.format(RefactoringCoreMessages.PullUpRefactoring_Type_variables_not_available,
+						status.addEntry(RefactoringStatus.ERROR,
+								String.format(PreconditionFailure.TypeVariablesNotAvailable.getMessage(),
 										superClassLabel),
-								JavaStatusContext.create(member));
+								JavaStatusContext.create(member),
+								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+								PreconditionFailure.TypeVariablesNotAvailable.ordinal(), sourceMethod);
 						addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
 					}
 					monitor.ifPresent(m -> m.worked(1));
@@ -1106,17 +1060,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *             If the {@link IAnnotation}s cannot be retrieved.
 	 */
 	private RefactoringStatus checkAnnotations(IMethod sourceMethod) throws JavaModelException {
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		RefactoringStatus status = new RefactoringStatus();
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
-		if (targetMethod != null && !checkAnnotations(sourceMethod, targetMethod).isOK()) {
-			RefactoringStatus status = RefactoringStatus.createErrorStatus(
-					formatMessage(Messages.AnnotationMismatch, sourceMethod, targetMethod),
-					JavaStatusContext.create(sourceMethod));
-			addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
-			return status;
-		}
+		if (targetMethod != null && !checkAnnotations(sourceMethod, targetMethod).isOK())
+			addErrorAndMark(status, PreconditionFailure.AnnotationMismatch, sourceMethod, targetMethod);
 
-		return new RefactoringStatus(); // OK.
+		return status;
 	}
 
 	private void addUnmigratableMethod(IMethod method, Object reason) {
@@ -1142,13 +1092,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		// if the source method annotation names don't match the target method
 		// annotation names.
 		if (!sourceMethodAnnotationElementNames.equals(targetAnnotationElementNames))
-			return RefactoringStatus.createErrorStatus(Messages.AnnotationNameMismatch, new RefactoringStatusContext() {
+			return RefactoringStatus.createErrorStatus(PreconditionFailure.AnnotationNameMismatch.getMessage(),
+					new RefactoringStatusContext() {
 
-				@Override
-				public Object getCorrespondingElement() {
-					return source;
-				}
-			});
+						@Override
+						public Object getCorrespondingElement() {
+							return source;
+						}
+					});
 		else { // otherwise, we have the same annotations names. Check the
 				// values.
 			for (IAnnotation sourceAnnotation : sourceAnnotationSet) {
@@ -1168,7 +1119,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							|| sourcePairs[i].getValueKind() != targetPairs[i].getValueKind()
 							|| !(sourcePairs[i].getValue().equals(targetPairs[i].getValue())))
 						return RefactoringStatus.createErrorStatus(
-								formatMessage(Messages.AnnotationValueMismatch, sourceAnnotation, targetAnnotation),
+								formatMessage(PreconditionFailure.AnnotationValueMismatch.getMessage(),
+										sourceAnnotation, targetAnnotation),
 								JavaStatusContext.create(findEnclosingMember(sourceAnnotation)));
 			}
 		}
@@ -1216,15 +1168,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private RefactoringStatus checkExceptions(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
 		if (targetMethod != null) {
 			Set<String> sourceMethodExceptionTypeSet = getExceptionTypeSet(sourceMethod);
 			Set<String> targetMethodExceptionTypeSet = getExceptionTypeSet(targetMethod);
 
 			if (!sourceMethodExceptionTypeSet.equals(targetMethodExceptionTypeSet)) {
-				RefactoringStatusEntry entry = addError(status, Messages.ExceptionTypeMismatch, sourceMethod,
-						targetMethod);
+				RefactoringStatusEntry entry = addError(status, sourceMethod, PreconditionFailure.ExceptionTypeMismatch,
+						sourceMethod, targetMethod);
 				addUnmigratableMethod(sourceMethod, entry);
 			}
 		}
@@ -1248,7 +1200,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @throws JavaModelException
 	 */
 	private RefactoringStatus checkParameters(IMethod sourceMethod) throws JavaModelException {
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		RefactoringStatus status = new RefactoringStatus();
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
 		// for each parameter.
 		for (int i = 0; i < sourceMethod.getParameters().length; i++) {
@@ -1257,15 +1210,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// get the corresponding target parameter.
 			ILocalVariable targetParameter = targetMethod.getParameters()[i];
 
-			if (!checkAnnotations(sourceParameter, targetParameter).isOK()) {
-				RefactoringStatus status = RefactoringStatus
-						.createErrorStatus(formatMessage(Messages.MethodContainsInconsistentParameterAnnotations,
-								sourceMethod, targetMethod), JavaStatusContext.create(sourceMethod));
-				addUnmigratableMethod(sourceMethod, status.getEntryWithHighestSeverity());
-			}
+			if (!checkAnnotations(sourceParameter, targetParameter).isOK())
+				addErrorAndMark(status, PreconditionFailure.MethodContainsInconsistentParameterAnnotations,
+						sourceMethod, targetMethod);
 		}
 
-		return new RefactoringStatus(); // OK.
+		return status;
 	}
 
 	private RefactoringStatus checkStructure(IMember member) throws JavaModelException {
@@ -1282,83 +1232,139 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status.getEntryAt(status.getEntries().length - 1);
 	}
 
-	private RefactoringStatus checkWritabilitiy(IMember member, String message) {
+	private RefactoringStatus checkWritabilitiy(IMember member, PreconditionFailure failure) {
 		if (member.isBinary() || member.isReadOnly()) {
-			return createError(message, member);
+			return createError(failure, member);
 		}
 		return new RefactoringStatus();
 	}
 
-	private RefactoringStatus checkExistence(IMember member, String message) {
+	private RefactoringStatus checkExistence(IMember member, PreconditionFailure failure) {
 		if (member == null || !member.exists()) {
-			return createError(message, member);
+			return createError(failure, member);
 		}
 		return new RefactoringStatus();
 	}
 
-	private Set<IMethod> getSourceMethods() {
+	public Set<IMethod> getSourceMethods() {
 		return this.sourceMethods;
 	}
 
-	private Set<IMethod> getUnmigratableMethods() {
+	public Set<IMethod> getUnmigratableMethods() {
 		return this.unmigratableMethods;
 	}
 
-	private RefactoringStatus checkSourceMethodBodies(IProgressMonitor pm) throws JavaModelException {
+	private RefactoringStatus checkSourceMethodBodies(Optional<IProgressMonitor> pm) throws JavaModelException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
+			pm.ifPresent(m -> m.beginTask("Checking source method bodies ...", this.getSourceMethods().size()));
 
 			Iterator<IMethod> it = this.getSourceMethods().iterator();
 			while (it.hasNext()) {
-				IMethod method = it.next();
-				ITypeRoot root = method.getCompilationUnit();
-				CompilationUnit unit = this.getCompilationUnit(root, new SubProgressMonitor(pm, 1));
-
-				MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
+				IMethod sourceMethod = it.next();
+				MethodDeclaration declaration = getMethodDeclaration(sourceMethod, pm);
 
 				if (declaration != null) {
 					Block body = declaration.getBody();
 
 					if (body != null) {
-						@SuppressWarnings("rawtypes")
-						List statements = body.statements();
+						body.accept(new ASTVisitor() {
 
-						if (!statements.isEmpty()) {
-							// TODO for now.
-							RefactoringStatusEntry entry = addError(status, Messages.NoMethodsWithStatements, method);
-							addUnmigratableMethod(method, entry);
-						}
+							@Override
+							public boolean visit(SuperConstructorInvocation node) {
+								addSuperReferenceErrorAndMark(status, sourceMethod);
+								return super.visit(node);
+							}
+
+							private void addSuperReferenceErrorAndMark(RefactoringStatus status, IMethod sourceMethod) {
+								addErrorAndMark(status, PreconditionFailure.MethodContainsSuperReference, sourceMethod);
+							}
+
+							@Override
+							public boolean visit(SuperFieldAccess node) {
+								addSuperReferenceErrorAndMark(status, sourceMethod);
+								return super.visit(node);
+							}
+
+							@Override
+							public boolean visit(SuperMethodInvocation node) {
+								addSuperReferenceErrorAndMark(status, sourceMethod);
+								return super.visit(node);
+							}
+
+							@Override
+							public boolean visit(SuperMethodReference node) {
+								addSuperReferenceErrorAndMark(status, sourceMethod);
+								return super.visit(node);
+							}
+
+							@Override
+							public boolean visit(MethodInvocation node) {
+								// check for calls to particular jav.lang.Object
+								// methods #144.
+								IMethodBinding methodBinding = node.resolveMethodBinding();
+
+								if (methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
+									IMethod calledObjectMethod = (IMethod) methodBinding.getJavaElement();
+
+									try {
+										if (Flags.isProtected(calledObjectMethod.getFlags())) {
+											addErrorAndMark(status,
+													PreconditionFailure.MethodContainsCallToProtectedObjectMethod,
+													sourceMethod, calledObjectMethod);
+										}
+									} catch (JavaModelException e) {
+										throw new RuntimeException(e);
+									}
+								}
+								return super.visit(node);
+							}
+						});
 					}
 				}
-				pm.worked(1);
+				pm.ifPresent(m -> m.worked(1));
 			}
 			return status;
 		} finally {
-			pm.done();
+			pm.ifPresent(IProgressMonitor::done);
 		}
 	}
 
-	private static void addWarning(RefactoringStatus status, String message, IJavaElement... relatedElementCollection) {
-		addEntry(status, RefactoringStatus.WARNING, message, relatedElementCollection);
+	private MethodDeclaration getMethodDeclaration(IMethod method, Optional<IProgressMonitor> pm)
+			throws JavaModelException {
+		ITypeRoot root = method.getCompilationUnit();
+		CompilationUnit unit = this.getCompilationUnit(root,
+				new SubProgressMonitor(pm.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
+		MethodDeclaration declaration = ASTNodeSearchUtil.getMethodDeclarationNode(method, unit);
+		return declaration;
 	}
 
-	private static RefactoringStatusEntry addError(RefactoringStatus status, String message,
+	private static void addWarning(RefactoringStatus status, IMethod sourceMethod, PreconditionFailure failure,
 			IJavaElement... relatedElementCollection) {
-		addEntry(status, RefactoringStatus.ERROR, message, relatedElementCollection);
+		addEntry(status, sourceMethod, RefactoringStatus.WARNING, failure, relatedElementCollection);
+	}
+
+	private static RefactoringStatusEntry addError(RefactoringStatus status, IMethod sourceMethod,
+			PreconditionFailure failure, IJavaElement... relatedElementCollection) {
+		addEntry(status, sourceMethod, RefactoringStatus.ERROR, failure, relatedElementCollection);
 		return getLastRefactoringStatusEntry(status);
 	}
 
-	private static void addEntry(RefactoringStatus status, int severity, String message,
-			IJavaElement... relatedElementCollection) {
-		message = formatMessage(message, relatedElementCollection);
+	private static void addEntry(RefactoringStatus status, IMethod sourceMethod, int severity,
+			PreconditionFailure failure, IJavaElement... relatedElementCollection) {
+		String message = formatMessage(failure.getMessage(), relatedElementCollection);
 
 		// add the first element as the context if appropriate.
 		if (relatedElementCollection.length > 0 && relatedElementCollection[0] instanceof IMember) {
 			IMember member = (IMember) relatedElementCollection[0];
 			RefactoringStatusContext context = JavaStatusContext.create(member);
-			status.addEntry(new RefactoringStatusEntry(severity, message, context));
+			status.addEntry(new RefactoringStatusEntry(severity, message, context,
+					MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID, failure.ordinal(),
+					sourceMethod));
 		} else // otherwise, just add the message.
-			status.addEntry(new RefactoringStatusEntry(severity, message));
+			status.addEntry(new RefactoringStatusEntry(severity, message, null,
+					MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID, failure.ordinal(),
+					sourceMethod));
 	}
 
 	private static String formatMessage(String message, IJavaElement... relatedElementCollection) {
@@ -1368,8 +1374,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return message;
 	}
 
-	private static RefactoringStatusEntry addError(RefactoringStatus status, String message, IMember member,
-			IMember... more) {
+	private static RefactoringStatusEntry addError(RefactoringStatus status, IMethod sourceMethod,
+			PreconditionFailure failure, IMember member, IMember... more) {
 		List<String> elementNames = new ArrayList<>();
 		elementNames.add(getElementLabel(member, ALL_FULLY_QUALIFIED));
 
@@ -1377,7 +1383,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		Stream<String> concat = Stream.concat(elementNames.stream(), stream);
 		List<String> collect = concat.collect(Collectors.toList());
 
-		status.addError(MessageFormat.format(message, collect.toArray()), JavaStatusContext.create(member));
+		status.addEntry(RefactoringStatus.ERROR, MessageFormat.format(failure.getMessage(), collect.toArray()),
+				JavaStatusContext.create(member),
+				MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID, failure.ordinal(),
+				sourceMethod);
 		return getLastRefactoringStatusEntry(status);
 	}
 
@@ -1385,8 +1394,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return createRefactoringStatus(message, member, RefactoringStatus::createWarningStatus);
 	}
 
-	private RefactoringStatus createError(String message, IMember member) {
-		return createRefactoringStatus(message, member, RefactoringStatus::createErrorStatus);
+	private RefactoringStatus createError(PreconditionFailure failure, IMember member) {
+		return createRefactoringStatus(failure.getMessage(), member, RefactoringStatus::createErrorStatus);
 	}
 
 	private static RefactoringStatus createFatalError(String message, IMember member) {
@@ -1425,7 +1434,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws CoreException, OperationCanceledException {
 		try {
 			monitor.beginTask(Messages.CheckingPreconditions, 12);
-			clearCaches();
 
 			final RefactoringStatus status = new RefactoringStatus();
 
@@ -1443,10 +1451,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (monitor.isCanceled())
 				throw new OperationCanceledException();
 
+			status.merge(checkSourceMethodBodies(Optional.of(new SubProgressMonitor(monitor, 1))));
+			if (status.hasFatalError())
+				return status;
+			if (monitor.isCanceled())
+				throw new OperationCanceledException();
+
 			// TODO: Should this be a separate method?
 			status.merge(checkDestinationInterfaces(Optional.of(new SubProgressMonitor(monitor, 1))));
 			if (status.hasFatalError())
 				return status;
+			if (monitor.isCanceled())
+				throw new OperationCanceledException();
+
+			status.merge(checkTargetMethods(Optional.of(new SubProgressMonitor(monitor, 1))));
 
 			// check if there are any methods left to migrate.
 			if (this.getUnmigratableMethods().containsAll(this.getSourceMethods()))
@@ -1466,17 +1484,168 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private void clearCaches() {
-		// TODO: #71: Clear caches.
+	private RefactoringStatus checkTargetMethods(Optional<IProgressMonitor> monitor) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		// first, create a map of target methods to their set of migratable
+		// source methods.
+		Map<IMethod, Set<IMethod>> targetMethodToMigratableSourceMethodsMap = createTargetMethodToMigratableSourceMethodsMap(
+				monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+
+		monitor.ifPresent(m -> m.beginTask("Checking target methods ...",
+				targetMethodToMigratableSourceMethodsMap.keySet().size()));
+
+		// for each target method.
+		for (IMethod targetMethod : targetMethodToMigratableSourceMethodsMap.keySet()) {
+			Set<IMethod> migratableSourceMethods = targetMethodToMigratableSourceMethodsMap.get(targetMethod);
+
+			// if the target method is associated with multiple source methods.
+			if (migratableSourceMethods.size() > 1) {
+				// we need to decide which of the source methods will be
+				// migrated and which will not. We'll build equivalence sets to
+				// see which of the source method bodies are the same. Then,
+				// we'll pick the largest equivalence set to migrate. That will
+				// reduce the greatest number of methods in the system. The
+				// other sets will become unmigratable. Those methods will just
+				// override the new default method.
+
+				// build the equivalence sets using a union–find data structure
+				// (MakeSet).
+				Set<Set<IMethod>> equivalenceSets = createEquivalenceSets(migratableSourceMethods);
+
+				// merge the sets.
+				mergeEquivalenceSets(equivalenceSets, monitor);
+
+				// find the largest set size.
+				equivalenceSets.stream().map(s -> s.size()).max(Integer::compareTo)
+						// find the first set with this size.
+						.flatMap(size -> equivalenceSets.stream().filter(s -> s.size() == size).findFirst()).ifPresent(
+								// for all of the methods in the other sets ...
+								fls -> equivalenceSets.stream().filter(s -> s != fls).flatMap(s -> s.stream())
+										// mark them as unmigratable.
+										.forEach(m -> addErrorAndMark(status,
+												PreconditionFailure.TargetMethodHasMultipleSourceMethods, m,
+												targetMethod)));
+			}
+			monitor.ifPresent(m -> m.worked(1));
+		}
+
+		monitor.ifPresent(IProgressMonitor::done);
+		return status;
 	}
 
-	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) {
+	private void mergeEquivalenceSets(Set<Set<IMethod>> equivalenceSets, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		// A map of methods to their equivalence set.
+		Map<IMethod, Set<IMethod>> methodToEquivalenceSetMap = new LinkedHashMap<>();
+		for (Set<IMethod> set : equivalenceSets) {
+			for (IMethod method : set) {
+				methodToEquivalenceSetMap.put(method, set);
+			}
+		}
+
+		monitor.ifPresent(
+				m -> m.beginTask("Merging method equivalence sets ...", methodToEquivalenceSetMap.keySet().size()));
+
+		for (IMethod method : methodToEquivalenceSetMap.keySet()) {
+			for (IMethod otherMethod : methodToEquivalenceSetMap.keySet()) {
+				if (method != otherMethod) {
+					Set<IMethod> methodSet = methodToEquivalenceSetMap.get(method); // Find(method)
+					Set<IMethod> otherMethodSet = methodToEquivalenceSetMap.get(otherMethod); // Find(otherMethod)
+
+					// if they are different sets and the elements are
+					// equivalent.
+					if (methodSet != otherMethodSet && isEquivalent(method, otherMethod,
+							monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)))) {
+						// Union(Find(method), Find(otherMethod))
+						methodSet.addAll(otherMethodSet);
+						equivalenceSets.remove(otherMethodSet);
+
+						// update the map.
+						for (IMethod methodInOtherMethodSet : otherMethodSet) {
+							methodToEquivalenceSetMap.put(methodInOtherMethodSet, methodSet);
+						}
+					}
+				}
+			}
+			monitor.ifPresent(m -> m.worked(1));
+		}
+
+		monitor.ifPresent(IProgressMonitor::done);
+	}
+
+	private boolean isEquivalent(IMethod method, IMethod otherMethod, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		monitor.ifPresent(m -> m.beginTask("Checking method equivalence ...", 2));
+
+		MethodDeclaration methodDeclaration = this.getMethodDeclaration(method,
+				monitor.map(m -> new SubProgressMonitor(m, 1)));
+
+		MethodDeclaration otherMethodDeclaration = this.getMethodDeclaration(otherMethod,
+				monitor.map(m -> new SubProgressMonitor(m, 1)));
+
+		monitor.ifPresent(IProgressMonitor::done);
+
+		Block methodDeclarationBody = methodDeclaration.getBody();
+		Block otherMethodDeclarationBody = otherMethodDeclaration.getBody();
+
+		boolean match = methodDeclarationBody.subtreeMatch(new ASTMatcher(), otherMethodDeclarationBody);
+		return match;
+	}
+
+	private static Set<Set<IMethod>> createEquivalenceSets(Set<IMethod> migratableSourceMethods) {
+		Set<Set<IMethod>> ret = new LinkedHashSet<>();
+
+		migratableSourceMethods.stream().forEach(m -> {
+			Set<IMethod> set = new LinkedHashSet<>();
+			set.add(m);
+			ret.add(set);
+		});
+
+		return ret;
+	}
+
+	private Map<IMethod, Set<IMethod>> createTargetMethodToMigratableSourceMethodsMap(
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
+		Map<IMethod, Set<IMethod>> ret = new LinkedHashMap<>();
+		Set<IMethod> migratableMethods = this.getMigratableMethods();
+
+		monitor.ifPresent(m -> m.beginTask("Finding migratable source methods for each target method ...",
+				migratableMethods.size()));
+
+		for (IMethod sourceMethod : migratableMethods) {
+			IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
+
+			ret.compute(targetMethod, (k, v) -> {
+				if (v == null) {
+					Set<IMethod> sourceMethodSet = new LinkedHashSet<>();
+					sourceMethodSet.add(sourceMethod);
+					return sourceMethodSet;
+				} else {
+					v.add(sourceMethod);
+					return v;
+				}
+			});
+			monitor.ifPresent(m -> m.worked(1));
+		}
+
+		monitor.ifPresent(IProgressMonitor::done);
+		return ret;
+	}
+
+	private void clearCaches() {
+		getTypeToSuperTypeHierarchyMap().clear();
+		getMethodToTargetMethodMap().clear();
+		getTypeToTypeHierarchyMap().clear();
+	}
+
+	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
-		IMethod targetMethod = this.getSourceMethodToTargetMethodMap().get(sourceMethod);
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 		IJavaProject destinationProject = targetMethod.getJavaProject();
 
 		if (!JavaModelUtil.is18OrHigher(destinationProject))
-			addErrorAndMark(status, Messages.DestinationProjectIncompatible, sourceMethod, targetMethod);
+			addErrorAndMark(status, PreconditionFailure.DestinationProjectIncompatible, sourceMethod, targetMethod);
 
 		return status;
 	}
@@ -1488,57 +1657,66 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
 
-			// the input methods as a set.
-			Set<IMethod> methods = new HashSet<>(this.getSourceMethods().parallelStream()
-					.filter(m -> m instanceof IMethod).map(m -> m).collect(Collectors.toSet()));
+			Set<IMethod> migratableMethods = this.getMigratableMethods();
 
-			// remove all the unmigratable methods.
-			methods.removeAll(this.unmigratableMethods);
-
-			if (methods.isEmpty())
+			if (migratableMethods.isEmpty())
 				return new NullChange(Messages.NoMethodsToMigrate);
 
-			for (IMethod sourceMethod : methods) {
-				IType destinationInterface = getSourceMethodToTargetMethodMap().get(sourceMethod).getDeclaringType();
+			// the set of target methods that we transformed to default methods.
+			Set<IMethod> transformedTargetMethods = new HashSet<>(migratableMethods.size());
 
-				logInfo("Migrating method: " + getElementLabel(sourceMethod, ALL_FULLY_QUALIFIED) + " to interface: "
-						+ destinationInterface.getFullyQualifiedName());
-
-				CompilationUnit destinationCompilationUnit = this.getCompilationUnit(destinationInterface.getTypeRoot(),
-						pm);
-				ASTRewrite destinationRewrite = getASTRewrite(destinationCompilationUnit);
-
+			for (IMethod sourceMethod : migratableMethods) {
+				// get the source method declaration.
 				CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
-
 				MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod,
 						sourceCompilationUnit);
 				logInfo("Source method declaration: " + sourceMethodDeclaration);
 
 				// Find the target method.
-				IMethod targetMethod = getSourceMethodToTargetMethodMap().get(sourceMethod);
-				MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
-						destinationCompilationUnit);
+				IMethod targetMethod = getTargetMethod(sourceMethod,
+						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
 
-				// tack on the source method body to the target method.
-				copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+				// if we have not already transformed this method
+				if (!transformedTargetMethods.contains(targetMethod)) {
+					IType destinationInterface = targetMethod.getDeclaringType();
 
-				// Change the target method to default.
-				convertToDefault(targetMethodDeclaration, destinationRewrite);
+					logInfo("Migrating method: " + getElementLabel(sourceMethod, ALL_FULLY_QUALIFIED)
+							+ " to interface: " + destinationInterface.getFullyQualifiedName());
 
-				// TODO: Do we need to worry about preserving ordering of the
-				// modifiers?
+					CompilationUnit destinationCompilationUnit = this
+							.getCompilationUnit(destinationInterface.getTypeRoot(), pm);
+					ASTRewrite destinationRewrite = getASTRewrite(destinationCompilationUnit);
 
-				// TODO: Should I be using JdtFlags instead of Flags?
+					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
+							destinationCompilationUnit);
 
-				// if the source method is strictfp.
-				// FIXME: Actually, I think we need to check that, in the
-				// case the target method isn't already strictfp, that the other
-				// methods in the hierarchy are.
-				if ((Flags.isStrictfp(sourceMethod.getFlags())
-						|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
-						&& !Flags.isStrictfp(targetMethod.getFlags()))
-					// change the target method to strictfp.
-					convertToStrictFP(targetMethodDeclaration, destinationRewrite);
+					// tack on the source method body to the target method.
+					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+
+					// Change the target method to default.
+					convertToDefault(targetMethodDeclaration, destinationRewrite);
+
+					// Remove any abstract modifiers from the target method as
+					// both abstract and default are not allowed.
+					removeAbstractness(targetMethodDeclaration, destinationRewrite);
+
+					// TODO: Do we need to worry about preserving ordering of
+					// the
+					// modifiers?
+
+					// if the source method is strictfp.
+					// FIXME: Actually, I think we need to check that, in the
+					// case the target method isn't already strictfp, that the
+					// other
+					// methods in the hierarchy are.
+					if ((Flags.isStrictfp(sourceMethod.getFlags())
+							|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
+							&& !Flags.isStrictfp(targetMethod.getFlags()))
+						// change the target method to strictfp.
+						convertToStrictFP(targetMethodDeclaration, destinationRewrite);
+
+					transformedTargetMethods.add(targetMethod);
+				}
 
 				// Remove the source method.
 				ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
@@ -1573,7 +1751,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
 		CompilationUnit compilationUnit = this.typeRootToCompilationUnitMap.get(root);
 		if (compilationUnit == null) {
-			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, false, pm);
+			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, true, pm);
 			this.typeRootToCompilationUnitMap.put(root, compilationUnit);
 		}
 		return compilationUnit;
@@ -1613,12 +1791,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void removeMethod(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
-		// TODO: Do I need an edit group??
+		// TODO: Do we need an edit group??
 		rewrite.remove(methodDeclaration, null);
 	}
 
 	private void convertToDefault(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
 		addModifierKeyword(methodDeclaration, ModifierKeyword.DEFAULT_KEYWORD, rewrite);
+	}
+
+	private void removeAbstractness(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
+		removeModifierKeyword(methodDeclaration, ModifierKeyword.ABSTRACT_KEYWORD, rewrite);
 	}
 
 	private void convertToStrictFP(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
@@ -1632,8 +1814,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		listRewrite.insertLast(modifier, null);
 	}
 
-	private Map<IMethod, IMethod> getSourceMethodToTargetMethodMap() {
-		return sourceMethodToTargetMethodMap;
+	@SuppressWarnings("unchecked")
+	private void removeModifierKeyword(MethodDeclaration methodDeclaration, ModifierKeyword modifierKeyword,
+			ASTRewrite rewrite) {
+		ListRewrite listRewrite = rewrite.getListRewrite(methodDeclaration, methodDeclaration.getModifiersProperty());
+		listRewrite.getOriginalList().stream().filter(o -> o instanceof Modifier).map(Modifier.class::cast)
+				.filter(m -> ((Modifier) m).getKeyword().equals(modifierKeyword)).findAny()
+				.ifPresent(m -> listRewrite.remove((ASTNode) m, null));
+	}
+
+	private static Map<IMethod, IMethod> getMethodToTargetMethodMap() {
+		return methodToTargetMethodMap;
 	}
 
 	/**
@@ -1654,19 +1845,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public static IMethod getTargetMethod(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
-		IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
+		IMethod targetMethod = getMethodToTargetMethodMap().get(sourceMethod);
 
-		if (sourceMethodTargetInterfaceTargetMethodTable.contains(sourceMethod, destinationInterface))
-			return sourceMethodTargetInterfaceTargetMethodTable.get(sourceMethod, destinationInterface);
-		else {
-			if (destinationInterface == null)
-				return null; // no target method in null destination interfaces.
-			else {
-				IMethod targetMethod = getTargetMethod(sourceMethod, destinationInterface);
-				sourceMethodTargetInterfaceTargetMethodTable.put(sourceMethod, destinationInterface, targetMethod);
-				return targetMethod;
+		if (targetMethod == null) {
+			IType destinationInterface = getDestinationInterface(sourceMethod, monitor);
+
+			if (getMethodTargetInterfaceTargetMethodTable().contains(sourceMethod, destinationInterface))
+				targetMethod = getMethodTargetInterfaceTargetMethodTable().get(sourceMethod, destinationInterface);
+			else if (destinationInterface != null) {
+				targetMethod = findTargetMethod(sourceMethod, destinationInterface);
+				getMethodTargetInterfaceTargetMethodTable().put(sourceMethod, destinationInterface, targetMethod);
 			}
+
+			getMethodToTargetMethodMap().put(sourceMethod, targetMethod);
 		}
+		return targetMethod;
 	}
 
 	private static IType getDestinationInterface(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
@@ -1691,7 +1884,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @param
 	 * @return The target method that will be manipulated or null if not found.
 	 */
-	private static IMethod getTargetMethod(IMethod sourceMethod, IType targetInterface) {
+	private static IMethod findTargetMethod(IMethod sourceMethod, IType targetInterface) {
 		if (targetInterface == null)
 			return null; // not found.
 
@@ -1737,7 +1930,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	@Override
 	public boolean isApplicable() throws CoreException {
 		return RefactoringAvailabilityTester.isInterfaceMigrationAvailable(getSourceMethods().parallelStream()
-				.filter(m -> !this.unmigratableMethods.contains(m)).toArray(IMethod[]::new), Optional.empty());
+				.filter(m -> !this.getUnmigratableMethods().contains(m)).toArray(IMethod[]::new), Optional.empty());
 	}
 
 	/**
@@ -1778,5 +1971,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	public RefactoringParticipant[] loadParticipants(RefactoringStatus status, SharableParticipants sharedParticipants)
 			throws CoreException {
 		return new RefactoringParticipant[0];
+	}
+
+	private static Table<IMethod, IType, IMethod> getMethodTargetInterfaceTargetMethodTable() {
+		return methodTargetInterfaceTargetMethodTable;
 	}
 }
