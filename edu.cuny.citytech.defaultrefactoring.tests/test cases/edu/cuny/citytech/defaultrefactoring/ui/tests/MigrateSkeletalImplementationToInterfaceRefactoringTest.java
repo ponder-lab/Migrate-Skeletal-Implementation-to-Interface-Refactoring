@@ -970,4 +970,37 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy3() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfADifferentType() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType() throws Exception {
+		//control of the above.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceTypeHierarchy() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceTypeHierarchy2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceTypeHierarchy3() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}	
 }

@@ -120,6 +120,48 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
 
+	private final class MethodReceiverAnalysisSearchRequestor extends SearchRequestor {
+		private final Optional<IProgressMonitor> monitor;
+		private boolean encounteredThisReceiver;
+
+		public boolean hasEncounteredThisReceiver() {
+			return encounteredThisReceiver;
+		}
+
+		private MethodReceiverAnalysisSearchRequestor(Optional<IProgressMonitor> monitor) {
+			this.monitor = monitor;
+		}
+
+		@Override
+		public void acceptSearchMatch(SearchMatch match) throws CoreException {
+			// get the AST node corresponding to the method
+			// invocation. It should be some kind of name (simple of qualified).
+			ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
+					((IMember) match.getElement()).getTypeRoot(),
+					new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+
+			if (node.getNodeType() != ASTNode.METHOD_INVOCATION
+					&& node.getNodeType() != ASTNode.SUPER_METHOD_INVOCATION)
+				node = node.getParent();
+
+			switch (node.getNodeType()) {
+			case ASTNode.METHOD_INVOCATION: {
+				MethodInvocation methodInvocation = (MethodInvocation) node;
+				Expression expression = methodInvocation.getExpression();
+
+				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION) {
+					this.encounteredThisReceiver = true;
+				}
+				break;
+			}
+			case ASTNode.SUPER_METHOD_INVOCATION: {
+				this.encounteredThisReceiver = true;
+				break;
+			}
+			}
+		}
+	}
+
 	private Set<IMethod> sourceMethods = new LinkedHashSet<>();
 
 	private Set<IMethod> unmigratableMethods = new UnmigratableMethodSet(sourceMethods);
@@ -422,17 +464,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// The question now is if the target type can access the
 				// particular member given that
 				// the target type can access the member's declaring type.
-				// if it's a method and it's not static.
-				if (member.getElementType() == IJavaElement.METHOD && !JdtFlags.isStatic(member)) {
-					// In this case, we have that the member is an instance
-					// method.
-					// We need to make sure that the destination interface is
-					// able to access this instance method and that the run time
-					// target of the method doesn't change.
-					// TODO: For now, let's just say no.
-					return false;
-					// TODO: How often is this happening? #142
-				}
 				// if it's public, the answer is yes.
 				if (JdtFlags.isPublic(member))
 					return true;
@@ -585,7 +616,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAccessedMethods(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
-			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws JavaModelException {
+			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws CoreException {
 		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
@@ -617,15 +648,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						PreconditionFailure.MethodNotAccessible.ordinal(), sourceMethod);
 				this.getUnmigratableMethods().add(sourceMethod);
 			} else if (!JdtFlags.isStatic(accessedMethod)) {
-				// it's accessible and it's not static but do we have the
-				// correct implicit parameter available?
+				// it's accessible and it's not static.
+				// we'll need to check the implicit parameters.
+				MethodReceiverAnalysisSearchRequestor requestor = new MethodReceiverAnalysisSearchRequestor(monitor);
+				new SearchEngine().search(
+						SearchPattern.createPattern(accessedMethod, IJavaSearchConstants.REFERENCES,
+								SearchPattern.R_EXACT_MATCH),
+						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
+						SearchEngine.createJavaSearchScope(new IJavaElement[] { sourceMethod }), requestor,
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
+
+				// if this is the implicit parameter.
+				if (requestor.hasEncounteredThisReceiver()) {
 				// let's check to see if the method is somewhere in the
 				// hierarchy.
 				IType methodDeclaringType = accessedMethod.getDeclaringType();
 
-				// is this method declared in a type that is in the declaring
-				// type's super type hierarchy?
-				ITypeHierarchy declaringTypeSuperTypeHierarchy = getSuperTypeHierarchy(sourceMethod.getDeclaringType(),
+					// is this method declared in a type that is in the
+					// declaring type's super type hierarchy?
+					ITypeHierarchy declaringTypeSuperTypeHierarchy = getSuperTypeHierarchy(
+							sourceMethod.getDeclaringType(),
 						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
 
 				if (declaringTypeSuperTypeHierarchy.contains(methodDeclaringType)) {
@@ -645,6 +687,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					}
 				}
 			}
+		}
 		}
 
 		monitor.ifPresent(IProgressMonitor::done);
