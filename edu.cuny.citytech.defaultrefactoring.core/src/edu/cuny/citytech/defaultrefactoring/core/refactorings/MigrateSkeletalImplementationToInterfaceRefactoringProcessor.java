@@ -305,12 +305,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private static Table<IMethod, IType, IMethod> methodTargetInterfaceTargetMethodTable = HashBasedTable.create();
 
 	private SearchEngine searchEngine = new SearchEngine();
-	
+
 	/**
 	 * For excluding AST parse time.
 	 */
 	private TimeCollector excludedTimeCollector = new TimeCollector();
-	
+
+	private boolean logging = true;
+
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
 	 * 
@@ -1010,8 +1012,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (interfaceMethods != null)
 					// the matching methods cannot already be default.
 					for (IMethod method : interfaceMethods)
-						if (!JdtFlags.isDefaultMethod(method))
-							ret.add(superInterface);
+					if (!JdtFlags.isDefaultMethod(method))
+					ret.add(superInterface);
 			}
 
 			return ret.toArray(new IType[ret.size()]);
@@ -2060,9 +2062,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void log(int severity, String message) {
-		String name = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
-		IStatus status = new Status(severity, name, message);
-		JavaPlugin.log(status);
+		if (this.isLogging()) {
+			String name = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
+			IStatus status = new Status(severity, name, message);
+			JavaPlugin.log(status);
+		}
 	}
 
 	private void logInfo(String message) {
@@ -2136,5 +2140,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private SearchEngine getSearchEngine() {
 		return searchEngine;
+	}
+
+	public boolean isLogging() {
+		return logging;
+	}
+
+	public void setLogging(boolean logging) {
+		this.logging = logging;
 	}
 }
