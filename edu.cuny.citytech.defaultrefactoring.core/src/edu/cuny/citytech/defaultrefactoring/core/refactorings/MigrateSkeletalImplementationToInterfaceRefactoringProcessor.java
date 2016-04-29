@@ -110,6 +110,7 @@ import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImpl
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.messages.PreconditionFailure;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
+import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -304,7 +305,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private static Table<IMethod, IType, IMethod> methodTargetInterfaceTargetMethodTable = HashBasedTable.create();
 
 	private SearchEngine searchEngine = new SearchEngine();
-
+	
+	/**
+	 * For excluding AST parse time.
+	 */
+	private TimeCollector excludedTimeCollector = new TimeCollector();
+	
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
 	 * 
@@ -366,6 +372,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws CoreException, OperationCanceledException {
 		try {
 			this.clearCaches();
+			this.getExcludedTimeCollector().clear();
 
 			if (this.getSourceMethods().isEmpty())
 				return RefactoringStatus.createFatalErrorStatus(Messages.MethodsNotSpecified);
@@ -1003,8 +1010,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (interfaceMethods != null)
 					// the matching methods cannot already be default.
 					for (IMethod method : interfaceMethods)
-					if (!JdtFlags.isDefaultMethod(method))
-					ret.add(superInterface);
+						if (!JdtFlags.isDefaultMethod(method))
+							ret.add(superInterface);
 			}
 
 			return ret.toArray(new IType[ret.size()]);
@@ -1783,6 +1790,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		getTypeToTypeHierarchyMap().clear();
 	}
 
+	public TimeCollector getExcludedTimeCollector() {
+		return excludedTimeCollector;
+	}
+
 	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
@@ -1895,7 +1906,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
 		CompilationUnit compilationUnit = this.typeRootToCompilationUnitMap.get(root);
 		if (compilationUnit == null) {
+			this.getExcludedTimeCollector().start();
 			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, true, pm);
+			this.getExcludedTimeCollector().stop();
 			this.typeRootToCompilationUnitMap.put(root, compilationUnit);
 		}
 		return compilationUnit;

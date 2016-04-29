@@ -37,6 +37,7 @@ import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoringProcessor;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
+import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
 import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
 
 /**
@@ -55,6 +56,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Job.create("Evaluating Migrate Skeletal Implementation to Interface Refactoring ...", monitor -> {
 			CSVPrinter resultsPrinter = null;
+			CSVPrinter candidateMethodPrinter = null;
 			CSVPrinter migratableMethodPrinter = null;
 			CSVPrinter unmigratableMethodPrinter = null;
 			CSVPrinter errorPrinter = null;
@@ -64,7 +66,9 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 				resultsPrinter = createCSVPrinter("results.csv",
 						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
-								"#failed preconditions", "#methods after refactoring" });
+								"#failed preconditions", "#methods after refactoring", "time (s)" });
+				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv",
+						new String[] { "subject", "method", "type FQN" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
 						new String[] { "subject", "method", "type FQN" });
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
@@ -86,20 +90,32 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					 * possible right now.
 					 */
 					Set<IMethod> allMethods = getAllMethods(javaProject);
-
 					resultsPrinter.print(allMethods.size());
 
 					Set<IMethod> interfaceMigrationAvailableMethods = new HashSet<IMethod>();
+
+					TimeCollector resultsTimeCollector = new TimeCollector();
+
+					resultsTimeCollector.start();
 					for (IMethod method : allMethods)
 						if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, Optional.of(monitor)))
 							interfaceMigrationAvailableMethods.add(method);
+					resultsTimeCollector.stop();
 
 					resultsPrinter.print(interfaceMigrationAvailableMethods.size());
 
+					// candidate methods.
+					for (IMethod method : interfaceMigrationAvailableMethods) {
+						candidateMethodPrinter.printRecord(javaProject.getElementName(),
+								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName());
+					}
+
+					resultsTimeCollector.start();
 					MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = createMigrateSkeletalImplementationToInterfaceRefactoringProcessor(
 							javaProject, interfaceMigrationAvailableMethods.toArray(
 									new IMethod[interfaceMigrationAvailableMethods.size()]),
 							Optional.of(monitor));
+					resultsTimeCollector.stop();
 
 					System.out.println(
 							"Original methods before preconditions: " + interfaceMigrationAvailableMethods.size());
@@ -110,8 +126,10 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							"Migratable methods before preconditions: " + processor.getMigratableMethods().size());
 
 					// run the precondition checking.
+					resultsTimeCollector.start();
 					ProcessorBasedRefactoring processorBasedRefactoring = new ProcessorBasedRefactoring(processor);
 					RefactoringStatus status = processorBasedRefactoring.checkAllConditions(new NullProgressMonitor());
+					resultsTimeCollector.stop();
 
 					System.out.println(
 							"Original methods after preconditions: " + interfaceMigrationAvailableMethods.size());
@@ -161,9 +179,11 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					}
 
 					// actually perform the refactoring.
+					resultsTimeCollector.start();
 					Change change = processorBasedRefactoring
 							.createChange(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
 					change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+					resultsTimeCollector.stop();
 
 					// ensure that we can build the project.
 					if (!javaProject.isConsistent())
@@ -173,8 +193,14 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						throw new IllegalStateException(String.format("Project: %s should compile after refactoring.",
 								javaProject.getElementName()));
 
+					// TODO: Count warnings?
+
 					// count the new number of methods.
 					resultsPrinter.print(getAllMethods(javaProject).size());
+
+					// overall results time.
+					resultsPrinter.print((resultsTimeCollector.getCollectedTime()
+							- processor.getExcludedTimeCollector().getCollectedTime()) / 1000.0);
 
 					// end the record.
 					resultsPrinter.println();
@@ -187,6 +213,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					// closing the files writer after done writing
 					if (resultsPrinter != null)
 						resultsPrinter.close();
+					if (candidateMethodPrinter != null)
+						candidateMethodPrinter.close();
 					if (migratableMethodPrinter != null)
 						migratableMethodPrinter.close();
 					if (unmigratableMethodPrinter != null)
