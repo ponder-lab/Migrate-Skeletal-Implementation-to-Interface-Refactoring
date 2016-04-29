@@ -120,6 +120,69 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
 
+	private final class MethodBodyAnalysisVisitor extends ASTVisitor {
+		private boolean methodContainsSuperReference;
+		private boolean methodContainsCallToProtectedObjectMethod;
+		private Set<IMethod> calledProtectedObjectMethodSet = new HashSet<>();
+
+		protected Set<IMethod> getCalledProtectedObjectMethodSet() {
+			return calledProtectedObjectMethodSet;
+		}
+
+		@Override
+		public boolean visit(SuperConstructorInvocation node) {
+			this.methodContainsSuperReference = true;
+			return super.visit(node);
+		}
+
+		protected boolean doesMethodContainsSuperReference() {
+			return methodContainsSuperReference;
+		}
+
+		protected boolean doesMethodContainsCallToProtectedObjectMethod() {
+			return methodContainsCallToProtectedObjectMethod;
+		}
+
+		@Override
+		public boolean visit(SuperFieldAccess node) {
+			this.methodContainsSuperReference = true;
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(SuperMethodInvocation node) {
+			this.methodContainsSuperReference = true;
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(SuperMethodReference node) {
+			this.methodContainsSuperReference = true;
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(MethodInvocation node) {
+			// check for calls to particular java.lang.Object
+			// methods #144.
+			IMethodBinding methodBinding = node.resolveMethodBinding();
+
+			if (methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
+				IMethod calledObjectMethod = (IMethod) methodBinding.getJavaElement();
+
+				try {
+					if (Flags.isProtected(calledObjectMethod.getFlags())) {
+						this.methodContainsCallToProtectedObjectMethod = true;
+						this.calledProtectedObjectMethodSet.add(calledObjectMethod);
+					}
+				} catch (JavaModelException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			return super.visit(node);
+		}
+	}
+
 	private final class FieldAccessAnalysisSearchRequestor extends SearchRequestor {
 		private final Optional<IProgressMonitor> monitor;
 		private boolean accessesFieldsFromImplicitParameter;
@@ -1390,58 +1453,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Block body = declaration.getBody();
 
 					if (body != null) {
-						body.accept(new ASTVisitor() {
+						MethodBodyAnalysisVisitor visitor = new MethodBodyAnalysisVisitor();
+						body.accept(visitor);
 
-							@Override
-							public boolean visit(SuperConstructorInvocation node) {
-								addSuperReferenceErrorAndMark(status, sourceMethod);
-								return super.visit(node);
-							}
+						if (visitor.doesMethodContainsSuperReference())
+							addErrorAndMark(status, PreconditionFailure.MethodContainsSuperReference, sourceMethod);
 
-							private void addSuperReferenceErrorAndMark(RefactoringStatus status, IMethod sourceMethod) {
-								addErrorAndMark(status, PreconditionFailure.MethodContainsSuperReference, sourceMethod);
-							}
-
-							@Override
-							public boolean visit(SuperFieldAccess node) {
-								addSuperReferenceErrorAndMark(status, sourceMethod);
-								return super.visit(node);
-							}
-
-							@Override
-							public boolean visit(SuperMethodInvocation node) {
-								addSuperReferenceErrorAndMark(status, sourceMethod);
-								return super.visit(node);
-							}
-
-							@Override
-							public boolean visit(SuperMethodReference node) {
-								addSuperReferenceErrorAndMark(status, sourceMethod);
-								return super.visit(node);
-							}
-
-							@Override
-							public boolean visit(MethodInvocation node) {
-								// check for calls to particular jav.lang.Object
-								// methods #144.
-								IMethodBinding methodBinding = node.resolveMethodBinding();
-
-								if (methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
-									IMethod calledObjectMethod = (IMethod) methodBinding.getJavaElement();
-
-									try {
-										if (Flags.isProtected(calledObjectMethod.getFlags())) {
-											addErrorAndMark(status,
-													PreconditionFailure.MethodContainsCallToProtectedObjectMethod,
-													sourceMethod, calledObjectMethod);
-										}
-									} catch (JavaModelException e) {
-										throw new RuntimeException(e);
-									}
-								}
-								return super.visit(node);
-							}
-						});
+						if (visitor.doesMethodContainsCallToProtectedObjectMethod())
+							addErrorAndMark(status, PreconditionFailure.MethodContainsCallToProtectedObjectMethod,
+									sourceMethod,
+									visitor.getCalledProtectedObjectMethodSet().stream().findAny().orElseThrow(
+											() -> new IllegalStateException("No associated object method")));
 					}
 				}
 				pm.ifPresent(m -> m.worked(1));
