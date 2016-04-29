@@ -240,6 +240,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private static Table<IMethod, IType, IMethod> methodTargetInterfaceTargetMethodTable = HashBasedTable.create();
 
+	private SearchEngine searchEngine = new SearchEngine();
+
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
 	 * 
@@ -609,7 +611,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// First, find all references of the accessed field in the
 				// source method.
 				FieldAccessAnalysisSearchRequestor requestor = new FieldAccessAnalysisSearchRequestor(monitor);
-				new SearchEngine().search(
+				this.getSearchEngine().search(
 						SearchPattern.createPattern(accessedField, IJavaSearchConstants.REFERENCES,
 								SearchPattern.R_EXACT_MATCH),
 						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
@@ -661,7 +663,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// it's accessible and it's not static.
 				// we'll need to check the implicit parameters.
 				MethodReceiverAnalysisSearchRequestor requestor = new MethodReceiverAnalysisSearchRequestor(monitor);
-				new SearchEngine().search(
+				this.getSearchEngine().search(
 						SearchPattern.createPattern(accessedMethod, IJavaSearchConstants.REFERENCES,
 								SearchPattern.R_EXACT_MATCH),
 						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
@@ -2095,5 +2097,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private static Table<IMethod, IType, IMethod> getMethodTargetInterfaceTargetMethodTable() {
 		return methodTargetInterfaceTargetMethodTable;
+	}
+
+	private SearchEngine getSearchEngine() {
+		return searchEngine;
 	}
 }
