@@ -1024,6 +1024,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType4() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType5() throws Exception {
+		// FIXME: This should pass #149.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceTypeHierarchy() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
