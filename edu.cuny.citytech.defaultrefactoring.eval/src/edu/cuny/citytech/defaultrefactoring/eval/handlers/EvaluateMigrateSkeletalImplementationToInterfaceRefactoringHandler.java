@@ -66,11 +66,11 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
 								"#failed preconditions", "#methods after refactoring" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
-						new String[] { "method", "type FQN" });
+						new String[] { "subject", "method", "type FQN" });
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
-						new String[] { "method", "type FQN" });
+						new String[] { "subject", "method", "type FQN" });
 				errorPrinter = createCSVPrinter("failed_preconditions.csv",
-						new String[] { "method", "type FQN", "severity", "code", "plug-in id", "message" });
+						new String[] { "subject", "method", "type FQN", "severity", "code", "plug-in id", "message" });
 
 				for (IJavaProject javaProject : javaProjects) {
 					if (!javaProject.isStructureKnown())
@@ -134,14 +134,14 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					resultsPrinter.print(processor.getMigratableMethods().size()); // number.
 
 					for (IMethod method : processor.getMigratableMethods()) {
-						migratableMethodPrinter.printRecord(Util.getMethodIdentifier(method),
-								method.getDeclaringType().getFullyQualifiedName());
+						migratableMethodPrinter.printRecord(javaProject.getElementName(),
+								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName());
 					}
 
 					// failed methods.
 					for (IMethod method : processor.getUnmigratableMethods()) {
-						unmigratableMethodPrinter.printRecord(Util.getMethodIdentifier(method),
-								method.getDeclaringType().getFullyQualifiedName());
+						unmigratableMethodPrinter.printRecord(javaProject.getElementName(),
+								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName());
 					}
 
 					// failed preconditions.
@@ -155,7 +155,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 									+ " corresponding to a failed precondition is not a method.");
 
 						IMethod failedMethod = (IMethod) correspondingElement;
-						errorPrinter.printRecord(Util.getMethodIdentifier(failedMethod),
+						errorPrinter.printRecord(javaProject.getElementName(), Util.getMethodIdentifier(failedMethod),
 								failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getSeverity(),
 								entry.getCode(), entry.getPluginId(), entry.getMessage());
 					}
