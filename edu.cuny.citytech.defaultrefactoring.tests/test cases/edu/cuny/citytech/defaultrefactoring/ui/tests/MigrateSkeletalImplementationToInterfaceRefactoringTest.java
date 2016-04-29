@@ -1045,4 +1045,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
 				new String[][] { new String[0] });
 	}
+	
+	public void testSkeletalImplementerHierarchy3() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testSkeletalImplementerHierarchy4() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
 }
