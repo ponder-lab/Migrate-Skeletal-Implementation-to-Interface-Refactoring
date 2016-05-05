@@ -66,7 +66,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
 								"#failed preconditions", "#methods after refactoring" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
-						new String[] { "method", "type FQN" });
+						new String[] { "method", "type FQN", "destination_interfaceFQN" });
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
 						new String[] { "method", "type FQN" });
 				errorPrinter = createCSVPrinter("failed_preconditions.csv",
@@ -135,7 +135,10 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					for (IMethod method : processor.getMigratableMethods()) {
 						migratableMethodPrinter.printRecord(Util.getMethodIdentifier(method),
-								method.getDeclaringType().getFullyQualifiedName());
+								method.getDeclaringType().getFullyQualifiedName(),
+								MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+										.getTargetMethod(method, Optional.of(monitor)).getDeclaringType()
+										.getFullyQualifiedName());
 					}
 
 					// failed methods.
