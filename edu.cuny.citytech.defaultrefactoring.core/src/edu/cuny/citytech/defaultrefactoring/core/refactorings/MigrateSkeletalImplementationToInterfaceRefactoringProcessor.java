@@ -53,6 +53,8 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -64,6 +66,12 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.core.search.SearchMatch;
+import org.eclipse.jdt.core.search.SearchParticipant;
+import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
@@ -102,6 +110,7 @@ import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImpl
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.messages.PreconditionFailure;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
+import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -111,6 +120,164 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
  */
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
+
+	private final class MethodBodyAnalysisVisitor extends ASTVisitor {
+		private boolean methodContainsSuperReference;
+		private boolean methodContainsCallToProtectedObjectMethod;
+		private Set<IMethod> calledProtectedObjectMethodSet = new HashSet<>();
+
+		protected Set<IMethod> getCalledProtectedObjectMethodSet() {
+			return calledProtectedObjectMethodSet;
+		}
+
+		@Override
+		public boolean visit(SuperConstructorInvocation node) {
+			this.methodContainsSuperReference = true;
+			return super.visit(node);
+		}
+
+		protected boolean doesMethodContainsSuperReference() {
+			return methodContainsSuperReference;
+		}
+
+		protected boolean doesMethodContainsCallToProtectedObjectMethod() {
+			return methodContainsCallToProtectedObjectMethod;
+		}
+
+		@Override
+		public boolean visit(SuperFieldAccess node) {
+			this.methodContainsSuperReference = true;
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(SuperMethodInvocation node) {
+			this.methodContainsSuperReference = true;
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(SuperMethodReference node) {
+			this.methodContainsSuperReference = true;
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(MethodInvocation node) {
+			// check for calls to particular java.lang.Object
+			// methods #144.
+			IMethodBinding methodBinding = node.resolveMethodBinding();
+
+			if (methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
+				IMethod calledObjectMethod = (IMethod) methodBinding.getJavaElement();
+
+				try {
+					if (Flags.isProtected(calledObjectMethod.getFlags())) {
+						this.methodContainsCallToProtectedObjectMethod = true;
+						this.calledProtectedObjectMethodSet.add(calledObjectMethod);
+					}
+				} catch (JavaModelException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			return super.visit(node);
+		}
+	}
+
+	private final class FieldAccessAnalysisSearchRequestor extends SearchRequestor {
+		private final Optional<IProgressMonitor> monitor;
+		private boolean accessesFieldsFromImplicitParameter;
+
+		private FieldAccessAnalysisSearchRequestor(Optional<IProgressMonitor> monitor) {
+			this.monitor = monitor;
+		}
+
+		@Override
+		public void acceptSearchMatch(SearchMatch match) throws CoreException {
+			// get the AST node corresponding to the field
+			// access. It should be some kind of name
+			// (simple of qualified).
+			ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
+					((IMember) match.getElement()).getTypeRoot(),
+					new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+
+			// examine the node's parent.
+			ASTNode parent = node.getParent();
+
+			switch (parent.getNodeType()) {
+			case ASTNode.FIELD_ACCESS: {
+				FieldAccess fieldAccess = (FieldAccess) parent;
+
+				// the expression is the LHS of the
+				// selection operator.
+				Expression expression = fieldAccess.getExpression();
+
+				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION)
+					// either there is nothing on the LHS
+					// or it's this, in which case we fail.
+					this.accessesFieldsFromImplicitParameter = true;
+				break;
+			}
+			case ASTNode.SUPER_FIELD_ACCESS: {
+				// super will also tell us that it's an
+				// instance field access of this.
+				this.accessesFieldsFromImplicitParameter = true;
+				break;
+			}
+			default: {
+				// it must be an unqualified field access,
+				// meaning that it's an instance field access of this.
+				this.accessesFieldsFromImplicitParameter = true;
+			}
+			}
+		}
+
+		public boolean hasAccessesToFieldsFromImplicitParameter() {
+			return accessesFieldsFromImplicitParameter;
+		}
+	}
+
+	private final class MethodReceiverAnalysisSearchRequestor extends SearchRequestor {
+		private final Optional<IProgressMonitor> monitor;
+		private boolean encounteredThisReceiver;
+
+		public boolean hasEncounteredThisReceiver() {
+			return encounteredThisReceiver;
+		}
+
+		private MethodReceiverAnalysisSearchRequestor(Optional<IProgressMonitor> monitor) {
+			this.monitor = monitor;
+		}
+
+		@Override
+		public void acceptSearchMatch(SearchMatch match) throws CoreException {
+			// get the AST node corresponding to the method
+			// invocation. It should be some kind of name (simple of qualified).
+			ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
+					((IMember) match.getElement()).getTypeRoot(),
+					new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+
+			if (node.getNodeType() != ASTNode.METHOD_INVOCATION
+					&& node.getNodeType() != ASTNode.SUPER_METHOD_INVOCATION)
+				node = node.getParent();
+
+			switch (node.getNodeType()) {
+			case ASTNode.METHOD_INVOCATION: {
+				MethodInvocation methodInvocation = (MethodInvocation) node;
+				Expression expression = methodInvocation.getExpression();
+
+				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION) {
+					this.encounteredThisReceiver = true;
+				}
+				break;
+			}
+			case ASTNode.SUPER_METHOD_INVOCATION: {
+				this.encounteredThisReceiver = true;
+				break;
+			}
+			}
+		}
+	}
 
 	private Set<IMethod> sourceMethods = new LinkedHashSet<>();
 
@@ -136,6 +303,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private final boolean layer;
 
 	private static Table<IMethod, IType, IMethod> methodTargetInterfaceTargetMethodTable = HashBasedTable.create();
+
+	private SearchEngine searchEngine = new SearchEngine();
+
+	/**
+	 * For excluding AST parse time.
+	 */
+	private TimeCollector excludedTimeCollector = new TimeCollector();
+
+	private boolean logging = true;
 
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
@@ -198,6 +374,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws CoreException, OperationCanceledException {
 		try {
 			this.clearCaches();
+			this.getExcludedTimeCollector().clear();
 
 			if (this.getSourceMethods().isEmpty())
 				return RefactoringStatus.createFatalErrorStatus(Messages.MethodsNotSpecified);
@@ -414,17 +591,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// The question now is if the target type can access the
 				// particular member given that
 				// the target type can access the member's declaring type.
-				// if it's a method and it's not static.
-				if (member.getElementType() == IJavaElement.METHOD && !JdtFlags.isStatic(member)) {
-					// In this case, we have that the member is an instance
-					// method.
-					// We need to make sure that the destination interface is
-					// able to access this instance method and that the run time
-					// target of the method doesn't change.
-					// TODO: For now, let's just say no.
-					return false;
-					// TODO: How often is this happening? #142
-				}
 				// if it's public, the answer is yes.
 				if (JdtFlags.isPublic(member))
 					return true;
@@ -478,39 +644,55 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAccessedFields(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
-			final ITypeHierarchy hierarchy) throws JavaModelException {
+			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws CoreException {
 		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
 		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+
 		final IField[] accessedFields = ReferenceFinderUtil.getFieldsReferencedIn(new IJavaElement[] { sourceMethod },
 				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
 
-		final IType destination = getDestinationInterface(sourceMethod).get();
-		for (int i = 0; i < accessedFields.length; i++) {
-			final IField field = accessedFields[i];
-			if (!field.exists())
+		final IType destination = getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
+				"Source method: " + sourceMethod + " has no destiantion interface."));
+
+		for (int index = 0; index < accessedFields.length; index++) {
+			final IField accessedField = accessedFields[index];
+
+			if (!accessedField.exists())
 				continue;
 
-			// if it's an instance field
-			if (!Flags.isStatic(field.getFlags()) && !field.getDeclaringType().isInterface()) {
-				// TODO: But what if it's a public instance field? More tests?
-				// What if I access System.out? #141.
-				// TODO: Also, are we making this twice? #140.
-				addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField, sourceMethod, field);
-			}
+			boolean isAccessible = pulledUpList.contains(accessedField) || canBeAccessedFrom(sourceMethod,
+					accessedField, destination, destinationInterfaceSuperTypeHierarchy)
+					|| Flags.isEnum(accessedField.getFlags());
 
-			boolean isAccessible = pulledUpList.contains(field)
-					|| canBeAccessedFrom(sourceMethod, field, destination, hierarchy) || Flags.isEnum(field.getFlags());
 			if (!isAccessible) {
 				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
 						PreconditionFailure.FieldNotAccessible.getMessage(),
-						new String[] { JavaElementLabels.getTextLabel(field, JavaElementLabels.ALL_FULLY_QUALIFIED),
+						new String[] {
+								JavaElementLabels.getTextLabel(accessedField, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
-				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(field),
+				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedField),
 						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
 						PreconditionFailure.FieldNotAccessible.ordinal(), sourceMethod);
 				this.getUnmigratableMethods().add(sourceMethod);
+			} else if (!JdtFlags.isStatic(accessedField) && !accessedField.getDeclaringType().isInterface()) {
+				// it's accessible and it's an instance field.
+				// Let's decide if the source method is accessing it from this
+				// object or another. If it's from this object, we fail.
+				// First, find all references of the accessed field in the
+				// source method.
+				FieldAccessAnalysisSearchRequestor requestor = new FieldAccessAnalysisSearchRequestor(monitor);
+				this.getSearchEngine().search(
+						SearchPattern.createPattern(accessedField, IJavaSearchConstants.REFERENCES,
+								SearchPattern.R_EXACT_MATCH),
+						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
+						SearchEngine.createJavaSearchScope(new IJavaElement[] { sourceMethod }), requestor,
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
+
+				if (requestor.hasAccessesToFieldsFromImplicitParameter())
+					addErrorAndMark(result, PreconditionFailure.SourceMethodAccessesInstanceField, sourceMethod,
+							accessedField);
 			}
 		}
 		monitor.ifPresent(IProgressMonitor::done);
@@ -518,7 +700,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAccessedMethods(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
-			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws JavaModelException {
+			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws CoreException {
 		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
@@ -550,31 +732,43 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						PreconditionFailure.MethodNotAccessible.ordinal(), sourceMethod);
 				this.getUnmigratableMethods().add(sourceMethod);
 			} else if (!JdtFlags.isStatic(accessedMethod)) {
-				// it's accessible and it's not static but do we have the
-				// correct implicit parameter available?
-				// let's check to see if the method is somewhere in the
-				// hierarchy.
-				IType methodDeclaringType = accessedMethod.getDeclaringType();
+				// it's accessible and it's not static.
+				// we'll need to check the implicit parameters.
+				MethodReceiverAnalysisSearchRequestor requestor = new MethodReceiverAnalysisSearchRequestor(monitor);
+				this.getSearchEngine().search(
+						SearchPattern.createPattern(accessedMethod, IJavaSearchConstants.REFERENCES,
+								SearchPattern.R_EXACT_MATCH),
+						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
+						SearchEngine.createJavaSearchScope(new IJavaElement[] { sourceMethod }), requestor,
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
 
-				// is this method declared in a type that is in the declaring
-				// type's super type hierarchy?
-				ITypeHierarchy declaringTypeSuperTypeHierarchy = getSuperTypeHierarchy(sourceMethod.getDeclaringType(),
-						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+				// if this is the implicit parameter.
+				if (requestor.hasEncounteredThisReceiver()) {
+					// let's check to see if the method is somewhere in the
+					// hierarchy.
+					IType methodDeclaringType = accessedMethod.getDeclaringType();
 
-				if (declaringTypeSuperTypeHierarchy.contains(methodDeclaringType)) {
-					// if so, then we need to check that it is in the
-					// destination interface's super type hierarchy.
-					boolean methodInHiearchy = isMethodInHierarchy(accessedMethod,
-							destinationInterfaceSuperTypeHierarchy);
-					if (!methodInHiearchy) {
-						final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
-								PreconditionFailure.MethodNotAccessible.getMessage(),
-								new String[] { getTextLabel(accessedMethod, ALL_FULLY_QUALIFIED),
-										getTextLabel(destination, ALL_FULLY_QUALIFIED) });
-						result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedMethod),
-								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
-								PreconditionFailure.MethodNotAccessible.ordinal(), sourceMethod);
-						this.getUnmigratableMethods().add(sourceMethod);
+					// is this method declared in a type that is in the
+					// declaring type's super type hierarchy?
+					ITypeHierarchy declaringTypeSuperTypeHierarchy = getSuperTypeHierarchy(
+							sourceMethod.getDeclaringType(),
+							monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+
+					if (declaringTypeSuperTypeHierarchy.contains(methodDeclaringType)) {
+						// if so, then we need to check that it is in the
+						// destination interface's super type hierarchy.
+						boolean methodInHiearchy = isMethodInHierarchy(accessedMethod,
+								destinationInterfaceSuperTypeHierarchy);
+						if (!methodInHiearchy) {
+							final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+									PreconditionFailure.MethodNotAccessible.getMessage(),
+									new String[] { getTextLabel(accessedMethod, ALL_FULLY_QUALIFIED),
+											getTextLabel(destination, ALL_FULLY_QUALIFIED) });
+							result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedMethod),
+									MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
+									PreconditionFailure.MethodNotAccessible.ordinal(), sourceMethod);
+							this.getUnmigratableMethods().add(sourceMethod);
+						}
 					}
 				}
 			}
@@ -593,7 +787,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkAccesses(IMethod sourceMethod, final Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
+			throws CoreException {
 		final RefactoringStatus result = new RefactoringStatus();
 		try {
 			monitor.ifPresent(
@@ -886,7 +1080,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private RefactoringStatus checkSourceMethods(Optional<IProgressMonitor> pm) throws JavaModelException {
+	private RefactoringStatus checkSourceMethods(Optional<IProgressMonitor> pm) throws CoreException {
 		try {
 			RefactoringStatus status = new RefactoringStatus();
 			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
@@ -1268,58 +1462,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Block body = declaration.getBody();
 
 					if (body != null) {
-						body.accept(new ASTVisitor() {
+						MethodBodyAnalysisVisitor visitor = new MethodBodyAnalysisVisitor();
+						body.accept(visitor);
 
-							@Override
-							public boolean visit(SuperConstructorInvocation node) {
-								addSuperReferenceErrorAndMark(status, sourceMethod);
-								return super.visit(node);
-							}
+						if (visitor.doesMethodContainsSuperReference())
+							addErrorAndMark(status, PreconditionFailure.MethodContainsSuperReference, sourceMethod);
 
-							private void addSuperReferenceErrorAndMark(RefactoringStatus status, IMethod sourceMethod) {
-								addErrorAndMark(status, PreconditionFailure.MethodContainsSuperReference, sourceMethod);
-							}
-
-							@Override
-							public boolean visit(SuperFieldAccess node) {
-								addSuperReferenceErrorAndMark(status, sourceMethod);
-								return super.visit(node);
-							}
-
-							@Override
-							public boolean visit(SuperMethodInvocation node) {
-								addSuperReferenceErrorAndMark(status, sourceMethod);
-								return super.visit(node);
-							}
-
-							@Override
-							public boolean visit(SuperMethodReference node) {
-								addSuperReferenceErrorAndMark(status, sourceMethod);
-								return super.visit(node);
-							}
-
-							@Override
-							public boolean visit(MethodInvocation node) {
-								// check for calls to particular jav.lang.Object
-								// methods #144.
-								IMethodBinding methodBinding = node.resolveMethodBinding();
-
-								if (methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
-									IMethod calledObjectMethod = (IMethod) methodBinding.getJavaElement();
-
-									try {
-										if (Flags.isProtected(calledObjectMethod.getFlags())) {
-											addErrorAndMark(status,
-													PreconditionFailure.MethodContainsCallToProtectedObjectMethod,
-													sourceMethod, calledObjectMethod);
-										}
-									} catch (JavaModelException e) {
-										throw new RuntimeException(e);
-									}
-								}
-								return super.visit(node);
-							}
-						});
+						if (visitor.doesMethodContainsCallToProtectedObjectMethod())
+							addErrorAndMark(status, PreconditionFailure.MethodContainsCallToProtectedObjectMethod,
+									sourceMethod,
+									visitor.getCalledProtectedObjectMethodSet().stream().findAny().orElseThrow(
+											() -> new IllegalStateException("No associated object method")));
 					}
 				}
 				pm.ifPresent(m -> m.worked(1));
@@ -1639,6 +1792,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		getTypeToTypeHierarchyMap().clear();
 	}
 
+	public TimeCollector getExcludedTimeCollector() {
+		return excludedTimeCollector;
+	}
+
 	private RefactoringStatus checkProjectCompliance(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
@@ -1751,7 +1908,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
 		CompilationUnit compilationUnit = this.typeRootToCompilationUnitMap.get(root);
 		if (compilationUnit == null) {
+			this.getExcludedTimeCollector().start();
 			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, true, pm);
+			this.getExcludedTimeCollector().stop();
 			this.typeRootToCompilationUnitMap.put(root, compilationUnit);
 		}
 		return compilationUnit;
@@ -1903,9 +2062,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void log(int severity, String message) {
-		String name = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
-		IStatus status = new Status(severity, name, message);
-		JavaPlugin.log(status);
+		if (this.isLogging()) {
+			String name = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
+			IStatus status = new Status(severity, name, message);
+			JavaPlugin.log(status);
+		}
 	}
 
 	private void logInfo(String message) {
@@ -1975,5 +2136,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private static Table<IMethod, IType, IMethod> getMethodTargetInterfaceTargetMethodTable() {
 		return methodTargetInterfaceTargetMethodTable;
+	}
+
+	private SearchEngine getSearchEngine() {
+		return searchEngine;
+	}
+
+	public boolean isLogging() {
+		return logging;
+	}
+
+	public void setLogging(boolean logging) {
+		this.logging = logging;
 	}
 }

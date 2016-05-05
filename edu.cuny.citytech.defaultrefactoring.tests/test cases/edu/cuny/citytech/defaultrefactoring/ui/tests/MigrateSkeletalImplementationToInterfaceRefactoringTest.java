@@ -904,7 +904,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
 				new String[][] { new String[0] }, new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodWithTargetThatHasMultipleSourceMethods6() throws Exception {
 		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
 				new String[][] { new String[0] }, new String[] { "m" }, new String[][] { new String[0] });
@@ -936,5 +936,127 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 	public void testMethodWithAbstractTargetMethod() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfADifferentType() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfADifferentType2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType() throws Exception {
+		// control of the above.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType5() throws Exception {
+		// control of the above.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType6() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType7() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceType8() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy3() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy5() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceFieldOfTheSourceTypeHierarchy6() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfADifferentType() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType() throws Exception {
+		// control of the above.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType4() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType5() throws Exception {
+		// FIXME: This should pass #149.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceTypeHierarchy() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceTypeHierarchy2() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceTypeHierarchy3() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testSkeletalImplementerHierarchy() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testSkeletalImplementerHierarchy2() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
+	}
+	
+	public void testSkeletalImplementerHierarchy3() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testSkeletalImplementerHierarchy4() throws Exception {
+		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
+				new String[][] { new String[0] });
 	}
 }
