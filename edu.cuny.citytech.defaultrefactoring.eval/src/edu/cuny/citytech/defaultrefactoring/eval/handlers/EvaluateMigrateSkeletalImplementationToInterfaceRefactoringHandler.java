@@ -70,7 +70,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv",
 						new String[] { "subject", "method", "type FQN" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
-						new String[] { "subject", "method", "type FQN" });
+						new String[] { "subject", "method", "type FQN", "destination_interfaceFQN" });
+
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
 						new String[] { "subject", "method", "type FQN" });
 				errorPrinter = createCSVPrinter("failed_preconditions.csv",
@@ -154,7 +155,11 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					for (IMethod method : processor.getMigratableMethods()) {
 						migratableMethodPrinter.printRecord(javaProject.getElementName(),
-								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName());
+								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
+								MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+										.getTargetMethod(method, Optional.of(monitor)).getDeclaringType()
+										.getFullyQualifiedName());
+
 					}
 
 					// failed methods.
