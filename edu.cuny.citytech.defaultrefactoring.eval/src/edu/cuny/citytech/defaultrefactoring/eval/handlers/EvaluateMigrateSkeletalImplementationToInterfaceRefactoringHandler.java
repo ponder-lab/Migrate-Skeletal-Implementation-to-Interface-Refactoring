@@ -1,12 +1,13 @@
 package edu.cuny.citytech.defaultrefactoring.eval.handlers;
 
 import static edu.cuny.citytech.defaultrefactoring.core.utils.Util.createMigrateSkeletalImplementationToInterfaceRefactoringProcessor;
+import static edu.cuny.citytech.defaultrefactoring.core.utils.Util.getMethodIdentifier;
+import static edu.cuny.citytech.defaultrefactoring.eval.utils.Util.getSelectedJavaProjectsFromEvent;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,7 +41,6 @@ import org.osgi.framework.FrameworkUtil;
 import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoringProcessor;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
-import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -64,7 +64,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 			CSVPrinter errorPrinter = null;
 
 			try {
-				IJavaProject[] javaProjects = Util.getSelectedJavaProjectsFromEvent(event);
+				IJavaProject[] javaProjects = getSelectedJavaProjectsFromEvent(event);
 
 				resultsPrinter = createCSVPrinter("results.csv",
 						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
@@ -110,8 +110,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					// candidate methods.
 					for (IMethod method : interfaceMigrationAvailableMethods) {
-						candidateMethodPrinter.printRecord(javaProject.getElementName(),
-								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName());
+						candidateMethodPrinter.printRecord(javaProject.getElementName(), getMethodIdentifier(method),
+								method.getDeclaringType().getFullyQualifiedName());
 					}
 
 					resultsTimeCollector.start();
@@ -163,8 +163,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					resultsPrinter.print(processor.getMigratableMethods().size()); // number.
 
 					for (IMethod method : processor.getMigratableMethods()) {
-						migratableMethodPrinter.printRecord(javaProject.getElementName(),
-								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
+						migratableMethodPrinter.printRecord(javaProject.getElementName(), getMethodIdentifier(method),
+								method.getDeclaringType().getFullyQualifiedName(),
 								MigrateSkeletalImplementationToInterfaceRefactoringProcessor
 										.getTargetMethod(method, Optional.of(monitor)).getDeclaringType()
 										.getFullyQualifiedName());
@@ -173,8 +173,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					// failed methods.
 					for (IMethod method : processor.getUnmigratableMethods()) {
-						unmigratableMethodPrinter.printRecord(javaProject.getElementName(),
-								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName());
+						unmigratableMethodPrinter.printRecord(javaProject.getElementName(), getMethodIdentifier(method),
+								method.getDeclaringType().getFullyQualifiedName());
 					}
 
 					// failed preconditions.
@@ -190,8 +190,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 										+ correspondingElement.getClass());
 
 							IMethod failedMethod = (IMethod) correspondingElement;
-							errorPrinter.printRecord(javaProject.getElementName(),
-									Util.getMethodIdentifier(failedMethod),
+							errorPrinter.printRecord(javaProject.getElementName(), getMethodIdentifier(failedMethod),
 									failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getSeverity(),
 									entry.getCode(), entry.getPluginId(), entry.getMessage());
 						}
