@@ -180,7 +180,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 							if (!(correspondingElement instanceof IMethod))
 								throw new IllegalStateException("The element: " + correspondingElement
-									+ " corresponding to a failed precondition is not a method.");
+										+ " corresponding to a failed precondition is not a method. Instead, it is a: "
+										+ correspondingElement.getClass());
 
 							IMethod failedMethod = (IMethod) correspondingElement;
 							errorPrinter.printRecord(javaProject.getElementName(),
