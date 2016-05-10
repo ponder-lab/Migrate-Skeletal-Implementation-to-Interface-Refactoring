@@ -175,6 +175,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					resultsPrinter.print(status.getEntries().length); // number.
 
 					for (RefactoringStatusEntry entry : status.getEntries()) {
+						if (!entry.isFatalError()) {
 							Object correspondingElement = entry.getData();
 
 							if (!(correspondingElement instanceof IMethod))
@@ -182,17 +183,22 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 									+ " corresponding to a failed precondition is not a method.");
 
 							IMethod failedMethod = (IMethod) correspondingElement;
-						errorPrinter.printRecord(javaProject.getElementName(), Util.getMethodIdentifier(failedMethod),
+							errorPrinter.printRecord(javaProject.getElementName(),
+									Util.getMethodIdentifier(failedMethod),
 									failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getSeverity(),
 									entry.getCode(), entry.getPluginId(), entry.getMessage());
 						}
+					}
 
-					// actually perform the refactoring.
+					// actually perform the refactoring if there are no fatal
+					// errors.
+					if (!status.hasFatalError()) {
 						resultsTimeCollector.start();
 						Change change = processorBasedRefactoring
 								.createChange(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
 						change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
 						resultsTimeCollector.stop();
+					}
 
 					// ensure that we can build the project.
 					if (!javaProject.isConsistent())
