@@ -100,7 +100,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					resultsTimeCollector.start();
 					for (IMethod method : allMethods)
-						if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, Optional.of(monitor)))
+						if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, true,
+								Optional.of(monitor)))
 							interfaceMigrationAvailableMethods.add(method);
 					resultsTimeCollector.stop();
 
