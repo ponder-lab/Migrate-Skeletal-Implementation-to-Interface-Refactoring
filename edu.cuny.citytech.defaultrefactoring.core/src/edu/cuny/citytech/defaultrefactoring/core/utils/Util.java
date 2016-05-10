@@ -115,16 +115,17 @@ public final class Util {
 		if (allResults != null) {
 			String[] nameParts = allResults[0];
 			if (nameParts != null) {
-				fullName = new String();
+				StringBuilder fullNameBuilder = new StringBuilder();
 				for (int i = 0; i < nameParts.length; i++) {
-					if (fullName.length() > 0) {
-						fullName += '.';
+					if (fullNameBuilder.length() > 0) {
+						fullNameBuilder.append('.');
 					}
 					String part = nameParts[i];
 					if (part != null) {
-						fullName += part;
+						fullNameBuilder.append(part);
 					}
 				}
+				fullName = fullNameBuilder.toString();
 			}
 		} else
 			fullName = simpleName;
