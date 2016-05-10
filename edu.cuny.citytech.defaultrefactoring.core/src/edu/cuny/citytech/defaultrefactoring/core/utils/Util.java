@@ -106,7 +106,7 @@ public final class Util {
 		return sb.toString();
 	}
 
-	private static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
+	public static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
 		IType declaringType = method.getDeclaringType();
 		String name = parameterVariable.getTypeSignature();
 		String simpleName = Signature.getSignatureSimpleName(name);
