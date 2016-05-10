@@ -72,7 +72,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv",
 						new String[] { "subject", "method", "type FQN" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
-						new String[] { "subject", "method", "type FQN", "destination_interfaceFQN" });
+						new String[] { "subject", "method", "type FQN", "destination interface FQN" });
 
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
 						new String[] { "subject", "method", "type FQN" });
