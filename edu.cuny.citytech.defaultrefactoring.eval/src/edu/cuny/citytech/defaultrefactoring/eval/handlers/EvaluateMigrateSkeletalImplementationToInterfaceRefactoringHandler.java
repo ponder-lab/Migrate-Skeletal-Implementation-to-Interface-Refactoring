@@ -6,6 +6,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -136,18 +138,24 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							"Original methods after preconditions: " + interfaceMigrationAvailableMethods.size());
 
 					System.out.println("Source methods after preconditions: " + processor.getSourceMethods().size());
-					Files.write(FileSystems.getDefault().getPath("source.txt"), processor.getSourceMethods()
-							.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()));
+					Files.write(
+							FileSystems.getDefault().getPath("source.txt"), processor.getSourceMethods()
+									.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
+							StandardOpenOption.APPEND);
 
 					System.out.println(
 							"Unmigratable methods after preconditions: " + processor.getUnmigratableMethods().size());
-					Files.write(FileSystems.getDefault().getPath("unmigratable.txt"), processor.getUnmigratableMethods()
-							.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()));
+					Files.write(
+							FileSystems.getDefault().getPath("unmigratable.txt"), processor.getUnmigratableMethods()
+									.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
+							StandardOpenOption.APPEND);
 
 					System.out.println(
 							"Migratable methods after preconditions: " + processor.getMigratableMethods().size());
-					Files.write(FileSystems.getDefault().getPath("migratable.txt"), processor.getMigratableMethods()
-							.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()));
+					Files.write(
+							FileSystems.getDefault().getPath("migratable.txt"), processor.getMigratableMethods()
+									.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
+							StandardOpenOption.APPEND);
 
 					// passed methods.
 					resultsPrinter.print(processor.getMigratableMethods().size()); // number.
@@ -167,24 +175,24 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					resultsPrinter.print(status.getEntries().length); // number.
 
 					for (RefactoringStatusEntry entry : status.getEntries()) {
-						Object correspondingElement = entry.getData();
+							Object correspondingElement = entry.getData();
 
-						if (!(correspondingElement instanceof IMethod))
-							throw new IllegalStateException("The element: " + correspondingElement
+							if (!(correspondingElement instanceof IMethod))
+								throw new IllegalStateException("The element: " + correspondingElement
 									+ " corresponding to a failed precondition is not a method.");
 
-						IMethod failedMethod = (IMethod) correspondingElement;
+							IMethod failedMethod = (IMethod) correspondingElement;
 						errorPrinter.printRecord(javaProject.getElementName(), Util.getMethodIdentifier(failedMethod),
-								failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getSeverity(),
-								entry.getCode(), entry.getPluginId(), entry.getMessage());
-					}
+									failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getSeverity(),
+									entry.getCode(), entry.getPluginId(), entry.getMessage());
+						}
 
 					// actually perform the refactoring.
-					resultsTimeCollector.start();
-					Change change = processorBasedRefactoring
-							.createChange(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
-					change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
-					resultsTimeCollector.stop();
+						resultsTimeCollector.start();
+						Change change = processorBasedRefactoring
+								.createChange(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+						change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+						resultsTimeCollector.stop();
 
 					// ensure that we can build the project.
 					if (!javaProject.isConsistent())
@@ -253,6 +261,6 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 	}
 
 	private static CSVPrinter createCSVPrinter(String fileName, String[] header) throws IOException {
-		return new CSVPrinter(new FileWriter(fileName), CSVFormat.EXCEL.withHeader(header));
+		return new CSVPrinter(new FileWriter(fileName, true), CSVFormat.EXCEL.withHeader(header));
 	}
 }
