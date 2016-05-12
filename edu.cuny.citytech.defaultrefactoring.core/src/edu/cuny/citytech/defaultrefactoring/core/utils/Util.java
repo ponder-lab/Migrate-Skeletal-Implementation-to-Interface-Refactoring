@@ -109,7 +109,11 @@ public final class Util {
 	public static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
 		IType declaringType = method.getDeclaringType();
 		String name = parameterVariable.getTypeSignature();
-		String simpleName = Signature.getSignatureSimpleName(name);
+
+		String signatureQualifier = Signature.getSignatureQualifier(name);
+		String signatureSimpleName = Signature.getSignatureSimpleName(name);
+		String simpleName = signatureQualifier.isEmpty() ?  signatureSimpleName : signatureQualifier + '.' + signatureSimpleName;
+
 		String[][] allResults = declaringType.resolveType(simpleName);
 		String fullName = null;
 		if (allResults != null) {
