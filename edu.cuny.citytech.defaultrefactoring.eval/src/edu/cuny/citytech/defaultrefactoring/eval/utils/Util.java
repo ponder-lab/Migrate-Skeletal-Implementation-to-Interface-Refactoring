@@ -44,6 +44,7 @@ public class Util {
 	private static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
 		IType declaringType = method.getDeclaringType();
 		String name = parameterVariable.getTypeSignature();
+		name = Signature.getTypeErasure(name);
 		String signatureQualifier = Signature.getSignatureQualifier(name);
 		String signatureSimpleName = Signature.getSignatureSimpleName(name);
 		String simpleName = signatureQualifier.isEmpty() ? signatureSimpleName
