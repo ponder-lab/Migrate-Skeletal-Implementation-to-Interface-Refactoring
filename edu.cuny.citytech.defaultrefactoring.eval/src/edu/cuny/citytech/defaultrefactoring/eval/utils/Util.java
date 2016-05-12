@@ -7,9 +7,7 @@ import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.handlers.HandlerUtil;
@@ -32,42 +30,12 @@ public class Util {
 		sb.append((method.getElementName()) + "(");
 		ILocalVariable[] parameters = method.getParameters();
 		for (int i = 0; i < parameters.length; i++) {
-			sb.append(getParamString(parameters[i], method));
+			sb.append(edu.cuny.citytech.defaultrefactoring.core.utils.Util.getParamString(parameters[i], method));
 			if (i != (parameters.length - 1)) {
 				sb.append(",");
 			}
 		}
 		sb.append(")");
 		return sb.toString();
-	}
-
-	private static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
-		IType declaringType = method.getDeclaringType();
-		String name = parameterVariable.getTypeSignature();
-		name = Signature.getTypeErasure(name);
-		String signatureQualifier = Signature.getSignatureQualifier(name);
-		String signatureSimpleName = Signature.getSignatureSimpleName(name);
-		String simpleName = signatureQualifier.isEmpty() ? signatureSimpleName
-				: signatureQualifier + '.' + signatureSimpleName;
-		String[][] allResults = declaringType.resolveType(simpleName);
-		String fullName = null;
-		if (allResults != null) {
-			String[] nameParts = allResults[0];
-			if (nameParts != null) {
-				StringBuilder fullNameBuilder = new StringBuilder();
-				for (int i = 0; i < nameParts.length; i++) {
-					if (fullNameBuilder.length() > 0) {
-						fullNameBuilder.append('.');
-					}
-					String part = nameParts[i];
-					if (part != null) {
-						fullNameBuilder.append(part);
-					}
-				}
-				fullName = fullNameBuilder.toString();
-			}
-		} else
-			fullName = simpleName;
-		return fullName;
 	}
 }

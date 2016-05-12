@@ -9,8 +9,11 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -87,5 +90,35 @@ public final class Util {
 				return refactoring.checkFinalConditions(pm);
 			}
 		};
+	}
+
+	public static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
+		IType declaringType = method.getDeclaringType();
+		String name = parameterVariable.getTypeSignature();
+		name = Signature.getTypeErasure(name);
+		String signatureQualifier = Signature.getSignatureQualifier(name);
+		String signatureSimpleName = Signature.getSignatureSimpleName(name);
+		String simpleName = signatureQualifier.isEmpty() ? signatureSimpleName
+				: signatureQualifier + '.' + signatureSimpleName;
+		String[][] allResults = declaringType.resolveType(simpleName);
+		String fullName = null;
+		if (allResults != null) {
+			String[] nameParts = allResults[0];
+			if (nameParts != null) {
+				StringBuilder fullNameBuilder = new StringBuilder();
+				for (int i = 0; i < nameParts.length; i++) {
+					if (fullNameBuilder.length() > 0) {
+						fullNameBuilder.append('.');
+					}
+					String part = nameParts[i];
+					if (part != null) {
+						fullNameBuilder.append(part);
+					}
+				}
+				fullName = fullNameBuilder.toString();
+			}
+		} else
+			fullName = simpleName;
+		return fullName;
 	}
 }
