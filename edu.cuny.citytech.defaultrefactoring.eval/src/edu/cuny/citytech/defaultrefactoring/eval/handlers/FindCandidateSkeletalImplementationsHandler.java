@@ -1,6 +1,5 @@
 package edu.cuny.citytech.defaultrefactoring.eval.handlers;
 
-import static edu.cuny.citytech.defaultrefactoring.core.utils.Util.getMethodIdentifier;
 import static edu.cuny.citytech.defaultrefactoring.eval.utils.Util.getSelectedJavaProjectsFromEvent;
 
 import java.io.FileWriter;
@@ -27,6 +26,8 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.osgi.framework.FrameworkUtil;
+
+import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -90,7 +91,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 								IMethod[] methods = type.getMethods();
 								for (int x = 0; x < methods.length; x++) {
 									IMethod method = methods[x];
-									String methodIdentifier = getMethodIdentifier(method);
+									String methodIdentifier = Util.getMethodIdentifier(method);
 									metPrinter.printRecord(methodIdentifier, type.getFullyQualifiedName());
 								}
 
