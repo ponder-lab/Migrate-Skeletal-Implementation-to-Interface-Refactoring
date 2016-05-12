@@ -111,6 +111,7 @@ import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.messages.PreconditionFailure;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
+import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -2040,25 +2041,51 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * 
 	 * @param sourceMethod
 	 *            The method that will be migrated to the target interface.
-	 * @param
+	 * @param targetInterface
+	 *            The interface for which sourceMethod will be migrated.
 	 * @return The target method that will be manipulated or null if not found.
+	 * @throws JavaModelException
 	 */
-	private static IMethod findTargetMethod(IMethod sourceMethod, IType targetInterface) {
+	private static IMethod findTargetMethod(IMethod sourceMethod, IType targetInterface) throws JavaModelException {
 		if (targetInterface == null)
 			return null; // not found.
 
-		IMethod[] methods = targetInterface.findMethods(sourceMethod);
+		Assert.isNotNull(sourceMethod);
+		Assert.isLegal(sourceMethod.exists(), "Source method does not exist.");
+		Assert.isLegal(targetInterface.exists(), "Target interface does not exist.");
 
-		if (methods == null)
-			return null; // not found.
+		IMethod ret = null;
 
-		Assert.isTrue(methods.length <= 1,
-				"Found multiple target methods for method: " + sourceMethod.getElementName());
+		for (IMethod method : targetInterface.getMethods()) {
+			if (method.exists() && method.getElementName().equals(sourceMethod.getElementName())) {
+				ILocalVariable[] parameters = method.getParameters();
+				ILocalVariable[] sourceParameters = sourceMethod.getParameters();
 
-		if (methods.length == 1)
-			return methods[0];
-		else
-			return null; // not found.
+				if (parameterListMatches(parameters, method, sourceParameters, sourceMethod)) {
+					if (ret != null)
+						throw new IllegalStateException("Found multiple matches of method: "
+								+ sourceMethod.getElementName() + " in interface: " + targetInterface.getElementName());
+					else
+						ret = method;
+				}
+			}
+		}
+		return ret;
+	}
+
+	private static boolean parameterListMatches(ILocalVariable[] parameters, IMethod method,
+			ILocalVariable[] sourceParameters, IMethod sourceMethod) throws JavaModelException {
+		if (parameters.length == sourceParameters.length) {
+			for (int i = 0; i < parameters.length; i++) {
+				String paramString = Util.getParamString(parameters[i], method);
+				String sourceParamString = Util.getParamString(sourceParameters[i], sourceMethod);
+
+				if (!paramString.equals(sourceParamString))
+					return false;
+			}
+			return true;
+		} else
+			return false;
 	}
 
 	private void log(int severity, String message) {
