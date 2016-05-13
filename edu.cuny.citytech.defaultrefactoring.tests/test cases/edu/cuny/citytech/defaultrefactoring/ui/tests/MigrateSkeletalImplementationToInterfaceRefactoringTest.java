@@ -215,19 +215,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodContainedInTypeWithField7() throws Exception {
 		// Access a package-private static field. Should pass.
 		// TODO: #92.
-		// helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField8() throws Exception {
 		// Same as 7 but public static field.
 		// TODO: #93.
-		// helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField9() throws Exception {
 		// Same as 7 but protected static field. Should pass.
 		// TODO: #94.
-		// helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField10() throws Exception {
@@ -1024,7 +1024,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType4() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType5() throws Exception {
 		// FIXME: This should pass #149.
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
@@ -1050,7 +1050,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
 				new String[][] { new String[0] });
 	}
-	
+
 	public void testSkeletalImplementerHierarchy3() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}

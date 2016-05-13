@@ -2,7 +2,7 @@ package p;
 
 interface I {
 	default void m() {
-		int f2 = A.f;
+		int f2 = f;
 	}
 }
 
