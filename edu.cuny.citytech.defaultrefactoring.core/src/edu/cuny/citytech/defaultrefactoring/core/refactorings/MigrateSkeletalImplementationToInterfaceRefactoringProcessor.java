@@ -56,6 +56,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -64,6 +65,7 @@ import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodReference;
+import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
@@ -125,7 +127,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private final class MethodBodyAnalysisVisitor extends ASTVisitor {
 		private boolean methodContainsSuperReference;
 		private boolean methodContainsCallToProtectedObjectMethod;
+		private boolean methodContainsTypeIncompatibleThisReference;
 		private Set<IMethod> calledProtectedObjectMethodSet = new HashSet<>();
+		private IMethod sourceMethod;
+		private Optional<IProgressMonitor> monitor;
+
+		public MethodBodyAnalysisVisitor(IMethod sourceMethod, Optional<IProgressMonitor> monitor) {
+			this.sourceMethod = sourceMethod;
+			this.monitor = monitor;
+		}
 
 		protected Set<IMethod> getCalledProtectedObjectMethodSet() {
 			return calledProtectedObjectMethodSet;
@@ -143,6 +153,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		protected boolean doesMethodContainsCallToProtectedObjectMethod() {
 			return methodContainsCallToProtectedObjectMethod;
+		}
+
+		protected boolean doesMethodContainsTypeIncompatibleThisReference() {
+			return methodContainsTypeIncompatibleThisReference;
 		}
 
 		@Override
@@ -181,6 +195,63 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					throw new RuntimeException(e);
 				}
 			}
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(ThisExpression node) {
+			ASTNode parent = node.getParent();
+
+			switch (parent.getNodeType()) {
+			case ASTNode.METHOD_INVOCATION: {
+				MethodInvocation methodInvocation = (MethodInvocation) parent;
+
+				// get the target method.
+				IMethod targetMethod = null;
+				try {
+					targetMethod = getTargetMethod(this.sourceMethod,
+							this.monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+				} catch (JavaModelException e) {
+					throw new RuntimeException(e);
+				}
+				IType destinationInterface = targetMethod.getDeclaringType();
+
+				// get the destination interface.
+				ITypeBinding destinationInterfaceTypeBinding = null;
+				try {
+					destinationInterfaceTypeBinding = ASTNodeSearchUtil.getTypeDeclarationNode(destinationInterface,
+							getCompilationUnit(destinationInterface.getTypeRoot(), new SubProgressMonitor(
+									this.monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)))
+							.resolveBinding();
+				} catch (JavaModelException e) {
+					throw new RuntimeException(e);
+				}
+
+				// find where (or if) the this expression occurs in the method invocation arguments. 
+				@SuppressWarnings("rawtypes")
+				List arguments = methodInvocation.arguments();
+				for (int i = 0; i < arguments.size(); i++) {
+					Object object = arguments.get(i);
+					// if we are at the argument where this appears.
+					if (object == node) {
+						// get the type binding from the corresponding
+						// parameter.
+						ITypeBinding parameterTypeBinding = methodInvocation.resolveMethodBinding()
+								.getParameterTypes()[i];
+
+						// the type of this will change to the destination
+						// interface. Let's check whether the an expression of
+						// the destination type can be assigned to a variable of
+						// the parameter type.
+						if (!destinationInterfaceTypeBinding.isAssignmentCompatible(parameterTypeBinding)) {
+							this.methodContainsTypeIncompatibleThisReference = true;
+							break;
+						}
+					}
+				}
+			}
+			}
+
 			return super.visit(node);
 		}
 	}
@@ -1463,7 +1534,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Block body = declaration.getBody();
 
 					if (body != null) {
-						MethodBodyAnalysisVisitor visitor = new MethodBodyAnalysisVisitor();
+						MethodBodyAnalysisVisitor visitor = new MethodBodyAnalysisVisitor(sourceMethod, pm);
 						body.accept(visitor);
 
 						if (visitor.doesMethodContainsSuperReference())
@@ -1474,6 +1545,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 									sourceMethod,
 									visitor.getCalledProtectedObjectMethodSet().stream().findAny().orElseThrow(
 											() -> new IllegalStateException("No associated object method")));
+
+						if (visitor.doesMethodContainsTypeIncompatibleThisReference()) {
+							// FIXME: The error context should be the this
+							// reference that caused the error.
+							addErrorAndMark(status, PreconditionFailure.WrongType, sourceMethod);
+						}
 					}
 				}
 				pm.ifPresent(m -> m.worked(1));
