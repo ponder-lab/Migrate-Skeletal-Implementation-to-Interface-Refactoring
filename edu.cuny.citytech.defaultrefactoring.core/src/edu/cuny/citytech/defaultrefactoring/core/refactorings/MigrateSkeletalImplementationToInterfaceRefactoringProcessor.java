@@ -202,6 +202,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		public boolean visit(ThisExpression node) {
 			ASTNode parent = node.getParent();
 
+			/* TODO: Actually need to examine every kind of expression where `this` may appear. #149.
+			 * Really, type constraints can (or should) be used for this.
+			 * Actually, similar to enum problem, especially with finding the parameter from where 
+			 * the `this` expression came.
+			 * Assignment is only one kind of expression, we need to also look at comparison and switches.
+			 */
 			switch (parent.getNodeType()) {
 			case ASTNode.METHOD_INVOCATION: {
 				MethodInvocation methodInvocation = (MethodInvocation) parent;
@@ -243,6 +249,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						// interface. Let's check whether the an expression of
 						// the destination type can be assigned to a variable of
 						// the parameter type.
+						// TODO: Does `isAssignmentCompatible()` also work with comparison?
 						if (!destinationInterfaceTypeBinding.isAssignmentCompatible(parameterTypeBinding)) {
 							this.methodContainsTypeIncompatibleThisReference = true;
 							break;
