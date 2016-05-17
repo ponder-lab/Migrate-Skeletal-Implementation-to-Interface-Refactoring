@@ -2,7 +2,9 @@
 
 [![Build Status](https://travis-ci.org/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring.svg?branch=master)](https://travis-ci.org/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring) [![Coverage Status](https://coveralls.io/repos/github/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/badge.svg?branch=master)](https://coveralls.io/github/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring?branch=master) [![GitHub license](https://img.shields.io/badge/license-Eclipse-blue.svg)](https://raw.githubusercontent.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/LICENSE.txt)
 
-<img src="https://openlab.citytech.cuny.edu/interfacerefactoring/files/2011/06/Screen-Shot-2016-03-14-at-11.43.53-PM.png" alt="Screenshot" width=75%/>
+## Screenshot
+
+<img src="https://i2.wp.com/openlab.citytech.cuny.edu/interfacerefactoring/files/2011/06/Screen-Shot-2016-03-14-at-11.43.53-PM-e1458161353498.png?ssl=1" alt="Screenshot" width=75%/>
 
 ## Introduction
 
