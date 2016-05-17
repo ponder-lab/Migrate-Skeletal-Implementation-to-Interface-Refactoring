@@ -203,14 +203,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// #153: Precondition missing for compile-time type of this
 			// TODO: #153 There is actually a lot more checks we should add
 			// here.
+			/*
+			 * TODO: Actually need to examine every kind of expression where
+			 * `this` may appear. #149. Really, type constraints can (or should)
+			 * be used for this. Actually, similar to enum problem, especially
+			 * with finding the parameter from where the `this` expression came.
+			 * Assignment is only one kind of expression, we need to also look
+			 * at comparison and switches.
+			 */
 			ASTNode parent = node.getParent();
 
-			/* TODO: Actually need to examine every kind of expression where `this` may appear. #149.
-			 * Really, type constraints can (or should) be used for this.
-			 * Actually, similar to enum problem, especially with finding the parameter from where 
-			 * the `this` expression came.
-			 * Assignment is only one kind of expression, we need to also look at comparison and switches.
-			 */
 			switch (parent.getNodeType()) {
 			case ASTNode.METHOD_INVOCATION: {
 				MethodInvocation methodInvocation = (MethodInvocation) parent;
