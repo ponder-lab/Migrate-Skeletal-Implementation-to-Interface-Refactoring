@@ -1563,7 +1563,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						if (visitor.doesMethodContainsTypeIncompatibleThisReference()) {
 							// FIXME: The error context should be the this
 							// reference that caused the error.
-							addErrorAndMark(status, PreconditionFailure.WrongType, sourceMethod);
+							addErrorAndMark(status, PreconditionFailure.MethodContainsTypeIncompatibleThisReference,
+									sourceMethod);
 						}
 					}
 				}
