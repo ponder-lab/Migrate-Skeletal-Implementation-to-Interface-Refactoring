@@ -124,7 +124,7 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
 
-	private final class MethodBodyAnalysisVisitor extends ASTVisitor {
+	private final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 		private boolean methodContainsSuperReference;
 		private boolean methodContainsCallToProtectedObjectMethod;
 		private boolean methodContainsTypeIncompatibleThisReference;
@@ -132,7 +132,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		private IMethod sourceMethod;
 		private Optional<IProgressMonitor> monitor;
 
-		public MethodBodyAnalysisVisitor(IMethod sourceMethod, Optional<IProgressMonitor> monitor) {
+		public SourceMethodBodyAnalysisVisitor(IMethod sourceMethod, Optional<IProgressMonitor> monitor) {
 			this.sourceMethod = sourceMethod;
 			this.monitor = monitor;
 		}
@@ -1548,7 +1548,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Block body = declaration.getBody();
 
 					if (body != null) {
-						MethodBodyAnalysisVisitor visitor = new MethodBodyAnalysisVisitor(sourceMethod, pm);
+						SourceMethodBodyAnalysisVisitor visitor = new SourceMethodBodyAnalysisVisitor(sourceMethod, pm);
 						body.accept(visitor);
 
 						if (visitor.doesMethodContainsSuperReference())
