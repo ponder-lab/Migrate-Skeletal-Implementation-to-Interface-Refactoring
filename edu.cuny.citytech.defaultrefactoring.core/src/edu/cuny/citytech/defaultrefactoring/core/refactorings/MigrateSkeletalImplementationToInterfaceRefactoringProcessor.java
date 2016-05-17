@@ -200,6 +200,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		@Override
 		public boolean visit(ThisExpression node) {
+			// #153: Precondition missing for compile-time type of this
+			// TODO: #153 There is actually a lot more checks we should add
+			// here.
 			ASTNode parent = node.getParent();
 
 			switch (parent.getNodeType()) {
@@ -227,7 +230,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					throw new RuntimeException(e);
 				}
 
-				// find where (or if) the this expression occurs in the method invocation arguments. 
+				// find where (or if) the this expression occurs in the method
+				// invocation arguments.
 				@SuppressWarnings("rawtypes")
 				List arguments = methodInvocation.arguments();
 				for (int i = 0; i < arguments.size(); i++) {
