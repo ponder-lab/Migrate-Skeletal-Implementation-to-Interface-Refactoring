@@ -1056,8 +1056,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceType5() throws Exception {
-		// FIXME: This should pass #149.
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		// This should fail per #149.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatAccessesPublicInstanceMethodOfTheSourceTypeHierarchy() throws Exception {
