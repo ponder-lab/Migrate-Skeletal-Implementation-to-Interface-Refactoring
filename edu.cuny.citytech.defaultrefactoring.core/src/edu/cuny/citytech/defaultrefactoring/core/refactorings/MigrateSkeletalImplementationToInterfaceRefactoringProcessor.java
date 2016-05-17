@@ -255,7 +255,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						// interface. Let's check whether the an expression of
 						// the destination type can be assigned to a variable of
 						// the parameter type.
-						// TODO: Does `isAssignmentCompatible()` also work with comparison?
+						// TODO: Does `isAssignmentCompatible()` also work with
+						// comparison?
 						if (!destinationInterfaceTypeBinding.isAssignmentCompatible(parameterTypeBinding)) {
 							this.methodContainsTypeIncompatibleThisReference = true;
 							break;
