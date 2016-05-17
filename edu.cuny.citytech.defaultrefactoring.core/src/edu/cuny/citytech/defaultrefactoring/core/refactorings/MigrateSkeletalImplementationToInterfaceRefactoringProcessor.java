@@ -51,6 +51,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTMatcher;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
@@ -60,12 +61,15 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.ThisExpression;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
@@ -212,11 +216,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			 * at comparison and switches.
 			 */
 			ASTNode parent = node.getParent();
+			process(parent, node);
+			return super.visit(node);
+		}
 
-			switch (parent.getNodeType()) {
-			case ASTNode.METHOD_INVOCATION: {
-				MethodInvocation methodInvocation = (MethodInvocation) parent;
-
+		private void process(ASTNode node, ThisExpression thisExpression) {
+			switch (node.getNodeType()) {
+			case ASTNode.METHOD_INVOCATION:
+			case ASTNode.ASSIGNMENT:
+			case ASTNode.RETURN_STATEMENT:
+			case ASTNode.VARIABLE_DECLARATION_FRAGMENT: {
 				// get the target method.
 				IMethod targetMethod = null;
 				try {
@@ -238,35 +247,96 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					throw new RuntimeException(e);
 				}
 
-				// find where (or if) the this expression occurs in the method
-				// invocation arguments.
-				@SuppressWarnings("rawtypes")
-				List arguments = methodInvocation.arguments();
-				for (int i = 0; i < arguments.size(); i++) {
-					Object object = arguments.get(i);
-					// if we are at the argument where this appears.
-					if (object == node) {
-						// get the type binding from the corresponding
-						// parameter.
-						ITypeBinding parameterTypeBinding = methodInvocation.resolveMethodBinding()
-								.getParameterTypes()[i];
+				if (node.getNodeType() == ASTNode.METHOD_INVOCATION) {
+					MethodInvocation methodInvocation = (MethodInvocation) node;
 
-						// the type of this will change to the destination
-						// interface. Let's check whether the an expression of
-						// the destination type can be assigned to a variable of
-						// the parameter type.
-						// TODO: Does `isAssignmentCompatible()` also work with
-						// comparison?
-						if (!destinationInterfaceTypeBinding.isAssignmentCompatible(parameterTypeBinding)) {
-							this.methodContainsTypeIncompatibleThisReference = true;
-							break;
+					// find where (or if) the this expression occurs in the
+					// method
+					// invocation arguments.
+					@SuppressWarnings("rawtypes")
+					List arguments = methodInvocation.arguments();
+					for (int i = 0; i < arguments.size(); i++) {
+						Object object = arguments.get(i);
+						// if we are at the argument where this appears.
+						if (object == thisExpression) {
+							// get the type binding from the corresponding
+							// parameter.
+							ITypeBinding parameterTypeBinding = methodInvocation.resolveMethodBinding()
+									.getParameterTypes()[i];
+
+							// the type of this will change to the destination
+							// interface. Let's check whether an expression of
+							// the destination type can be assigned to a
+							// variable of
+							// the parameter type.
+							// TODO: Does `isAssignmentCompatible()` also work
+							// with
+							// comparison?
+							if (!destinationInterfaceTypeBinding.isAssignmentCompatible(parameterTypeBinding)) {
+								this.methodContainsTypeIncompatibleThisReference = true;
+								break;
+							}
 						}
 					}
-				}
-			}
-			}
+				} else if (node.getNodeType() == ASTNode.ASSIGNMENT) {
+					Assignment assignment = (Assignment) node;
+					Expression leftHandSide = assignment.getLeftHandSide();
+					Expression rightHandSide = assignment.getRightHandSide();
+					processAssignment(assignment, thisExpression, destinationInterfaceTypeBinding, leftHandSide,
+							rightHandSide);
+				} else if (node.getNodeType() == ASTNode.VARIABLE_DECLARATION_FRAGMENT) {
+					VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
+					Expression initializer = vdf.getInitializer();
+					SimpleName name = vdf.getName();
+					processAssignment(vdf, thisExpression, destinationInterfaceTypeBinding, name, initializer);
+				} else if (node.getNodeType() == ASTNode.RETURN_STATEMENT) {
+					ReturnStatement returnStatement = (ReturnStatement) node;
 
-			return super.visit(node);
+					// sanity check.
+					Expression expression = returnStatement.getExpression();
+					Assert.isTrue(expression == thisExpression, "The return expression should be this.");
+
+					MethodDeclaration targetMethodDeclaration = null;
+					try {
+						targetMethodDeclaration = ASTNodeSearchUtil
+								.getMethodDeclarationNode(targetMethod,
+										getCompilationUnit(targetMethod.getTypeRoot(),
+												new SubProgressMonitor(this.monitor.orElseGet(NullProgressMonitor::new),
+														IProgressMonitor.UNKNOWN)));
+					} catch (JavaModelException e) {
+						throw new RuntimeException(e);
+					}
+					ITypeBinding returnType = targetMethodDeclaration.resolveBinding().getReturnType();
+
+					// ensure that the destination type is assignment compatible
+					// with the return type.
+					if (!destinationInterfaceTypeBinding.isAssignmentCompatible(returnType))
+						this.methodContainsTypeIncompatibleThisReference = true;
+				} else
+					throw new IllegalStateException("Unexpected node type: " + node.getNodeType());
+				break;
+			}
+			}
+		}
+
+		private void processAssignment(ASTNode node, ThisExpression thisExpression,
+				ITypeBinding destinationInterfaceTypeBinding, Expression leftHandSide, Expression rightHandSide) {
+			// if `this` appears on the LHS.
+			if (leftHandSide == thisExpression) {
+				// in this case, we need to check that the RHS can be
+				// assigned to a variable of the destination type.
+				if (!rightHandSide.resolveTypeBinding().isAssignmentCompatible(destinationInterfaceTypeBinding))
+					this.methodContainsTypeIncompatibleThisReference = true;
+			} else if (rightHandSide == thisExpression) {
+				// otherwise, if `this` appears on the RHS. Then, we
+				// need to check that the LHS can receive a variable of
+				// the destination type.
+				if (!destinationInterfaceTypeBinding.isAssignmentCompatible(leftHandSide.resolveTypeBinding()))
+					this.methodContainsTypeIncompatibleThisReference = true;
+			} else {
+				throw new IllegalStateException(
+						"this: " + thisExpression + " must appear either on the LHS or RHS of the assignment: " + node);
+			}
 		}
 	}
 
