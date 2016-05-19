@@ -272,7 +272,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							// TODO: Does `isAssignmentCompatible()` also work
 							// with
 							// comparison?
-							if (!destinationInterfaceTypeBinding.isAssignmentCompatible(parameterTypeBinding)) {
+							if (!isAssignmentCompatible(destinationInterfaceTypeBinding, parameterTypeBinding)) {
 								this.methodContainsTypeIncompatibleThisReference = true;
 								break;
 							}
@@ -310,7 +310,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 					// ensure that the destination type is assignment compatible
 					// with the return type.
-					if (!destinationInterfaceTypeBinding.isAssignmentCompatible(returnType))
+					if (!isAssignmentCompatible(destinationInterfaceTypeBinding, returnType))
 						this.methodContainsTypeIncompatibleThisReference = true;
 				} else
 					throw new IllegalStateException("Unexpected node type: " + node.getNodeType());
@@ -319,19 +319,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			}
 		}
 
+		private boolean isAssignmentCompatible(ITypeBinding typeBinding, ITypeBinding otherTypeBinding) {
+			// Workaround
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=493965.
+			return typeBinding.isAssignmentCompatible(otherTypeBinding) || typeBinding.isInterface()
+					&& otherTypeBinding.isInterface() && typeBinding.isEqualTo(otherTypeBinding);
+		}
+
 		private void processAssignment(ASTNode node, ThisExpression thisExpression,
 				ITypeBinding destinationInterfaceTypeBinding, Expression leftHandSide, Expression rightHandSide) {
 			// if `this` appears on the LHS.
 			if (leftHandSide == thisExpression) {
 				// in this case, we need to check that the RHS can be
 				// assigned to a variable of the destination type.
-				if (!rightHandSide.resolveTypeBinding().isAssignmentCompatible(destinationInterfaceTypeBinding))
+				if (!isAssignmentCompatible(rightHandSide.resolveTypeBinding(), destinationInterfaceTypeBinding))
 					this.methodContainsTypeIncompatibleThisReference = true;
 			} else if (rightHandSide == thisExpression) {
 				// otherwise, if `this` appears on the RHS. Then, we
 				// need to check that the LHS can receive a variable of
 				// the destination type.
-				if (!destinationInterfaceTypeBinding.isAssignmentCompatible(leftHandSide.resolveTypeBinding()))
+				if (!isAssignmentCompatible(destinationInterfaceTypeBinding, leftHandSide.resolveTypeBinding()))
 					this.methodContainsTypeIncompatibleThisReference = true;
 			} else {
 				throw new IllegalStateException(
