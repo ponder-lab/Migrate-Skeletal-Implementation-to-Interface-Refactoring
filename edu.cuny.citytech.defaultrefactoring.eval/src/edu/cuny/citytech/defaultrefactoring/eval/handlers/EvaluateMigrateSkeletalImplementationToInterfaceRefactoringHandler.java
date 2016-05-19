@@ -78,8 +78,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
 						new String[] { "subject", "method", "type FQN" });
-				errorPrinter = createCSVPrinter("failed_preconditions.csv",
-						new String[] { "subject", "method", "type FQN", "code", "message" });
+				errorPrinter = createCSVPrinter("failed_preconditions.csv", new String[] { "subject", "method",
+						"type FQN", "destination interface FQN", "code", "message" });
 
 				for (IJavaProject javaProject : javaProjects) {
 					if (!javaProject.isStructureKnown())
@@ -175,9 +175,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					for (IMethod method : processor.getMigratableMethods()) {
 						migratableMethodPrinter.printRecord(javaProject.getElementName(),
 								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
-								MigrateSkeletalImplementationToInterfaceRefactoringProcessor
-										.getTargetMethod(method, Optional.of(monitor)).getDeclaringType()
-										.getFullyQualifiedName());
+								getDestinationTypeFullyQualifiedName(method, monitor));
 
 					}
 
@@ -202,7 +200,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							IMethod failedMethod = (IMethod) correspondingElement;
 							errorPrinter.printRecord(javaProject.getElementName(),
 									Util.getMethodIdentifier(failedMethod),
-									failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getCode(),
+									failedMethod.getDeclaringType().getFullyQualifiedName(),
+									getDestinationTypeFullyQualifiedName(failedMethod, monitor), entry.getCode(),
 									entry.getMessage());
 						}
 					}
@@ -264,6 +263,12 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 		}).schedule();
 
 		return null;
+	}
+
+	private static String getDestinationTypeFullyQualifiedName(IMethod method, IProgressMonitor monitor)
+			throws JavaModelException {
+		return MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+				.getTargetMethod(method, Optional.of(monitor)).getDeclaringType().getFullyQualifiedName();
 	}
 
 	private static Set<IMethod> getAllMethods(IJavaProject javaProject) throws JavaModelException {
