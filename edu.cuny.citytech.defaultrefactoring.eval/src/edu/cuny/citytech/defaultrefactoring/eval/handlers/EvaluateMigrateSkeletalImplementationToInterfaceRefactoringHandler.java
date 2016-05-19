@@ -77,7 +77,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
 						new String[] { "subject", "method", "type FQN" });
 				errorPrinter = createCSVPrinter("failed_preconditions.csv",
-						new String[] { "subject", "method", "type FQN", "severity", "code", "plug-in id", "message" });
+						new String[] { "subject", "method", "type FQN", "code", "message" });
 
 				for (IJavaProject javaProject : javaProjects) {
 					if (!javaProject.isStructureKnown())
@@ -192,8 +192,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							IMethod failedMethod = (IMethod) correspondingElement;
 							errorPrinter.printRecord(javaProject.getElementName(),
 									Util.getMethodIdentifier(failedMethod),
-									failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getSeverity(),
-									entry.getCode(), entry.getPluginId(), entry.getMessage());
+									failedMethod.getDeclaringType().getFullyQualifiedName(), entry.getCode(),
+									entry.getMessage());
 						}
 					}
 
