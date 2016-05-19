@@ -429,6 +429,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				MethodInvocation methodInvocation = (MethodInvocation) node;
 				Expression expression = methodInvocation.getExpression();
 
+				// FIXME: It's not really that the expression is a `this`
+				// expression but that the type of the expression comes from a
+				// `this` expression. In other words, we may need to climb the
+				// AST.
 				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION) {
 					this.encounteredThisReceiver = true;
 				}
