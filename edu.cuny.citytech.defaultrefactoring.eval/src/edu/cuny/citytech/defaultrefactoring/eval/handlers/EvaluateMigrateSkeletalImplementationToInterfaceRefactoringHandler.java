@@ -77,7 +77,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						new String[] { "subject", "method", "type FQN", "destination interface FQN" });
 
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
-						new String[] { "subject", "method", "type FQN" });
+						new String[] { "subject", "method", "type FQN", "destination interface FQN" });
 				errorPrinter = createCSVPrinter("failed_preconditions.csv", new String[] { "subject", "method",
 						"type FQN", "destination interface FQN", "code", "message" });
 
@@ -182,7 +182,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					// failed methods.
 					for (IMethod method : processor.getUnmigratableMethods()) {
 						unmigratableMethodPrinter.printRecord(javaProject.getElementName(),
-								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName());
+								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
+								getDestinationTypeFullyQualifiedName(method, monitor));
 					}
 
 					// failed preconditions.
