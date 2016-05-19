@@ -1,7 +1,9 @@
 package edu.cuny.citytech.defaultrefactoring.eval.handlers;
 
+import static com.google.common.io.Files.touch;
 import static edu.cuny.citytech.defaultrefactoring.core.utils.Util.createMigrateSkeletalImplementationToInterfaceRefactoringProcessor;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -138,25 +140,33 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					System.out.println(
 							"Original methods after preconditions: " + interfaceMigrationAvailableMethods.size());
-
 					System.out.println("Source methods after preconditions: " + processor.getSourceMethods().size());
+
+					File file = new File("source.txt");
+					touch(file);
 					Files.write(
-							FileSystems.getDefault().getPath("source.txt"), processor.getSourceMethods()
-									.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
+							file.toPath(), processor.getSourceMethods().parallelStream()
+									.map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
 							StandardOpenOption.APPEND);
 
 					System.out.println(
 							"Unmigratable methods after preconditions: " + processor.getUnmigratableMethods().size());
+
+					file = new File("unmigratable.txt");
+					touch(file);
 					Files.write(
-							FileSystems.getDefault().getPath("unmigratable.txt"), processor.getUnmigratableMethods()
-									.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
+							file.toPath(), processor.getUnmigratableMethods().parallelStream()
+									.map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
 							StandardOpenOption.APPEND);
 
 					System.out.println(
 							"Migratable methods after preconditions: " + processor.getMigratableMethods().size());
+
+					file = new File("migratable.txt");
+					touch(file);
 					Files.write(
-							FileSystems.getDefault().getPath("migratable.txt"), processor.getMigratableMethods()
-									.parallelStream().map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
+							file.toPath(), processor.getMigratableMethods().parallelStream()
+									.map(m -> m.getHandleIdentifier()).collect(Collectors.toSet()),
 							StandardOpenOption.APPEND);
 
 					// passed methods.
