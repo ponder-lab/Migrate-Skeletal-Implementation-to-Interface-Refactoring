@@ -323,7 +323,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// Workaround
 			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=493965.
 			return typeBinding.isAssignmentCompatible(otherTypeBinding) || typeBinding.isInterface()
-					&& otherTypeBinding.isInterface() && typeBinding.isEqualTo(otherTypeBinding);
+					&& otherTypeBinding.isInterface() && (typeBinding.isEqualTo(otherTypeBinding) || Arrays
+							.stream(typeBinding.getInterfaces()).anyMatch(itb -> itb.isEqualTo(otherTypeBinding)));
 		}
 
 		private void processAssignment(ASTNode node, ThisExpression thisExpression,
