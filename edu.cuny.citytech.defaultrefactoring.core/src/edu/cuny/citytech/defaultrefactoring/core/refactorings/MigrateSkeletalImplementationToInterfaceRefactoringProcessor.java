@@ -137,6 +137,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		private Optional<IProgressMonitor> monitor;
 
 		public SourceMethodBodyAnalysisVisitor(IMethod sourceMethod, Optional<IProgressMonitor> monitor) {
+			super(false);
 			this.sourceMethod = sourceMethod;
 			this.monitor = monitor;
 		}
