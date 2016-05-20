@@ -100,6 +100,14 @@ public final class Util {
 		String signatureSimpleName = Signature.getSignatureSimpleName(name);
 		String simpleName = signatureQualifier.isEmpty() ? signatureSimpleName
 				: signatureQualifier + '.' + signatureSimpleName;
+		
+		// workaround https://bugs.eclipse.org/bugs/show_bug.cgi?id=494209.
+		boolean isArray = false;
+		if (simpleName.endsWith("[]")) {
+			isArray = true;
+			simpleName = simpleName.substring(0, simpleName.lastIndexOf('['));
+		}
+		
 		String[][] allResults = declaringType.resolveType(simpleName);
 		String fullName = null;
 		if (allResults != null) {
@@ -119,6 +127,11 @@ public final class Util {
 			}
 		} else
 			fullName = simpleName;
+		
+		// workaround https://bugs.eclipse.org/bugs/show_bug.cgi?id=494209.
+		if (isArray)
+			fullName += "[]";
+		
 		return fullName;
 	}
 }
