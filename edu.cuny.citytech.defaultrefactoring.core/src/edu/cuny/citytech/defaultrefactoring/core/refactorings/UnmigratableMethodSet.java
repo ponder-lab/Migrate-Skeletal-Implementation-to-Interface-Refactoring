@@ -1,7 +1,6 @@
 package edu.cuny.citytech.defaultrefactoring.core.refactorings;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
