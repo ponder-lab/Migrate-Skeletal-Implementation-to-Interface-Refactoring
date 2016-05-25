@@ -52,6 +52,8 @@ import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
  */
 public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler extends AbstractHandler {
 
+	private static final boolean ALLOW_CONCRETE_CLASSES = true;
+
 	/**
 	 * the command has been executed, so extract extract the needed information
 	 * from the application context.
@@ -103,7 +105,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					resultsTimeCollector.start();
 					for (IMethod method : allMethods)
-						if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, true,
+						if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, ALLOW_CONCRETE_CLASSES,
 								Optional.of(monitor)))
 							interfaceMigrationAvailableMethods.add(method);
 					resultsTimeCollector.stop();
