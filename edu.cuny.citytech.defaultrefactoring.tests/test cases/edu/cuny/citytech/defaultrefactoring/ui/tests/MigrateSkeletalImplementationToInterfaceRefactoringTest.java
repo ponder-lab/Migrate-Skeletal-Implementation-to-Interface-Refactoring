@@ -1089,4 +1089,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPassNoFatal(new String[] { "m" }, new String[][] { new String[0] }, new String[] { "m" },
 				new String[][] { new String[0] });
 	}
+
+	public void testMethodThatHasDifferentParameterNamesThanTarget() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
+	}
 }

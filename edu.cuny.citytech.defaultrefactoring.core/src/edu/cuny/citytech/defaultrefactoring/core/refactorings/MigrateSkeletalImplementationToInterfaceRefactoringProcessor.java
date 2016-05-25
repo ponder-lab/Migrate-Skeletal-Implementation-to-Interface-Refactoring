@@ -63,6 +63,7 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
@@ -2025,6 +2026,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 					// tack on the source method body to the target method.
 					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+					
+					// alter the target parameter names to match that of the source method if necessary #148. 
+					changeTargetMethodParametersToMatchSource(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
 
 					// Change the target method to default.
 					convertToDefault(targetMethodDeclaration, destinationRewrite);
@@ -2114,6 +2118,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			change.addEdit(edit);
 
 		manager.manage(compilationUnit, change);
+	}
+	
+	private void changeTargetMethodParametersToMatchSource(MethodDeclaration sourceMethodDeclaration, MethodDeclaration targetMethodDeclaration,
+			ASTRewrite destinationRewrite) {
+		Assert.isLegal(sourceMethodDeclaration.parameters().size() == targetMethodDeclaration.parameters().size());
+		
+		// iterate over the source method parameters.
+		for (int i = 0; i < sourceMethodDeclaration.parameters().size(); i++) {
+			//get the parameter for the source method.
+			SingleVariableDeclaration sourceParameter = (SingleVariableDeclaration) sourceMethodDeclaration.parameters().get(i);
+			// get the corresponding target method parameter.
+			SingleVariableDeclaration targetParameter = (SingleVariableDeclaration) targetMethodDeclaration.parameters().get(i);
+			
+			// if the names don't match.
+			if (!sourceParameter.getName().equals(targetParameter.getName())) {
+				// change the target method parameter to match it since that is what the body will use.
+				ASTNode sourceParameterNameCopy = destinationRewrite.createCopyTarget(sourceParameter.getName());
+				destinationRewrite.replace(targetParameter.getName(), sourceParameterNameCopy, null);
+			}
+		}
 	}
 
 	private void copyMethodBody(MethodDeclaration sourceMethodDeclaration, MethodDeclaration targetMethodDeclaration,
