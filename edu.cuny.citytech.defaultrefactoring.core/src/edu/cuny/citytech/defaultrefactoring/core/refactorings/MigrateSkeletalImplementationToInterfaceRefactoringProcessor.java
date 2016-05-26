@@ -2134,7 +2134,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// if the names don't match.
 			if (!sourceParameter.getName().equals(targetParameter.getName())) {
 				// change the target method parameter to match it since that is what the body will use.
-				ASTNode sourceParameterNameCopy = destinationRewrite.createCopyTarget(sourceParameter.getName());
+				ASTNode sourceParameterNameCopy = ASTNode.copySubtree(destinationRewrite.getAST(), sourceParameter.getName());
 				destinationRewrite.replace(targetParameter.getName(), sourceParameterNameCopy, null);
 			}
 		}
