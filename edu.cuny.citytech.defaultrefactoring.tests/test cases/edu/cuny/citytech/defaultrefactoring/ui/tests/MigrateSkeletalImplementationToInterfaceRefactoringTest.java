@@ -55,10 +55,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		return REFACTORING_PATH;
 	}
 
+	@Override
 	protected Refactoring getRefactoring(IMethod... methods) throws JavaModelException {
 		return Util.createRefactoring(methods);
 	}
 
+	@Override
 	protected Logger getLogger() {
 		return logger;
 	}
@@ -784,13 +786,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodThatUsesThis8() throws Exception {
-		helperFail(new String[] { "m" },
-				new String[][] { new String[] { Signature.createTypeSignature("A", false) } });
+		helperFail(new String[] { "m" }, new String[][] { new String[] { Signature.createTypeSignature("A", false) } });
 	}
 
 	public void testMethodThatUsesThis9() throws Exception {
-		helperPass(new String[] { "m" },
-				new String[][] { new String[] { Signature.createTypeSignature("I", false) } });
+		helperPass(new String[] { "m" }, new String[][] { new String[] { Signature.createTypeSignature("I", false) } });
+	}
 
 	public void testMethodThatUsesThis10() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
@@ -893,7 +894,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodThatSkipsType3() throws Exception {
-		// Here, B doesn't explicitly implement the interface but we still have the 
+		// Here, B doesn't explicitly implement the interface but we still have
+		// the
 		// same problem.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
