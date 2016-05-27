@@ -791,6 +791,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatUsesThis9() throws Exception {
 		helperPass(new String[] { "m" },
 				new String[][] { new String[] { Signature.createTypeSignature("I", false) } });
+
+	public void testMethodThatUsesThis10() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodThatUsesThis11() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatAccessesType() throws Exception {

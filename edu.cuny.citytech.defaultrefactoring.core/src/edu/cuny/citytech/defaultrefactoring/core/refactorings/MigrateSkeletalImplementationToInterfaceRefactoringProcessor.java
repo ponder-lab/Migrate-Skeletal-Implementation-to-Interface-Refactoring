@@ -53,7 +53,9 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -72,6 +74,7 @@ import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -107,6 +110,7 @@ import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
+import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 import org.osgi.framework.FrameworkUtil;
 
@@ -225,6 +229,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		private void process(ASTNode node, ThisExpression thisExpression) {
 			switch (node.getNodeType()) {
 			case ASTNode.METHOD_INVOCATION:
+			case ASTNode.CLASS_INSTANCE_CREATION:
+			case ASTNode.CONSTRUCTOR_INVOCATION:
+				// NOTE: super isn't allowed inside the source method body.
 			case ASTNode.ASSIGNMENT:
 			case ASTNode.RETURN_STATEMENT:
 			case ASTNode.VARIABLE_DECLARATION_FRAGMENT: {
@@ -248,38 +255,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				} catch (JavaModelException e) {
 					throw new RuntimeException(e);
 				}
-
-				if (node.getNodeType() == ASTNode.METHOD_INVOCATION) {
+				if (node.getNodeType() == ASTNode.CONSTRUCTOR_INVOCATION) {
+					ConstructorInvocation constructorInvocation = (ConstructorInvocation) node;
+					List<?> arguments = constructorInvocation.arguments();
+					IMethodBinding methodBinding = constructorInvocation.resolveConstructorBinding();
+					processArguments(arguments, methodBinding, thisExpression, destinationInterfaceTypeBinding);
+				} else if (node.getNodeType() == ASTNode.CLASS_INSTANCE_CREATION) {
+					ClassInstanceCreation classInstanceCreation = (ClassInstanceCreation) node;
+					List<?> arguments = classInstanceCreation.arguments();
+					IMethodBinding methodBinding = classInstanceCreation.resolveConstructorBinding();
+					processArguments(arguments, methodBinding, thisExpression, destinationInterfaceTypeBinding);
+				} else if (node.getNodeType() == ASTNode.METHOD_INVOCATION) {
 					MethodInvocation methodInvocation = (MethodInvocation) node;
-
-					// find where (or if) the this expression occurs in the
-					// method
-					// invocation arguments.
-					@SuppressWarnings("rawtypes")
-					List arguments = methodInvocation.arguments();
-					for (int i = 0; i < arguments.size(); i++) {
-						Object object = arguments.get(i);
-						// if we are at the argument where this appears.
-						if (object == thisExpression) {
-							// get the type binding from the corresponding
-							// parameter.
-							ITypeBinding parameterTypeBinding = methodInvocation.resolveMethodBinding()
-									.getParameterTypes()[i];
-
-							// the type of this will change to the destination
-							// interface. Let's check whether an expression of
-							// the destination type can be assigned to a
-							// variable of
-							// the parameter type.
-							// TODO: Does `isAssignmentCompatible()` also work
-							// with
-							// comparison?
-							if (!isAssignmentCompatible(destinationInterfaceTypeBinding, parameterTypeBinding)) {
-								this.methodContainsTypeIncompatibleThisReference = true;
-								break;
-							}
-						}
-					}
+					List<?> arguments = methodInvocation.arguments();
+					IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
+					processArguments(arguments, methodBinding, thisExpression, destinationInterfaceTypeBinding);
 				} else if (node.getNodeType() == ASTNode.ASSIGNMENT) {
 					Assignment assignment = (Assignment) node;
 					Expression leftHandSide = assignment.getLeftHandSide();
@@ -318,6 +308,47 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					throw new IllegalStateException("Unexpected node type: " + node.getNodeType());
 				break;
 			}
+			}
+		}
+
+		/**
+		 * Process a list of arguments stemming from a method-like call.
+		 * 
+		 * @param arguments
+		 *            The list of arguments to process.
+		 * @param methodBinding
+		 *            The binding of the corresponding method call.
+		 * @param thisExpression
+		 *            The this expression we are looking for.
+		 * @param destinationInterfaceTypeBinding
+		 *            The binding of the destination interface.
+		 */
+		private void processArguments(List<?> arguments, IMethodBinding methodBinding, ThisExpression thisExpression,
+				ITypeBinding destinationInterfaceTypeBinding) {
+			// find where (or if) the this expression occurs in the
+			// method
+			// invocation arguments.
+			for (int i = 0; i < arguments.size(); i++) {
+				Object object = arguments.get(i);
+				// if we are at the argument where this appears.
+				if (object == thisExpression) {
+					// get the type binding from the corresponding
+					// parameter.
+					ITypeBinding parameterTypeBinding = methodBinding.getParameterTypes()[i];
+
+					// the type of this will change to the destination
+					// interface. Let's check whether an expression of
+					// the destination type can be assigned to a
+					// variable of
+					// the parameter type.
+					// TODO: Does `isAssignmentCompatible()` also work
+					// with
+					// comparison?
+					if (!isAssignmentCompatible(destinationInterfaceTypeBinding, parameterTypeBinding)) {
+						this.methodContainsTypeIncompatibleThisReference = true;
+						break;
+					}
+				}
 			}
 		}
 
