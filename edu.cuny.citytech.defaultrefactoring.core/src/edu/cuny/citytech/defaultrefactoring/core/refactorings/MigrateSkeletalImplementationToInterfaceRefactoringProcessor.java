@@ -488,6 +488,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private Map<CompilationUnit, ASTRewrite> compilationUnitToASTRewriteMap = new HashMap<>();
 
+	private Map<CompilationUnit, ImportRewrite> compilationUnitToImportRewriteMap = new HashMap<>();
+
 	private Map<ITypeRoot, CompilationUnit> typeRootToCompilationUnitMap = new HashMap<>();
 
 	@SuppressWarnings("unused")
@@ -1998,6 +2000,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		getTypeToSuperTypeHierarchyMap().clear();
 		getMethodToTargetMethodMap().clear();
 		getTypeToTypeHierarchyMap().clear();
+		getCompilationUnitToASTRewriteMap().clear();
+		getCompilationUnitToImportRewriteMap().clear();
 	}
 
 	public TimeCollector getExcludedTimeCollector() {
@@ -2050,23 +2054,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 					CompilationUnit destinationCompilationUnit = this
 							.getCompilationUnit(destinationInterface.getTypeRoot(), pm);
-					ASTRewrite destinationRewrite = getASTRewrite(destinationCompilationUnit);
+					ASTRewrite destinationAstRewrite = getASTRewrite(destinationCompilationUnit);
+					ImportRewrite destinationImportRewrite = getImportRewrite(destinationCompilationUnit);
 
 					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
 							destinationCompilationUnit);
 
 					// tack on the source method body to the target method.
-					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
-					
-					// alter the target parameter names to match that of the source method if necessary #148. 
-					changeTargetMethodParametersToMatchSource(sourceMethodDeclaration, targetMethodDeclaration, destinationRewrite);
+					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationAstRewrite);
+
+					// alter the target parameter names to match that of the
+					// source method if necessary #148.
+					changeTargetMethodParametersToMatchSource(sourceMethodDeclaration, targetMethodDeclaration,
+							destinationAstRewrite);
 
 					// Change the target method to default.
-					convertToDefault(targetMethodDeclaration, destinationRewrite);
+					convertToDefault(targetMethodDeclaration, destinationAstRewrite);
 
 					// Remove any abstract modifiers from the target method as
 					// both abstract and default are not allowed.
-					removeAbstractness(targetMethodDeclaration, destinationRewrite);
+					removeAbstractness(targetMethodDeclaration, destinationAstRewrite);
 
 					// TODO: Do we need to worry about preserving ordering of
 					// the
@@ -2081,7 +2088,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
 							&& !Flags.isStrictfp(targetMethod.getFlags()))
 						// change the target method to strictfp.
-						convertToStrictFP(targetMethodDeclaration, destinationRewrite);
+						convertToStrictFP(targetMethodDeclaration, destinationAstRewrite);
+
+					// Find types referenced in the source method and add
+					// imports for them in the destination compilation unit #22.
+					pm.beginTask("Finding types referenced in source method ...", IProgressMonitor.UNKNOWN);
+					Arrays.stream(ReferenceFinderUtil.getTypesReferencedIn(new IJavaElement[] { sourceMethod },
+							new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)))
+							.forEach(t -> destinationImportRewrite.addImport(t.getFullyQualifiedName()));
 
 					transformedTargetMethods.add(targetMethod);
 				}
@@ -2091,15 +2105,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				removeMethod(sourceMethodDeclaration, sourceRewrite);
 			}
 
-			// TODO: Need to deal with imports #22.
-
 			// save the source changes.
 			ICompilationUnit[] units = this.typeRootToCompilationUnitMap.keySet().parallelStream()
 					.filter(t -> t instanceof ICompilationUnit).map(t -> (ICompilationUnit) t)
 					.filter(cu -> !manager.containsChangesIn(cu)).toArray(ICompilationUnit[]::new);
 
-			for (ICompilationUnit cu : units)
-				manageCompilationUnit(manager, cu, getASTRewrite(getCompilationUnit(cu, pm)));
+			for (ICompilationUnit cu : units) {
+				CompilationUnit compilationUnit = getCompilationUnit(cu, pm);
+				manageCompilationUnit(manager, cu, getASTRewrite(compilationUnit), getImportRewrite(compilationUnit),
+						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
+			}
 
 			final Map<String, String> arguments = new HashMap<>();
 			int flags = RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
@@ -2127,18 +2142,34 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return compilationUnit;
 	}
 
+	private ImportRewrite getImportRewrite(CompilationUnit compilationUnit) {
+		ImportRewrite rewrite = this.getCompilationUnitToImportRewriteMap().get(compilationUnit);
+		if (rewrite == null) {
+			rewrite = ImportRewrite.create(compilationUnit, true);
+			this.getCompilationUnitToImportRewriteMap().put(compilationUnit, rewrite);
+		}
+		return rewrite;
+	}
+
 	private ASTRewrite getASTRewrite(CompilationUnit compilationUnit) {
-		ASTRewrite rewrite = this.compilationUnitToASTRewriteMap.get(compilationUnit);
+		ASTRewrite rewrite = this.getCompilationUnitToASTRewriteMap().get(compilationUnit);
 		if (rewrite == null) {
 			rewrite = ASTRewrite.create(compilationUnit.getAST());
-			this.compilationUnitToASTRewriteMap.put(compilationUnit, rewrite);
+			this.getCompilationUnitToASTRewriteMap().put(compilationUnit, rewrite);
 		}
 		return rewrite;
 	}
 
 	private void manageCompilationUnit(final TextEditBasedChangeManager manager, ICompilationUnit compilationUnit,
-			ASTRewrite rewrite) throws JavaModelException {
-		TextEdit edit = rewrite.rewriteAST();
+			ASTRewrite astRewrite, ImportRewrite importRewrite, Optional<IProgressMonitor> monitor)
+			throws CoreException {
+		TextEdit astEdit = astRewrite.rewriteAST();
+
+		monitor.ifPresent(m -> m.beginTask("Rewriting imports", IProgressMonitor.UNKNOWN));
+		TextEdit importEdit = importRewrite.rewriteImports(monitor.orElseGet(NullProgressMonitor::new));
+
+		MultiTextEdit edit = new MultiTextEdit();
+		edit.addChildren(new TextEdit[] { astEdit, importEdit });
 
 		TextChange change = (TextChange) manager.get(compilationUnit);
 		change.setTextType("java");
@@ -2150,22 +2181,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		manager.manage(compilationUnit, change);
 	}
-	
-	private void changeTargetMethodParametersToMatchSource(MethodDeclaration sourceMethodDeclaration, MethodDeclaration targetMethodDeclaration,
-			ASTRewrite destinationRewrite) {
+
+	private void changeTargetMethodParametersToMatchSource(MethodDeclaration sourceMethodDeclaration,
+			MethodDeclaration targetMethodDeclaration, ASTRewrite destinationRewrite) {
 		Assert.isLegal(sourceMethodDeclaration.parameters().size() == targetMethodDeclaration.parameters().size());
-		
+
 		// iterate over the source method parameters.
 		for (int i = 0; i < sourceMethodDeclaration.parameters().size(); i++) {
-			//get the parameter for the source method.
-			SingleVariableDeclaration sourceParameter = (SingleVariableDeclaration) sourceMethodDeclaration.parameters().get(i);
+			// get the parameter for the source method.
+			SingleVariableDeclaration sourceParameter = (SingleVariableDeclaration) sourceMethodDeclaration.parameters()
+					.get(i);
 			// get the corresponding target method parameter.
-			SingleVariableDeclaration targetParameter = (SingleVariableDeclaration) targetMethodDeclaration.parameters().get(i);
-			
+			SingleVariableDeclaration targetParameter = (SingleVariableDeclaration) targetMethodDeclaration.parameters()
+					.get(i);
+
 			// if the names don't match.
 			if (!sourceParameter.getName().equals(targetParameter.getName())) {
-				// change the target method parameter to match it since that is what the body will use.
-				ASTNode sourceParameterNameCopy = ASTNode.copySubtree(destinationRewrite.getAST(), sourceParameter.getName());
+				// change the target method parameter to match it since that is
+				// what the body will use.
+				ASTNode sourceParameterNameCopy = ASTNode.copySubtree(destinationRewrite.getAST(),
+						sourceParameter.getName());
 				destinationRewrite.replace(targetParameter.getName(), sourceParameterNameCopy, null);
 			}
 		}
@@ -2406,4 +2441,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	public void setLogging(boolean logging) {
 		this.logging = logging;
 	}
+
+	protected Map<CompilationUnit, ASTRewrite> getCompilationUnitToASTRewriteMap() {
+		return compilationUnitToASTRewriteMap;
+	}
+
+	protected Map<CompilationUnit, ImportRewrite> getCompilationUnitToImportRewriteMap() {
+		return compilationUnitToImportRewriteMap;
+	}
+
 }
