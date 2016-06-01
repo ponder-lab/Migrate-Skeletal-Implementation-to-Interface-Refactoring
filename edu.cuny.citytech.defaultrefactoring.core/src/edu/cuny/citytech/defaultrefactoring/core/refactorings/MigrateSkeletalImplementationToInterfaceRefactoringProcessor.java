@@ -63,10 +63,11 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
@@ -74,8 +75,9 @@ import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
+import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchMatch;
@@ -83,10 +85,13 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
+import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
+import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.structure.ImportRewriteUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ReferenceFinderUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
 import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableUtil;
@@ -105,13 +110,10 @@ import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
-import org.eclipse.ltk.core.refactoring.TextChange;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
-import org.eclipse.text.edits.MultiTextEdit;
-import org.eclipse.text.edits.TextEdit;
 import org.osgi.framework.FrameworkUtil;
 
 import com.google.common.collect.HashBasedTable;
@@ -486,9 +488,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private static final String FUNCTIONAL_INTERFACE_ANNOTATION_NAME = "FunctionalInterface";
 
-	private Map<CompilationUnit, ASTRewrite> compilationUnitToASTRewriteMap = new HashMap<>();
-
-	private Map<CompilationUnit, ImportRewrite> compilationUnitToImportRewriteMap = new HashMap<>();
+	private Map<ICompilationUnit, CompilationUnitRewrite> compilationUnitToCompilationUnitRewriteMap = new HashMap<>();
 
 	private Map<ITypeRoot, CompilationUnit> typeRootToCompilationUnitMap = new HashMap<>();
 
@@ -2000,8 +2000,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		getTypeToSuperTypeHierarchyMap().clear();
 		getMethodToTargetMethodMap().clear();
 		getTypeToTypeHierarchyMap().clear();
-		getCompilationUnitToASTRewriteMap().clear();
-		getCompilationUnitToImportRewriteMap().clear();
+		getCompilationUnitToCompilationUnitRewriteMap().clear();
 	}
 
 	public TimeCollector getExcludedTimeCollector() {
@@ -2054,26 +2053,27 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 					CompilationUnit destinationCompilationUnit = this
 							.getCompilationUnit(destinationInterface.getTypeRoot(), pm);
-					ASTRewrite destinationAstRewrite = getASTRewrite(destinationCompilationUnit);
-					ImportRewrite destinationImportRewrite = getImportRewrite(destinationCompilationUnit);
+					CompilationUnitRewrite destinationCompilationUnitRewrite = getCompilationUnitRewrite(
+							targetMethod.getCompilationUnit(), destinationCompilationUnit);
 
 					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
 							destinationCompilationUnit);
 
 					// tack on the source method body to the target method.
-					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration, destinationAstRewrite);
+					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration,
+							destinationCompilationUnitRewrite.getASTRewrite());
 
 					// alter the target parameter names to match that of the
 					// source method if necessary #148.
 					changeTargetMethodParametersToMatchSource(sourceMethodDeclaration, targetMethodDeclaration,
-							destinationAstRewrite);
+							destinationCompilationUnitRewrite.getASTRewrite());
 
 					// Change the target method to default.
-					convertToDefault(targetMethodDeclaration, destinationAstRewrite);
+					convertToDefault(targetMethodDeclaration, destinationCompilationUnitRewrite.getASTRewrite());
 
 					// Remove any abstract modifiers from the target method as
 					// both abstract and default are not allowed.
-					removeAbstractness(targetMethodDeclaration, destinationAstRewrite);
+					removeAbstractness(targetMethodDeclaration, destinationCompilationUnitRewrite.getASTRewrite());
 
 					// TODO: Do we need to worry about preserving ordering of
 					// the
@@ -2088,31 +2088,32 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							|| Flags.isStrictfp(sourceMethod.getDeclaringType().getFlags()))
 							&& !Flags.isStrictfp(targetMethod.getFlags()))
 						// change the target method to strictfp.
-						convertToStrictFP(targetMethodDeclaration, destinationAstRewrite);
+						convertToStrictFP(targetMethodDeclaration, destinationCompilationUnitRewrite.getASTRewrite());
 
-					// Find types referenced in the source method and add
-					// imports for them in the destination compilation unit #22.
-					pm.beginTask("Finding types referenced in source method ...", IProgressMonitor.UNKNOWN);
-					Arrays.stream(ReferenceFinderUtil.getTypesReferencedIn(new IJavaElement[] { sourceMethod },
-							new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)))
-							.forEach(t -> destinationImportRewrite.addImport(t.getFullyQualifiedName()));
+					// deal with imports #22.
+					ImportRewriteContext context = new ContextSensitiveImportRewriteContext(destinationCompilationUnit,
+							destinationCompilationUnitRewrite.getImportRewrite());
+
+					ImportRewriteUtil.addImports(destinationCompilationUnitRewrite, context, sourceMethodDeclaration,
+							new HashMap<Name, String>(), new HashMap<Name, String>(), false);
 
 					transformedTargetMethods.add(targetMethod);
 				}
 
 				// Remove the source method.
-				ASTRewrite sourceRewrite = getASTRewrite(sourceCompilationUnit);
-				removeMethod(sourceMethodDeclaration, sourceRewrite);
+				CompilationUnitRewrite sourceRewrite = getCompilationUnitRewrite(sourceMethod.getCompilationUnit(),
+						sourceCompilationUnit);
+				removeMethod(sourceMethodDeclaration, sourceRewrite.getASTRewrite());
+				sourceRewrite.getImportRemover().registerRemovedNode(sourceMethodDeclaration);
 			}
 
 			// save the source changes.
-			ICompilationUnit[] units = this.typeRootToCompilationUnitMap.keySet().parallelStream()
-					.filter(t -> t instanceof ICompilationUnit).map(t -> (ICompilationUnit) t)
+			ICompilationUnit[] units = this.getCompilationUnitToCompilationUnitRewriteMap().keySet().stream()
 					.filter(cu -> !manager.containsChangesIn(cu)).toArray(ICompilationUnit[]::new);
 
 			for (ICompilationUnit cu : units) {
 				CompilationUnit compilationUnit = getCompilationUnit(cu, pm);
-				manageCompilationUnit(manager, cu, getASTRewrite(compilationUnit), getImportRewrite(compilationUnit),
+				manageCompilationUnit(manager, getCompilationUnitRewrite(cu, compilationUnit),
 						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
 			}
 
@@ -2142,44 +2143,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return compilationUnit;
 	}
 
-	private ImportRewrite getImportRewrite(CompilationUnit compilationUnit) {
-		ImportRewrite rewrite = this.getCompilationUnitToImportRewriteMap().get(compilationUnit);
+	private CompilationUnitRewrite getCompilationUnitRewrite(ICompilationUnit unit, CompilationUnit root) {
+		CompilationUnitRewrite rewrite = this.getCompilationUnitToCompilationUnitRewriteMap().get(unit);
 		if (rewrite == null) {
-			rewrite = ImportRewrite.create(compilationUnit, true);
-			this.getCompilationUnitToImportRewriteMap().put(compilationUnit, rewrite);
+			rewrite = new CompilationUnitRewrite(unit, root);
+			this.getCompilationUnitToCompilationUnitRewriteMap().put(unit, rewrite);
 		}
 		return rewrite;
 	}
 
-	private ASTRewrite getASTRewrite(CompilationUnit compilationUnit) {
-		ASTRewrite rewrite = this.getCompilationUnitToASTRewriteMap().get(compilationUnit);
-		if (rewrite == null) {
-			rewrite = ASTRewrite.create(compilationUnit.getAST());
-			this.getCompilationUnitToASTRewriteMap().put(compilationUnit, rewrite);
-		}
-		return rewrite;
-	}
-
-	private void manageCompilationUnit(final TextEditBasedChangeManager manager, ICompilationUnit compilationUnit,
-			ASTRewrite astRewrite, ImportRewrite importRewrite, Optional<IProgressMonitor> monitor)
-			throws CoreException {
-		TextEdit astEdit = astRewrite.rewriteAST();
-
-		monitor.ifPresent(m -> m.beginTask("Rewriting imports", IProgressMonitor.UNKNOWN));
-		TextEdit importEdit = importRewrite.rewriteImports(monitor.orElseGet(NullProgressMonitor::new));
-
-		MultiTextEdit edit = new MultiTextEdit();
-		edit.addChildren(new TextEdit[] { astEdit, importEdit });
-
-		TextChange change = (TextChange) manager.get(compilationUnit);
+	private void manageCompilationUnit(final TextEditBasedChangeManager manager, CompilationUnitRewrite rewrite,
+			Optional<IProgressMonitor> monitor) throws CoreException {
+		monitor.ifPresent(m -> m.beginTask("Creating change ...", IProgressMonitor.UNKNOWN));
+		CompilationUnitChange change = rewrite.createChange(false, monitor.orElseGet(NullProgressMonitor::new));
 		change.setTextType("java");
-
-		if (change.getEdit() == null)
-			change.setEdit(edit);
-		else
-			change.addEdit(edit);
-
-		manager.manage(compilationUnit, change);
+		manager.manage(rewrite.getCu(), change);
 	}
 
 	private void changeTargetMethodParametersToMatchSource(MethodDeclaration sourceMethodDeclaration,
@@ -2442,12 +2420,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		this.logging = logging;
 	}
 
-	protected Map<CompilationUnit, ASTRewrite> getCompilationUnitToASTRewriteMap() {
-		return compilationUnitToASTRewriteMap;
-	}
-
-	protected Map<CompilationUnit, ImportRewrite> getCompilationUnitToImportRewriteMap() {
-		return compilationUnitToImportRewriteMap;
+	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
+		return this.compilationUnitToCompilationUnitRewriteMap;
 	}
 
 }
