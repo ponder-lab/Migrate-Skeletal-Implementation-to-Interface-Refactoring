@@ -827,7 +827,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		final RefactoringStatus result = new RefactoringStatus();
 		final IType[] accessedTypes = getTypesReferencedInMovedMembers(sourceMethod, monitor);
 		final IType destination = getDestinationInterface(sourceMethod).get();
-		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+		final List<IMember> pulledUpList = Arrays.asList(sourceMethod);
 		for (int index = 0; index < accessedTypes.length; index++) {
 			final IType type = accessedTypes[index];
 			if (!type.exists())
@@ -853,7 +853,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
-		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+		final List<IMember> pulledUpList = Arrays.asList(sourceMethod);
 
 		final IField[] accessedFields = ReferenceFinderUtil.getFieldsReferencedIn(new IJavaElement[] { sourceMethod },
 				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
@@ -909,7 +909,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
 		final RefactoringStatus result = new RefactoringStatus();
 
-		final List<IMember> pulledUpList = Arrays.asList(new IMember[] { sourceMethod });
+		final List<IMember> pulledUpList = Arrays.asList(sourceMethod);
 
 		final IMethod[] accessedMethods = ReferenceFinderUtil.getMethodsReferencedIn(
 				new IJavaElement[] { sourceMethod },
