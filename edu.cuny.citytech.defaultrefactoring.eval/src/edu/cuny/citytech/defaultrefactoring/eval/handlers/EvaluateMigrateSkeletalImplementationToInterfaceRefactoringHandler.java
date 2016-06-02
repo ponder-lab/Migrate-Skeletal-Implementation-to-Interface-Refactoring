@@ -103,6 +103,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					TimeCollector resultsTimeCollector = new TimeCollector();
 
+					// TODO: Remove this and just clear caches after this call?
 					resultsTimeCollector.start();
 					for (IMethod method : allMethods)
 						if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, ALLOW_CONCRETE_CLASSES,
