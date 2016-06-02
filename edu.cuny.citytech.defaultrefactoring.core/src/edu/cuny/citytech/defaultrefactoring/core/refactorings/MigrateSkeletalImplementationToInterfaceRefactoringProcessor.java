@@ -58,8 +58,10 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -2055,6 +2057,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							.getCompilationUnit(destinationInterface.getTypeRoot(), pm);
 					CompilationUnitRewrite destinationCompilationUnitRewrite = getCompilationUnitRewrite(
 							targetMethod.getCompilationUnit(), destinationCompilationUnit);
+					ImportRewriteContext context = new ContextSensitiveImportRewriteContext(destinationCompilationUnit,
+							destinationCompilationUnitRewrite.getImportRewrite());
 
 					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
 							destinationCompilationUnit);
@@ -2062,6 +2066,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// tack on the source method body to the target method.
 					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration,
 							destinationCompilationUnitRewrite.getASTRewrite());
+
+					// add any static imports needed to the target method's
+					// compilation unit for static fields referenced in the
+					// source method.
+					addStaticImports(sourceMethodDeclaration, targetMethodDeclaration,
+							destinationCompilationUnitRewrite, context);
 
 					// alter the target parameter names to match that of the
 					// source method if necessary #148.
@@ -2091,9 +2101,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						convertToStrictFP(targetMethodDeclaration, destinationCompilationUnitRewrite.getASTRewrite());
 
 					// deal with imports #22.
-					ImportRewriteContext context = new ContextSensitiveImportRewriteContext(destinationCompilationUnit,
-							destinationCompilationUnitRewrite.getImportRewrite());
-
 					ImportRewriteUtil.addImports(destinationCompilationUnitRewrite, context, sourceMethodDeclaration,
 							new HashMap<Name, String>(), new HashMap<Name, String>(), false);
 
@@ -2130,6 +2137,63 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			pm.done();
 			this.clearCaches();
 		}
+	}
+
+	/**
+	 * Add any static imports needed to the target method's compilation unit for
+	 * static fields referenced in the source method.
+	 * 
+	 * @param sourceMethodDeclaration
+	 *            The method being migrated.
+	 * @param targetMethodDeclaration
+	 *            The target for the migration.
+	 * @param destinationCompilationUnitRewrite
+	 *            The rewrite associated with the target's compilation unit.
+	 * @param context
+	 *            The context in which to add static imports if necessary.
+	 */
+	private void addStaticImports(MethodDeclaration sourceMethodDeclaration, MethodDeclaration targetMethodDeclaration,
+			CompilationUnitRewrite destinationCompilationUnitRewrite, ImportRewriteContext context) {
+		sourceMethodDeclaration.accept(new ASTVisitor() {
+
+			@Override
+			public boolean visit(SimpleName node) {
+				// add any necessary static imports.
+				if (node.getParent().getNodeType() != ASTNode.QUALIFIED_NAME) {
+					IBinding binding = node.resolveBinding();
+					if (binding.getKind() == IBinding.VARIABLE) {
+						IVariableBinding variableBinding = ((IVariableBinding) binding);
+						if (variableBinding.isField()) {
+							ITypeBinding declaringClass = variableBinding.getDeclaringClass();
+							processStaticImport(variableBinding, declaringClass, targetMethodDeclaration,
+									destinationCompilationUnitRewrite, context);
+						}
+					}
+				}
+				return super.visit(node);
+			}
+
+			private void processStaticImport(IBinding binding, ITypeBinding declaringClass,
+					MethodDeclaration targetMethodDeclaration, CompilationUnitRewrite destinationCompilationUnitRewrite,
+					ImportRewriteContext context) {
+				if (Modifier.isStatic(binding.getModifiers())
+						&& !declaringClass.isEqualTo(targetMethodDeclaration.resolveBinding().getDeclaringClass()))
+					destinationCompilationUnitRewrite.getImportRewrite().addStaticImport(binding, context);
+			}
+
+			@Override
+			public boolean visit(MethodInvocation node) {
+				if (node.getExpression() == null) { // it's an
+													// unqualified
+													// method call.
+					IMethodBinding methodBinding = node.resolveMethodBinding();
+					ITypeBinding declaringClass = methodBinding.getDeclaringClass();
+					processStaticImport(methodBinding, declaringClass, targetMethodDeclaration,
+							destinationCompilationUnitRewrite, context);
+				}
+				return super.visit(node);
+			}
+		});
 	}
 
 	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
