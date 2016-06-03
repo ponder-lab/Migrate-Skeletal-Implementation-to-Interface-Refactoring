@@ -293,6 +293,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 					// sanity check.
 					Expression expression = returnStatement.getExpression();
+					expression = (Expression) Util.stripParenthesizedExpressions(expression);
 					Assert.isTrue(expression == thisExpression, "The return expression should be this.");
 
 					MethodDeclaration targetMethodDeclaration = null;
@@ -314,6 +315,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				} else
 					throw new IllegalStateException("Unexpected node type: " + node.getNodeType());
 				break;
+			}
+			case ASTNode.PARENTHESIZED_EXPRESSION: {
+				process(node.getParent(), thisExpression);
 			}
 			}
 		}
