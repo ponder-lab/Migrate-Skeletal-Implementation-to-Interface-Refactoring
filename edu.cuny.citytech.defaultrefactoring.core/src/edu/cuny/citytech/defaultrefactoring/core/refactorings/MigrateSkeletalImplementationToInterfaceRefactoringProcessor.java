@@ -757,12 +757,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				return true;
 			if (target.equals(member))
 				return true;
+			// NOTE: We are not creating stubs (for now).
+			// Related to https://bugs.eclipse.org/bugs/show_bug.cgi?id=495439.
+			/*
 			if (member instanceof IMethod) {
 				final IMethod method = (IMethod) member;
 				final IMethod stub = target.getMethod(method.getElementName(), method.getParameterTypes());
 				if (stub.exists())
 					return true;
 			}
+			*/
 			if (member.getDeclaringType() == null) {
 				if (!(member instanceof IType))
 					return false;
@@ -923,7 +927,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (!accessedMethod.exists())
 				continue;
 
-			boolean isAccessible = pulledUpList.contains(accessedMethod) || canBeAccessedFrom(sourceMethod,
+	 		boolean isAccessible = pulledUpList.contains(accessedMethod) || canBeAccessedFrom(sourceMethod,
 					accessedMethod, destination, destinationInterfaceSuperTypeHierarchy);
 
 			if (!isAccessible) {
@@ -998,7 +1002,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
 						((IMember) match.getElement()).getTypeRoot(),
 						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
-
+				
 				IMethod constructor = extractConstructor(node);
 
 				if (constructor != null)
