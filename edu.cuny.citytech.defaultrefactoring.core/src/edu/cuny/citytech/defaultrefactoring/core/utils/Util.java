@@ -14,6 +14,8 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -137,5 +139,13 @@ public final class Util {
 			fullName += "[]";
 
 		return fullName;
+	}
+
+	public static ASTNode stripParenthesizedExpressions(ASTNode node) {
+		if (node.getNodeType() == ASTNode.PARENTHESIZED_EXPRESSION) {
+			ParenthesizedExpression parenthesizedExpression = (ParenthesizedExpression)node;
+			return stripParenthesizedExpressions(parenthesizedExpression.getExpression());
+		} else
+			return node;
 	}
 }

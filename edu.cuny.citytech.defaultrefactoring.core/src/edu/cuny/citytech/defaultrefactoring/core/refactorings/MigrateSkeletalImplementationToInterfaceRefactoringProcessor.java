@@ -1003,6 +1003,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						((IMember) match.getElement()).getTypeRoot(),
 						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
 				
+				node = Util.stripParenthesizedExpressions(node);
 				IMethod constructor = extractConstructor(node);
 
 				if (constructor != null)
