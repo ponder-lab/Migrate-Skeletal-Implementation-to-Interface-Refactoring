@@ -7,6 +7,7 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getTextLabel;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -56,6 +57,7 @@ import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
+import org.eclipse.jdt.core.dom.CreationReference;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IBinding;
@@ -81,6 +83,7 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
@@ -906,21 +909,23 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private RefactoringStatus checkAccessedMethods(IMethod sourceMethod, final Optional<IProgressMonitor> monitor,
 			final ITypeHierarchy destinationInterfaceSuperTypeHierarchy) throws CoreException {
-		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 2));
+		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking_referenced_elements, 3));
 		final RefactoringStatus result = new RefactoringStatus();
 
 		final List<IMember> pulledUpList = Arrays.asList(sourceMethod);
 
-		final IMethod[] accessedMethods = ReferenceFinderUtil.getMethodsReferencedIn(
-				new IJavaElement[] { sourceMethod },
-				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1));
+		final Set<IMethod> accessedMethods = new LinkedHashSet<>(
+				Arrays.asList(ReferenceFinderUtil.getMethodsReferencedIn(new IJavaElement[] { sourceMethod },
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), 1))));
+
+		// also add constructors.
+		accessedMethods.addAll(getConstructorsReferencedIn(new IJavaElement[] { sourceMethod },
+				monitor.map(m -> new SubProgressMonitor(m, 1))));
 
 		final IType destination = getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
 				"Source method: " + sourceMethod + " has no destiantion interface."));
 
-		for (int index = 0; index < accessedMethods.length; index++) {
-			final IMethod accessedMethod = accessedMethods[index];
-
+		for (IMethod accessedMethod : accessedMethods) {
 			if (!accessedMethod.exists())
 				continue;
 
@@ -981,6 +986,66 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		monitor.ifPresent(IProgressMonitor::done);
 		return result;
+	}
+
+	private Collection<? extends IMethod> getConstructorsReferencedIn(IJavaElement[] elements,
+			final Optional<IProgressMonitor> monitor) throws CoreException {
+		Collection<IMethod> ret = new LinkedHashSet<>();
+
+		SearchPattern pattern = SearchPattern.createPattern("*", IJavaSearchConstants.CONSTRUCTOR,
+				IJavaSearchConstants.REFERENCES, SearchPattern.R_PATTERN_MATCH);
+		IJavaSearchScope scope = SearchEngine.createJavaSearchScope(elements, true);
+		SearchParticipant[] participants = new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() };
+
+		this.getSearchEngine().search(pattern, participants, scope, new SearchRequestor() {
+
+			@Override
+			public void acceptSearchMatch(SearchMatch match) throws CoreException {
+				ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
+						((IMember) match.getElement()).getTypeRoot(),
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+
+				IMethod constructor = extractConstructor(node);
+
+				if (constructor != null)
+					ret.add(constructor);
+			}
+
+			private IMethod extractConstructor(ASTNode node) {
+				if (node == null)
+					throw new IllegalArgumentException("Node is null");
+				else {
+					switch (node.getNodeType()) {
+					case ASTNode.CLASS_INSTANCE_CREATION: {
+						ClassInstanceCreation creation = (ClassInstanceCreation) node;
+						IMethodBinding binding = creation.resolveConstructorBinding();
+						return (IMethod) binding.getJavaElement();
+					}
+					case ASTNode.CONSTRUCTOR_INVOCATION: {
+						ConstructorInvocation invocation = (ConstructorInvocation) node;
+						IMethodBinding binding = invocation.resolveConstructorBinding();
+						return (IMethod) binding.getJavaElement();
+					}
+					case ASTNode.SUPER_CONSTRUCTOR_INVOCATION: {
+						SuperConstructorInvocation invocation = (SuperConstructorInvocation) node;
+						IMethodBinding binding = invocation.resolveConstructorBinding();
+						return (IMethod) binding.getJavaElement();
+					}
+					case ASTNode.CREATION_REFERENCE: {
+						CreationReference reference = (CreationReference) node;
+						IMethodBinding binding = reference.resolveMethodBinding();
+						return (IMethod) binding.getJavaElement();
+					}
+					default: {
+						// try the parent node.
+						return extractConstructor(node.getParent());
+					}
+					}
+				}
+			}
+		}, monitor.orElseGet(NullProgressMonitor::new));
+
+		return ret;
 	}
 
 	private static boolean isMethodInHierarchy(IMethod method, ITypeHierarchy hierarchy) {
