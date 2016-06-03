@@ -757,6 +757,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testMethodThatCallsConstructor() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodThatCallsConstructor2() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testMethodThatUsesThis() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
