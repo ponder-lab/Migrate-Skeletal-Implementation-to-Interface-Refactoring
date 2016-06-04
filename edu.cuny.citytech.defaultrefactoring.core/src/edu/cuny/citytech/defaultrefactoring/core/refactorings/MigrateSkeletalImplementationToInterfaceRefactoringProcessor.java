@@ -1046,7 +1046,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					case ASTNode.CREATION_REFERENCE: {
 						CreationReference reference = (CreationReference) node;
 						IMethodBinding binding = reference.resolveMethodBinding();
-						return (IMethod) binding.getJavaElement();
+
+						if (binding == null) {
+							logWarning("Could not resolve method binding from creation reference: " + reference);
+							return null;
+						}
+
+						IMethod javaElement = (IMethod) binding.getJavaElement();
+						return javaElement;
 					}
 					default: {
 						// try the parent node.
@@ -2484,7 +2491,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		log(IStatus.INFO, message);
 	}
 
-	@SuppressWarnings("unused")
 	private void logWarning(String message) {
 		log(IStatus.WARNING, message);
 	}
