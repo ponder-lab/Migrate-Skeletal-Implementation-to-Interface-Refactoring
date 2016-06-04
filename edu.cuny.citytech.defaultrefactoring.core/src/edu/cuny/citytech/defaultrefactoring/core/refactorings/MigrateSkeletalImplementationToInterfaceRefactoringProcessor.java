@@ -402,6 +402,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		@Override
 		public void acceptSearchMatch(SearchMatch match) throws CoreException {
+			if (match.isInsideDocComment())
+				return;
+
 			// get the AST node corresponding to the field
 			// access. It should be some kind of name
 			// (simple of qualified).
@@ -459,6 +462,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		@Override
 		public void acceptSearchMatch(SearchMatch match) throws CoreException {
+			if (match.isInsideDocComment())
+				return;
+
 			// get the AST node corresponding to the method
 			// invocation. It should be some kind of name (simple of qualified).
 			ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
@@ -770,7 +776,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (stub.exists())
 					return true;
 			}
-			*/
+			 */
 			if (member.getDeclaringType() == null) {
 				if (!(member instanceof IType))
 					return false;
@@ -931,7 +937,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (!accessedMethod.exists())
 				continue;
 
-	 		boolean isAccessible = pulledUpList.contains(accessedMethod) || canBeAccessedFrom(sourceMethod,
+			boolean isAccessible = pulledUpList.contains(accessedMethod) || canBeAccessedFrom(sourceMethod,
 					accessedMethod, destination, destinationInterfaceSuperTypeHierarchy);
 
 			if (!isAccessible) {
@@ -1003,10 +1009,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 			@Override
 			public void acceptSearchMatch(SearchMatch match) throws CoreException {
+				if (match.isInsideDocComment())
+					return;
+
 				ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
 						((IMember) match.getElement()).getTypeRoot(),
 						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
-				
+
 				node = Util.stripParenthesizedExpressions(node);
 				IMethod constructor = extractConstructor(node);
 
@@ -2547,7 +2556,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	public boolean isLogging() {
 		return logging;
 	}
-
+	
 	public void setLogging(boolean logging) {
 		this.logging = logging;
 	}
