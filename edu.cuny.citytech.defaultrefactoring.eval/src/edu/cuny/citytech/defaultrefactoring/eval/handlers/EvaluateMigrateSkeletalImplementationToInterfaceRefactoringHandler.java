@@ -125,7 +125,6 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 									new IMethod[interfaceMigrationAvailableMethods.size()]),
 							Optional.of(monitor));
 					resultsTimeCollector.stop();
-					processor.setLogging(false);
 
 					System.out.println(
 							"Original methods before preconditions: " + interfaceMigrationAvailableMethods.size());

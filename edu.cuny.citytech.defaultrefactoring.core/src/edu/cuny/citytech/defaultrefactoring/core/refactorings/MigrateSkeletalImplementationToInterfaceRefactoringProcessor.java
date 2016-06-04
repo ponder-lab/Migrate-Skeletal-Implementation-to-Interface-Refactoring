@@ -529,7 +529,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	private TimeCollector excludedTimeCollector = new TimeCollector();
 
-	private boolean logging = true;
+	/**
+	 * The minimum logging level, one of the constants in
+	 * org.eclipse.core.runtime.IStatus.
+	 */
+	private int loggingLevel = IStatus.WARNING;
 
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
@@ -770,12 +774,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// NOTE: We are not creating stubs (for now).
 			// Related to https://bugs.eclipse.org/bugs/show_bug.cgi?id=495439.
 			/*
-			if (member instanceof IMethod) {
-				final IMethod method = (IMethod) member;
-				final IMethod stub = target.getMethod(method.getElementName(), method.getParameterTypes());
-				if (stub.exists())
-					return true;
-			}
+			 * if (member instanceof IMethod) { final IMethod method = (IMethod)
+			 * member; final IMethod stub =
+			 * target.getMethod(method.getElementName(),
+			 * method.getParameterTypes()); if (stub.exists()) return true; }
 			 */
 			if (member.getDeclaringType() == null) {
 				if (!(member instanceof IType))
@@ -2480,7 +2482,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void log(int severity, String message) {
-		if (this.isLogging()) {
+		if (severity >= this.getLoggingLevel()) {
 			String name = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
 			IStatus status = new Status(severity, name, message);
 			JavaPlugin.log(status);
@@ -2559,12 +2561,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return searchEngine;
 	}
 
-	public boolean isLogging() {
-		return logging;
+	/**
+	 * Minimum logging level. One of the constants in
+	 * org.eclipse.core.runtime.IStatus.
+	 * 
+	 * @param level
+	 *            The minimum logging level to set.
+	 * @see org.eclipse.core.runtime.IStatus.
+	 */
+	public void setLoggingLevel(int level) {
+		this.loggingLevel = level;
 	}
-	
-	public void setLogging(boolean logging) {
-		this.logging = logging;
+
+	protected int getLoggingLevel() {
+		return this.loggingLevel;
 	}
 
 	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
