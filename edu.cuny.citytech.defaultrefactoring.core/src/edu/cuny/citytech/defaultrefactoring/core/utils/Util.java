@@ -142,8 +142,8 @@ public final class Util {
 	}
 
 	public static ASTNode stripParenthesizedExpressions(ASTNode node) {
-		if (node.getNodeType() == ASTNode.PARENTHESIZED_EXPRESSION) {
-			ParenthesizedExpression parenthesizedExpression = (ParenthesizedExpression)node;
+		if (node != null && node.getNodeType() == ASTNode.PARENTHESIZED_EXPRESSION) {
+			ParenthesizedExpression parenthesizedExpression = (ParenthesizedExpression) node;
 			return stripParenthesizedExpressions(parenthesizedExpression.getExpression());
 		} else
 			return node;
