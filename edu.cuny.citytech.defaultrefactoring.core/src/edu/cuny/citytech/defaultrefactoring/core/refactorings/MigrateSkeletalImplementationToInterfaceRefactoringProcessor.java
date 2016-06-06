@@ -448,36 +448,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private final class MethodReceiverAnalysisSearchRequestor extends SearchRequestor {
-		private final Optional<IProgressMonitor> monitor;
+	private final class MethodReceiverAnalysisVisitor extends ASTVisitor {
+		private IMethod accessedMethod;
 		private boolean encounteredThisReceiver;
 
 		public boolean hasEncounteredThisReceiver() {
 			return encounteredThisReceiver;
 		}
 
-		private MethodReceiverAnalysisSearchRequestor(Optional<IProgressMonitor> monitor) {
-			this.monitor = monitor;
+		private MethodReceiverAnalysisVisitor(IMethod accessedMethod) {
+			this.accessedMethod = accessedMethod;
 		}
 
 		@Override
-		public void acceptSearchMatch(SearchMatch match) throws CoreException {
-			if (match.isInsideDocComment())
-				return;
-
-			// get the AST node corresponding to the method
-			// invocation. It should be some kind of name (simple of qualified).
-			ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
-					((IMember) match.getElement()).getTypeRoot(),
-					new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
-
-			if (node.getNodeType() != ASTNode.METHOD_INVOCATION
-					&& node.getNodeType() != ASTNode.SUPER_METHOD_INVOCATION)
-				node = node.getParent();
-
-			switch (node.getNodeType()) {
-			case ASTNode.METHOD_INVOCATION: {
-				MethodInvocation methodInvocation = (MethodInvocation) node;
+		public boolean visit(MethodInvocation methodInvocation) {
+			if (methodInvocation.resolveMethodBinding().getJavaElement().equals(accessedMethod)) {
 				Expression expression = methodInvocation.getExpression();
 
 				// FIXME: It's not really that the expression is a `this`
@@ -487,13 +472,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION) {
 					this.encounteredThisReceiver = true;
 				}
-				break;
 			}
-			case ASTNode.SUPER_METHOD_INVOCATION: {
+			return super.visit(methodInvocation);
+		}
+
+		@Override
+		public boolean visit(SuperMethodInvocation node) {
+			if (node.resolveMethodBinding().getJavaElement().equals(accessedMethod))
 				this.encounteredThisReceiver = true;
-				break;
-			}
-			}
+			return super.visit(node);
 		}
 	}
 
@@ -954,16 +941,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			} else if (!JdtFlags.isStatic(accessedMethod)) {
 				// it's accessible and it's not static.
 				// we'll need to check the implicit parameters.
-				MethodReceiverAnalysisSearchRequestor requestor = new MethodReceiverAnalysisSearchRequestor(monitor);
-				this.getSearchEngine().search(
-						SearchPattern.createPattern(accessedMethod, IJavaSearchConstants.REFERENCES,
-								SearchPattern.R_EXACT_MATCH),
-						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
-						SearchEngine.createJavaSearchScope(new IJavaElement[] { sourceMethod }), requestor,
-						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
+				MethodDeclaration sourceMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(sourceMethod,
+						getCompilationUnit(sourceMethod.getTypeRoot(), new SubProgressMonitor(
+								monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+
+				MethodReceiverAnalysisVisitor visitor = new MethodReceiverAnalysisVisitor(accessedMethod);
+				sourceMethodDeclaration.getBody().accept(visitor);
 
 				// if this is the implicit parameter.
-				if (requestor.hasEncounteredThisReceiver()) {
+				if (visitor.hasEncounteredThisReceiver()) {
 					// let's check to see if the method is somewhere in the
 					// hierarchy.
 					IType methodDeclaringType = accessedMethod.getDeclaringType();
