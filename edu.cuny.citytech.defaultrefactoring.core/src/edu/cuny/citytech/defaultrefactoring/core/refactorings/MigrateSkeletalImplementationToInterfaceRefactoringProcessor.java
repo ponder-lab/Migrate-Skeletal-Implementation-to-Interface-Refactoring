@@ -464,6 +464,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		public boolean visit(MethodInvocation methodInvocation) {
 			if (methodInvocation.resolveMethodBinding().getJavaElement().equals(accessedMethod)) {
 				Expression expression = methodInvocation.getExpression();
+				expression = (Expression) Util.stripParenthesizedExpressions(expression);
 
 				// FIXME: It's not really that the expression is a `this`
 				// expression but that the type of the expression comes from a
