@@ -77,6 +77,7 @@ import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.ThisExpression;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
@@ -1436,6 +1437,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addErrorAndMark(status, PreconditionFailure.SourceMethodHasNoTargetMethod, sourceMethod);
 				else {
 					status.merge(checkParameters(sourceMethod));
+					status.merge(checkReturnType(sourceMethod));
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkProjectCompliance(sourceMethod));
@@ -1686,6 +1688,32 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				addErrorAndMark(status, PreconditionFailure.MethodContainsInconsistentParameterAnnotations,
 						sourceMethod, targetMethod);
 		}
+
+		return status;
+	}
+
+	/**
+	 * Check that return types are compatible between the source and target
+	 * methods.
+	 * 
+	 * @param sourceMethod
+	 *            The method to check.
+	 * @param monitor
+	 *            Optional progress monitor.
+	 * @return {@link RefactoringStatus} indicating the result of the check.
+	 * @throws JavaModelException
+	 */
+	private RefactoringStatus checkReturnType(IMethod sourceMethod) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
+
+		String sourceMethodReturnType = Util.getQualifiedNameFromTypeSignature(sourceMethod.getReturnType(),
+				sourceMethod.getDeclaringType());
+		String targetMethodReturnType = Util.getQualifiedNameFromTypeSignature(targetMethod.getReturnType(),
+				targetMethod.getDeclaringType());
+
+		if (!sourceMethodReturnType.equals(targetMethodReturnType))
+			addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod, targetMethod);
 
 		return status;
 	}
@@ -2457,8 +2485,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			ILocalVariable[] sourceParameters, IMethod sourceMethod) throws JavaModelException {
 		if (parameters.length == sourceParameters.length) {
 			for (int i = 0; i < parameters.length; i++) {
-				String paramString = Util.getParamString(parameters[i], method);
-				String sourceParamString = Util.getParamString(sourceParameters[i], sourceMethod);
+				String paramString = Util.getQualifiedNameFromTypeSignature(parameters[i].getTypeSignature(),
+						method.getDeclaringType());
+				String sourceParamString = Util.getQualifiedNameFromTypeSignature(
+						sourceParameters[i].getTypeSignature(), sourceMethod.getDeclaringType());
 
 				if (!paramString.equals(sourceParamString))
 					return false;

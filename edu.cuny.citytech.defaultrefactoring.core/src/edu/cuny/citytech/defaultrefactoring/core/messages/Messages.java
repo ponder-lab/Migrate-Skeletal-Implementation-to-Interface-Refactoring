@@ -53,7 +53,7 @@ public class Messages extends NLS {
 	public static String NoMethodsInConcreteTypes;
 	public static String NoMethodsInStaticTypes;
 	public static String NoMethodsWithParameters;
-	public static String NoMethodsWithReturnTypes;
+	public static String IncompatibleMethodReturnTypes;
 	public static String NoMethodsWithTypeParameters;
 	public static String NoMethodsWithStatements;
 	public static String NoMethodsInBinaryTypes;

@@ -30,7 +30,8 @@ public class Util {
 		sb.append((method.getElementName()) + "(");
 		ILocalVariable[] parameters = method.getParameters();
 		for (int i = 0; i < parameters.length; i++) {
-			sb.append(edu.cuny.citytech.defaultrefactoring.core.utils.Util.getParamString(parameters[i], method));
+			sb.append(edu.cuny.citytech.defaultrefactoring.core.utils.Util
+					.getQualifiedNameFromTypeSignature(parameters[i].getTypeSignature(), method.getDeclaringType()));
 			if (i != (parameters.length - 1)) {
 				sb.append(",");
 			}

@@ -37,7 +37,7 @@ public enum PreconditionFailure {
 	NoMethodsInConcreteTypes(Messages.NoMethodsInConcreteTypes),
 	NoMethodsInStaticTypes(Messages.NoMethodsInStaticTypes),
 	NoMethodsWithParameters(Messages.NoMethodsWithParameters),
-	NoMethodsWithReturnTypes(Messages.NoMethodsWithReturnTypes),
+	IncompatibleMethodReturnTypes(Messages.IncompatibleMethodReturnTypes),
 	NoMethodsWithTypeParameters(Messages.NoMethodsWithTypeParameters),
 	NoMethodsWithStatements(Messages.NoMethodsWithStatements),
 	NoMethodsInBinaryTypes(Messages.NoMethodsInBinaryTypes),

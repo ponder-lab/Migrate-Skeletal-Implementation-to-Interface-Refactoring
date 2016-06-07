@@ -9,7 +9,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -98,12 +97,11 @@ public final class Util {
 		};
 	}
 
-	public static String getParamString(ILocalVariable parameterVariable, IMethod method) throws JavaModelException {
-		IType declaringType = method.getDeclaringType();
-		String name = parameterVariable.getTypeSignature();
-		name = Signature.getTypeErasure(name);
-		String signatureQualifier = Signature.getSignatureQualifier(name);
-		String signatureSimpleName = Signature.getSignatureSimpleName(name);
+	public static String getQualifiedNameFromTypeSignature(String typeSignature, IType declaringType)
+			throws JavaModelException {
+		typeSignature = Signature.getTypeErasure(typeSignature);
+		String signatureQualifier = Signature.getSignatureQualifier(typeSignature);
+		String signatureSimpleName = Signature.getSignatureSimpleName(typeSignature);
 		String simpleName = signatureQualifier.isEmpty() ? signatureSimpleName
 				: signatureQualifier + '.' + signatureSimpleName;
 
