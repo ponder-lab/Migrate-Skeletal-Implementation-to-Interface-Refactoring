@@ -2624,5 +2624,4 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
 		return this.compilationUnitToCompilationUnitRewriteMap;
 	}
-
 }
