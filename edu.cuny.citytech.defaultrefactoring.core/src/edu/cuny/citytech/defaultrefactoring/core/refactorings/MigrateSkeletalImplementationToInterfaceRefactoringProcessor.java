@@ -463,7 +463,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		@Override
 		public boolean visit(MethodInvocation methodInvocation) {
-			if (methodInvocation.resolveMethodBinding().getJavaElement().equals(accessedMethod)) {
+			IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
+			IJavaElement javaElement = methodBinding.getJavaElement();
+
+			if (javaElement == null)
+				logWarning("Could not get Java element from binding: " + methodBinding + " while processing: "
+						+ methodInvocation);
+			else if (javaElement.equals(accessedMethod)) {
 				Expression expression = methodInvocation.getExpression();
 				expression = (Expression) Util.stripParenthesizedExpressions(expression);
 
