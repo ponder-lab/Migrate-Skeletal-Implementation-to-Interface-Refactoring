@@ -74,7 +74,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
 								"#failed preconditions", "#methods after refactoring", "time (s)" });
 				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv",
-						new String[] { "subject", "method", "type FQN" });
+						new String[] { "method", "type FQN" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
 						new String[] { "subject", "method", "type FQN", "destination interface FQN" });
 
@@ -115,8 +115,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					// candidate methods.
 					for (IMethod method : interfaceMigrationAvailableMethods) {
-						candidateMethodPrinter.printRecord(javaProject.getElementName(),
-								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName());
+						candidateMethodPrinter.printRecord(Util.getMethodIdentifier(method),
+								method.getDeclaringType().getFullyQualifiedName());
 					}
 
 					resultsTimeCollector.start();
