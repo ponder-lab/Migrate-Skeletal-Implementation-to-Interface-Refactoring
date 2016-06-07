@@ -1724,6 +1724,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status;
 	}
 
+	@SuppressWarnings("unused")
+	private ITypeBinding resolveReturnTypeBinding(IMethod method, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		MethodDeclaration methodDeclarationNode = ASTNodeSearchUtil.getMethodDeclarationNode(method,
+				getCompilationUnit(method.getTypeRoot(),
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+
+		if (methodDeclarationNode != null) {
+			Type returnType = methodDeclarationNode.getReturnType2();
+			return returnType.resolveBinding();
+		} else
+			return null;
+	}
+
 	private RefactoringStatus checkStructure(IMember member) throws JavaModelException {
 		if (!member.isStructureKnown()) {
 			return RefactoringStatus.createErrorStatus(
