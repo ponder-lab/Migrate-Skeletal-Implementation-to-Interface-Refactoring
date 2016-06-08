@@ -47,6 +47,8 @@ public final class RefactoringAvailabilityTester {
 			return false;
 		if (JdtFlags.isSynchronized(method))
 			return false;
+		if (JdtFlags.isFinal(method))
+			return false;
 
 		final IType declaring = method.getDeclaringType();
 		if (declaring != null) {
