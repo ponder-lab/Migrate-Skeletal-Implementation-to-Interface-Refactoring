@@ -688,13 +688,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (!structure.isOK())
 					addUnmigratableMethod(sourceMethod, structure.getEntryWithHighestSeverity());
 
-				// TODO: For now, no annotated target interfaces.
-				if (targetInterface.get().getAnnotations().length != 0) {
-					RefactoringStatusEntry error = addError(status, sourceMethod,
-							PreconditionFailure.DestinationInterfaceHasAnnotations, targetInterface.get());
-					addUnmigratableMethod(sourceMethod, error);
-				}
-
 				// #35: The target interface should not be a
 				// @FunctionalInterface.
 				if (isInterfaceFunctional(targetInterface.get())) {
