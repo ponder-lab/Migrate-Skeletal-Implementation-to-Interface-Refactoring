@@ -12,6 +12,7 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
+import org.eclipse.jdt.internal.corext.util.JdtFlags;
 
 import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoringProcessor;
 
@@ -37,6 +38,8 @@ public final class RefactoringAvailabilityTester {
 		if (!Checks.isAvailable(method))
 			return false;
 		if (method.isConstructor())
+			return false;
+		if (JdtFlags.isNative(method))
 			return false;
 
 		final IType declaring = method.getDeclaringType();
