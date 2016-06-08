@@ -717,13 +717,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
-				// TODO: For now, no member interfaces.
-				if (targetInterface.get().isMember()) {
-					RefactoringStatusEntry error = addError(status, sourceMethod,
-							PreconditionFailure.DestinationInterfaceIsMember, targetInterface.get());
-					addUnmigratableMethod(sourceMethod, error);
-				}
-
 				// Can't be strictfp if all the methods to be migrated aren't
 				// also strictfp #42.
 				if (Flags.isStrictfp(targetInterface.get().getFlags())
