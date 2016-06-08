@@ -696,13 +696,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
-				// TODO: For now, only top-level types.
-				if (targetInterface.get().getDeclaringType() != null) {
-					RefactoringStatusEntry error = addError(status, sourceMethod,
-							PreconditionFailure.DestinationInterfaceIsNotTopLevel, targetInterface.get());
-					addUnmigratableMethod(sourceMethod, error);
-				}
-
 				// TODO: For now, no type parameters.
 				if (targetInterface.get().getTypeParameters().length != 0) {
 					RefactoringStatusEntry error = addError(status, sourceMethod,
