@@ -6,9 +6,7 @@ import static edu.cuny.citytech.defaultrefactoring.core.utils.Util.createMigrate
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashSet;
