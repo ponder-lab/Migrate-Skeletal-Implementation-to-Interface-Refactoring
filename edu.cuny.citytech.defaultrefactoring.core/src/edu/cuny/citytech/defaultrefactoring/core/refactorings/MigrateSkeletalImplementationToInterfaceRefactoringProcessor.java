@@ -1498,8 +1498,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						break;
 					case 2:
 						status.addEntry(RefactoringStatus.ERROR,
-								String.format(PreconditionFailure.TypeVariable2NotAvailable.getMessage(), unmapped[0],
-										unmapped[1], superClassLabel),
+								MessageFormat.format(PreconditionFailure.TypeVariable2NotAvailable.getMessage(),
+										unmapped[0], unmapped[1], superClassLabel),
 								JavaStatusContext.create(member),
 								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
 								PreconditionFailure.TypeVariable2NotAvailable.ordinal(), sourceMethod);
@@ -1507,8 +1507,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						break;
 					case 3:
 						status.addEntry(RefactoringStatus.ERROR,
-								String.format(PreconditionFailure.TypeVariable3NotAvailable.getMessage(), unmapped[0],
-										unmapped[1], unmapped[2], superClassLabel),
+								MessageFormat.format(PreconditionFailure.TypeVariable3NotAvailable.getMessage(),
+										unmapped[0], unmapped[1], unmapped[2], superClassLabel),
 								JavaStatusContext.create(member),
 								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
 								PreconditionFailure.TypeVariable3NotAvailable.ordinal(), sourceMethod);
@@ -1516,7 +1516,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						break;
 					default:
 						status.addEntry(RefactoringStatus.ERROR,
-								String.format(PreconditionFailure.TypeVariablesNotAvailable.getMessage(),
+								MessageFormat.format(PreconditionFailure.TypeVariablesNotAvailable.getMessage(),
 										superClassLabel),
 								JavaStatusContext.create(member),
 								MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
