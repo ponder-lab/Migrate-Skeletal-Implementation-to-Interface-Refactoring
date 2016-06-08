@@ -41,6 +41,8 @@ public final class RefactoringAvailabilityTester {
 			return false;
 		if (JdtFlags.isNative(method))
 			return false;
+		if (JdtFlags.isStatic(method))
+			return false;
 
 		final IType declaring = method.getDeclaringType();
 		if (declaring != null) {
