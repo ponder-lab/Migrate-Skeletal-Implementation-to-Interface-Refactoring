@@ -1534,7 +1534,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		RefactoringStatus status = new RefactoringStatus();
 		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
-		if (targetMethod != null && !checkAnnotations(sourceMethod, targetMethod).isOK())
+		if (targetMethod != null && (!checkAnnotations(sourceMethod, targetMethod).isOK()
+				|| !checkAnnotations(sourceMethod.getDeclaringType(), targetMethod.getDeclaringType()).isOK()))
 			addErrorAndMark(status, PreconditionFailure.AnnotationMismatch, sourceMethod, targetMethod);
 
 		return status;
