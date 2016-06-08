@@ -1170,9 +1170,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		RefactoringStatus status = new RefactoringStatus();
 		IType type = sourceMethod.getDeclaringType();
 
-		if (type.isEnum())
-			// TODO: For now. It might be okay to have an enum.
-			addErrorAndMark(status, PreconditionFailure.NoMethodsInEnums, sourceMethod, type);
 		if (type.isAnnotation())
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInAnnotationTypes, sourceMethod, type);
 		if (type.isInterface())
@@ -1192,9 +1189,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.isMember())
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInMemberTypes, sourceMethod, type);
-		if (!type.isClass())
-			// TODO for now.
-			addErrorAndMark(status, PreconditionFailure.MethodsOnlyInClasses, sourceMethod, type);
 		if (type.getAnnotations().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInAnnotatedTypes, sourceMethod, type);
