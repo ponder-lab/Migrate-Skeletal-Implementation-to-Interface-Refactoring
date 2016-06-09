@@ -385,11 +385,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodWithReturnType() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodWithReturnType2() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodWithReturnType3() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
@@ -768,7 +768,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatCallsConstructor() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodThatCallsConstructor2() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
