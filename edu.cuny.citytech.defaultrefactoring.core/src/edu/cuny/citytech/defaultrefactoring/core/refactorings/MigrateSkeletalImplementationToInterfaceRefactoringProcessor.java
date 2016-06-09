@@ -2452,6 +2452,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		Assert.isNotNull(sourceMethod);
 		Assert.isLegal(sourceMethod.exists(), "Source method does not exist.");
 		Assert.isLegal(targetInterface.exists(), "Target interface does not exist.");
+		Assert.isLegal(targetInterface.isInterface(), "Target interface must be an interface.");
 
 		IMethod ret = null;
 
