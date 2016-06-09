@@ -1118,4 +1118,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatHasDifferentParameterNamesThanTarget() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[] { Signature.SIG_INT } });
 	}
+
+	public void testMethodWithTargetInLibrary() throws Exception {
+		helperFail(new String[] { "showStatus" },
+				new String[][] { new String[] { Signature.createTypeSignature("String", false) } });
+	}
 }
