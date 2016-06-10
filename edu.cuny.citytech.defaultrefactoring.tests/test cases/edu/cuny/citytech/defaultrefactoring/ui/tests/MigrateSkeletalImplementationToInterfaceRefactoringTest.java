@@ -874,7 +874,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 	public void testMethodThatAccessesType7() throws Exception {
 		// Generics don't match up here.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// FIXME: This should fail. Blocked on: PullUp pulls up a method
+		// referencing a type
+		// variable that is not present in the super class
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=495874.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatAccessesType8() throws Exception {
