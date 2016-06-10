@@ -4,8 +4,9 @@ interface I<T> {
 	void m();
 }
 
-abstract class A implements I {
+abstract class A<T> implements I<T> {
 	@Override
 	public void m() {
+		T t = null;
 	}
 }

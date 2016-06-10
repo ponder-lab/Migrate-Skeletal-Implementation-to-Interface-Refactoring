@@ -5,7 +5,7 @@ interface I {
 }
 
 abstract class A<E> implements I {
-	@Override
 	public void m() {
+		E e = null;
 	}
 }

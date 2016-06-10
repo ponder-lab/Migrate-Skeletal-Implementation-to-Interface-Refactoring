@@ -1,11 +1,10 @@
 package p;
 
 interface I {
-	void m();
+	default void m() {
+		E e = null;
+	}
 }
 
 abstract class A<E> implements I {
-	@Override
-	public void m() {
-	}
 }
