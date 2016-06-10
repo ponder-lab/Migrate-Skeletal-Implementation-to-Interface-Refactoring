@@ -19,6 +19,8 @@ import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -66,6 +68,11 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 			CSVPrinter errorPrinter = null;
 
 			try {
+				// build the workspace.
+				monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
+				ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD,
+						new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+
 				IJavaProject[] javaProjects = Util.getSelectedJavaProjectsFromEvent(event);
 
 				resultsPrinter = createCSVPrinter("results.csv",

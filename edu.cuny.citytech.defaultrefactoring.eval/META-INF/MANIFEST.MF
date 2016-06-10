@@ -20,4 +20,5 @@ Export-Package: edu.cuny.citytech.defaultrefactoring.eval.handlers,
  edu.cuny.citytech.defaultrefactoring.ui.plugins
 Import-Package: com.google.common.io,
  edu.cuny.citytech.defaultrefactoring.core.refactorings,
- edu.cuny.citytech.defaultrefactoring.core.utils
+ edu.cuny.citytech.defaultrefactoring.core.utils,
+ org.eclipse.core.resources
