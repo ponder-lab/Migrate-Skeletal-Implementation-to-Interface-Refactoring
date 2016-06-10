@@ -106,8 +106,8 @@ public final class TypeVariableUtil {
 			String fullyQualifiedParameterizedName = implementedInterface.getFullyQualifiedParameterizedName();
 			
 			// RK: strip off bounds if present. Otherwise, createTypeSignature() won't work.
-			fullyQualifiedParameterizedName = fullyQualifiedParameterizedName.replaceFirst(" extends [^>]*", "");
-			fullyQualifiedParameterizedName = fullyQualifiedParameterizedName.replaceFirst(" super [^>]*", "");
+			fullyQualifiedParameterizedName = fullyQualifiedParameterizedName.replaceAll(" extends [^>]*", "");
+			fullyQualifiedParameterizedName = fullyQualifiedParameterizedName.replaceAll(" super [^>]*", "");
 			
 			final String signature = Signature.createTypeSignature(
 					fullyQualifiedParameterizedName, implementedInterface.isResolved());
