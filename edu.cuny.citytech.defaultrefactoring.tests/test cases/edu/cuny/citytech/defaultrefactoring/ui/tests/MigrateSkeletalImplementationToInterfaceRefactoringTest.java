@@ -296,7 +296,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodContainedInTypeWithTypeParameters2() throws Exception {
-		// FIXME: Blocked on: PullUp pulls up a method referencing a type
+		// FIXME: This should fail. Blocked on: PullUp pulls up a method
+		// referencing a type
 		// variable that is not present in the super class
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=495874.
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
