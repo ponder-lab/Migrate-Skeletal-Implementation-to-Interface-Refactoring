@@ -292,7 +292,34 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodContainedInTypeWithTypeParameters() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithTypeParameters2() throws Exception {
+		// FIXME: Blocked on: PullUp pulls up a method referencing a type
+		// variable that is not present in the super class
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=495874.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithTypeParameters3() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithTypeParameters4() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithTypeParameters5() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodContainedInTypeWithTypeParameters6() throws Exception {
+		// Type parameter bound differences here. Should fail.
+		// FIXME: This should fail. Blocked on: 495877: Pull Up ignores type
+		// parameter bounds
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=495877.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithSuperTypes() throws Exception {
