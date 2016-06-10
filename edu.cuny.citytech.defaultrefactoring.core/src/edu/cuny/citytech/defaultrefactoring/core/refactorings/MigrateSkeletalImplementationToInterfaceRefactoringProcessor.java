@@ -1434,10 +1434,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final IMember[] pullables = new IMember[] { sourceMethod };
 			monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, pullables.length));
 
+			monitor.ifPresent(m -> m.beginTask("Retrieving target method.", IProgressMonitor.UNKNOWN));
+			IMethod targetMethod = getTargetMethod(sourceMethod,
+					monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+
 			final IType declaring = sourceMethod.getDeclaringType();
 			final ITypeParameter[] parameters = declaring.getTypeParameters();
 			if (parameters.length > 0) {
-				final TypeVariableMaplet[] mapping = TypeVariableUtil.subTypeToInheritedType(declaring);
+				final TypeVariableMaplet[] mapping = TypeVariableUtil.subTypeToInheritedType(declaring,
+						targetMethod.getDeclaringType());
 				IMember member = null;
 				int length = 0;
 				for (int index = 0; index < pullables.length; index++) {
@@ -1445,7 +1450,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					final String[] unmapped = TypeVariableUtil.getUnmappedVariables(mapping, declaring, member);
 					length = unmapped.length;
 
-					String superClassLabel = BasicElementLabels.getJavaElementName(declaring.getSuperclassName());
+					String superClassLabel = BasicElementLabels
+							.getJavaElementName(targetMethod.getDeclaringType().getElementName());
 					switch (length) {
 					case 0:
 						break;
