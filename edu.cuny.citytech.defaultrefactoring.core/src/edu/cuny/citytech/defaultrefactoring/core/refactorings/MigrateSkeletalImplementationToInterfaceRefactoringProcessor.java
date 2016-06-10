@@ -80,6 +80,7 @@ import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
@@ -92,6 +93,7 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
+import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
@@ -100,14 +102,18 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewr
 import org.eclipse.jdt.internal.corext.refactoring.structure.ImportRewriteUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ReferenceFinderUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
-import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableUtil;
+import org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor.TypeVariableMapper;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
+import org.eclipse.jdt.internal.corext.util.Strings;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.viewsupport.BasicElementLabels;
 import org.eclipse.jdt.ui.JavaElementLabels;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.GroupCategory;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
@@ -120,6 +126,8 @@ import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
 import org.osgi.framework.FrameworkUtil;
 
 import com.google.common.collect.HashBasedTable;
@@ -130,6 +138,7 @@ import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.messages.PreconditionFailure;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
+import edu.cuny.citytech.defaultrefactoring.core.utils.TypeVariableUtil;
 import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 
 /**
@@ -696,13 +705,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addUnmigratableMethod(sourceMethod, error);
 				}
 
-				// TODO: For now, no type parameters.
-				if (targetInterface.get().getTypeParameters().length != 0) {
-					RefactoringStatusEntry error = addError(status, sourceMethod,
-							PreconditionFailure.DestinationInterfaceDeclaresTypeParameters, targetInterface.get());
-					addUnmigratableMethod(sourceMethod, error);
-				}
-
 				// Can't be strictfp if all the methods to be migrated aren't
 				// also strictfp #42.
 				if (Flags.isStrictfp(targetInterface.get().getFlags())
@@ -1164,9 +1166,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.getInitializers().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithInitializers, sourceMethod, type);
-		if (type.getTypeParameters().length != 0)
-			// TODO for now.
-			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithTypeParameters, sourceMethod, type);
 		if (type.getTypes().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithType, sourceMethod, type);
@@ -2134,6 +2133,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						sourceCompilationUnit);
 				logInfo("Source method declaration: " + sourceMethodDeclaration);
 
+				CompilationUnitRewrite sourceRewrite = getCompilationUnitRewrite(sourceMethod.getCompilationUnit(),
+						sourceCompilationUnit);
+
 				// Find the target method.
 				IMethod targetMethod = getTargetMethod(sourceMethod,
 						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
@@ -2155,9 +2157,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
 							destinationCompilationUnit);
 
+					try {
+						Class.forName("org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet");
+					} catch (ClassNotFoundException e) {
+						throw new RuntimeException(e);
+					}
+					final TypeVariableMaplet[] mapping = TypeVariableUtil.subTypeToSuperType(
+							sourceMethod.getDeclaringType(), targetMethod.getDeclaringType(),
+							targetMethod.getDeclaringType());
+
 					// tack on the source method body to the target method.
-					copyMethodBody(sourceMethodDeclaration, targetMethodDeclaration,
-							destinationCompilationUnitRewrite.getASTRewrite());
+					pm.beginTask("Copying source method body ...", IProgressMonitor.UNKNOWN);
+					copyMethodBody(sourceRewrite, destinationCompilationUnitRewrite, sourceMethod,
+							sourceMethodDeclaration, targetMethodDeclaration, mapping,
+							new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN));
 
 					// add any static imports needed to the target method's
 					// compilation unit for static fields referenced in the
@@ -2200,8 +2213,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				}
 
 				// Remove the source method.
-				CompilationUnitRewrite sourceRewrite = getCompilationUnitRewrite(sourceMethod.getCompilationUnit(),
-						sourceCompilationUnit);
 				removeMethod(sourceMethodDeclaration, sourceRewrite.getASTRewrite());
 				sourceRewrite.getImportRemover().registerRemovedNode(sourceMethodDeclaration);
 			}
@@ -2340,13 +2351,31 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private void copyMethodBody(MethodDeclaration sourceMethodDeclaration, MethodDeclaration targetMethodDeclaration,
-			ASTRewrite destinationRewrite) {
-		Block sourceMethodBody = sourceMethodDeclaration.getBody();
-		Assert.isNotNull(sourceMethodBody, "Source method has a null body.");
-
-		ASTNode sourceMethodBodyCopy = ASTNode.copySubtree(destinationRewrite.getAST(), sourceMethodBody);
-		destinationRewrite.set(targetMethodDeclaration, MethodDeclaration.BODY_PROPERTY, sourceMethodBodyCopy, null);
+	private void copyMethodBody(final CompilationUnitRewrite sourceRewrite, final CompilationUnitRewrite targetRewrite,
+			final IMethod method, final MethodDeclaration oldMethod, final MethodDeclaration newMethod,
+			final TypeVariableMaplet[] mapping, final IProgressMonitor monitor) throws JavaModelException {
+		final Block body = oldMethod.getBody();
+		if (body == null) {
+			newMethod.setBody(null);
+			return;
+		}
+		try {
+			final IDocument document = new Document(method.getCompilationUnit().getBuffer().getContents());
+			final ASTRewrite rewrite = ASTRewrite.create(body.getAST());
+			final ITrackedNodePosition position = rewrite.track(body);
+			body.accept(new TypeVariableMapper(rewrite, mapping));
+			rewrite.rewriteAST(document, method.getJavaProject().getOptions(true)).apply(document, TextEdit.NONE);
+			String content = document.get(position.getStartPosition(), position.getLength());
+			final String[] lines = Strings.convertIntoLines(content);
+			Strings.trimIndentation(lines, method.getJavaProject(), false);
+			content = Strings.concatenate(lines, StubUtility.getLineDelimiterUsed(method));
+			ASTNode stringPlaceholder = targetRewrite.getASTRewrite().createStringPlaceholder(content, ASTNode.BLOCK);
+			targetRewrite.getASTRewrite().set(newMethod, MethodDeclaration.BODY_PROPERTY, stringPlaceholder, null);
+		} catch (MalformedTreeException exception) {
+			JavaPlugin.log(exception);
+		} catch (BadLocationException exception) {
+			JavaPlugin.log(exception);
+		}
 	}
 
 	private void removeMethod(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
