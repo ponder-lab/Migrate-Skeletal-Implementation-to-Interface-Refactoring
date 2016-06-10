@@ -642,6 +642,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// of the declaring type and destination interface hierarchies.
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testDeclaringTypeHierarchyWithInvalidClass7() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testDeclaringTypeHierarchyWithInvalidClass8() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testDeclaringTypeHierarchyWithInvalidInterface() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
