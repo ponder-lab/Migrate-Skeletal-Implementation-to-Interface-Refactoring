@@ -735,6 +735,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testDeclaringTypeWithSubtype8() throws Exception {
+		// Covariant return type test for #159. This should pass as the
+		// subclass overrides the migrated method from the declaring class.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testDeclaringTypeWithSupertype() throws Exception {
 		// this test has a field in the super type but the method to migrate
 		// does not access it.
@@ -758,7 +764,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// semantics.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testDeclaringTypeWithSupertype5() throws Exception {
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
