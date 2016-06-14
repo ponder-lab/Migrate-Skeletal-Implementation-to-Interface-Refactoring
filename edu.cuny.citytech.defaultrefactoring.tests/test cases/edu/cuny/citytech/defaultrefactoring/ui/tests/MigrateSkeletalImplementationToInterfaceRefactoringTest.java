@@ -758,6 +758,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// semantics.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testDeclaringTypeWithSupertype5() throws Exception {
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testDeclaringTypeWithInvalidSupertype() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
