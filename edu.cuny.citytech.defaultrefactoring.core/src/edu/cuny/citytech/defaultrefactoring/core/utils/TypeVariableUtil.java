@@ -22,8 +22,8 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
  *
  */
 @SuppressWarnings("restriction")
-public final class TypeVariableUtil {
-	private TypeVariableUtil() {
+public class TypeVariableUtil {
+	protected TypeVariableUtil() {
 	}
 
 	/**
@@ -104,13 +104,21 @@ public final class TypeVariableUtil {
 		final ITypeParameter[] domain = type.getTypeParameters();
 		if (domain.length > 0) {
 			String fullyQualifiedParameterizedName = implementedInterface.getFullyQualifiedParameterizedName();
-			
-			// RK: strip off bounds if present. Otherwise, createTypeSignature() won't work.
-			fullyQualifiedParameterizedName = fullyQualifiedParameterizedName.replaceAll(" extends [^>]*", "");
-			fullyQualifiedParameterizedName = fullyQualifiedParameterizedName.replaceAll(" super [^>]*", "");
-			
-			final String signature = Signature.createTypeSignature(
-					fullyQualifiedParameterizedName, implementedInterface.isResolved());
+
+			// RK: strip off bounds if present. Otherwise, createTypeSignature()
+			// won't work.
+			fullyQualifiedParameterizedName = stripBoundsFromFullyQualifiedParameterizedName(
+					fullyQualifiedParameterizedName);
+
+			String signature = null;
+			try {
+				signature = Signature.createTypeSignature(fullyQualifiedParameterizedName,
+						implementedInterface.isResolved());
+			} catch (IllegalArgumentException e) {
+				throw new IllegalArgumentException("Could not create type signature for: "
+						+ implementedInterface.getFullyQualifiedParameterizedName(), e);
+			}
+
 			if (signature != null) {
 				final String[] range = getVariableSignatures(signature);
 				if (range.length > 0)
@@ -118,6 +126,69 @@ public final class TypeVariableUtil {
 			}
 		}
 		return new TypeVariableMaplet[0];
+	}
+
+	protected static String stripBoundsFromFullyQualifiedParameterizedName(String fullyQualifiedParameterizedName) {
+		// look for extends.
+		int startingIndexOfUpperBoundClause = fullyQualifiedParameterizedName.indexOf("extends");
+
+		// look for super.
+		int startingIndexOfLowerBoundClause = fullyQualifiedParameterizedName.indexOf("super");
+
+		// find the starting index of the first bounds clause.
+		int startingIndexOfBoundClause;
+
+		if (startingIndexOfUpperBoundClause == -1 && startingIndexOfLowerBoundClause == -1)
+			return fullyQualifiedParameterizedName; // not found.
+		else if (startingIndexOfUpperBoundClause != -1 && startingIndexOfLowerBoundClause == -1)
+			startingIndexOfBoundClause = startingIndexOfUpperBoundClause; // extends
+																			// is
+																			// first.
+		else if (startingIndexOfUpperBoundClause == -1 && startingIndexOfLowerBoundClause != -1)
+			startingIndexOfBoundClause = startingIndexOfLowerBoundClause; // super
+																			// is
+																			// first.
+		else // pick the one that appears first.
+			startingIndexOfBoundClause = Math.min(startingIndexOfLowerBoundClause, startingIndexOfUpperBoundClause);
+
+		int endingIndexOfBoundClause = findEndingIndexOfBoundClause(fullyQualifiedParameterizedName,
+				startingIndexOfBoundClause);
+
+		if (endingIndexOfBoundClause == -1)
+			throw new IllegalArgumentException(fullyQualifiedParameterizedName + " is not well-formed.");
+
+		// delete the clause.
+		StringBuilder ret = new StringBuilder(fullyQualifiedParameterizedName).delete(startingIndexOfBoundClause,
+				endingIndexOfBoundClause);
+
+		// also remove any leading whitespace from where the clause was.
+		for (int i = startingIndexOfBoundClause - 1; i >= 0; i--) {
+			if (Character.isWhitespace(ret.charAt(i)))
+				ret.deleteCharAt(i);
+			else
+				break;
+		}
+
+		return stripBoundsFromFullyQualifiedParameterizedName(ret.toString());
+	}
+
+	protected static int findEndingIndexOfBoundClause(String fullyQualifiedParameterizedName,
+			int startingIndexOfBoundClause) {
+		int bracketCount = 1;
+		for (int i = startingIndexOfBoundClause; i < fullyQualifiedParameterizedName.length(); i++) {
+			char curr = fullyQualifiedParameterizedName.charAt(i);
+
+			if (curr == '<')
+				bracketCount++;
+			else if (curr == '>')
+				bracketCount--;
+			else if (curr == ',' && bracketCount == 1)
+				return i;
+
+			if (bracketCount == 0)
+				return i;
+		}
+		return -1; // not found.
 	}
 
 	/**

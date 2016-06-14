@@ -571,6 +571,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testDestinationInterfaceWithTypeParameters3() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testDestinationInterfaceWithTypeParameters4() throws Exception {
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testDestinationInterfaceWithMemberTypes() throws Exception {
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
