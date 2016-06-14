@@ -2163,11 +2163,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					MethodDeclaration targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
 							destinationCompilationUnit);
 
-					try {
-						Class.forName("org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet");
-					} catch (ClassNotFoundException e) {
-						throw new RuntimeException(e);
-					}
 					final TypeVariableMaplet[] mapping = TypeVariableUtil.subTypeToSuperType(
 							sourceMethod.getDeclaringType(), targetMethod.getDeclaringType(),
 							targetMethod.getDeclaringType());
