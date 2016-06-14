@@ -17,8 +17,10 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
 
 /**
  * TypeVariableUtils customized for use with default method refactoring.
+ * 
  * @see {@link org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableUtil}
- * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi Khatchadourian</a>
+ * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
+ *         Khatchadourian</a>
  *
  */
 @SuppressWarnings("restriction")
