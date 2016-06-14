@@ -712,6 +712,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// inherited from the types I and J #159.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
+	
+	public void testDeclaringTypeWithSubtype4() throws Exception {
+		// The type C must implement the inherited abstract method J.m() #159.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
 
 	public void testDeclaringTypeWithSupertype() throws Exception {
 		// this test has a field in the super type but the method to migrate
