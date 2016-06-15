@@ -741,6 +741,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testDeclaringTypeWithSubtype9() throws Exception {
+		// Another Duplicate default methods named m with the parameters () and
+		// () are
+		// inherited from the types I and J. In this case, we have the
+		// satisfying method definition in a subclass, which should still fail
+		// #159.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testDeclaringTypeWithSupertype() throws Exception {
 		// this test has a field in the super type but the method to migrate
 		// does not access it.
