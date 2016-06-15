@@ -750,6 +750,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testDeclaringTypeWithSubtype10() throws Exception {
+		// Like above but the satisfying method definition is in the top-level
+		// class. Should pass #159.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testDeclaringTypeWithSupertype() throws Exception {
 		// this test has a field in the super type but the method to migrate
 		// does not access it.
