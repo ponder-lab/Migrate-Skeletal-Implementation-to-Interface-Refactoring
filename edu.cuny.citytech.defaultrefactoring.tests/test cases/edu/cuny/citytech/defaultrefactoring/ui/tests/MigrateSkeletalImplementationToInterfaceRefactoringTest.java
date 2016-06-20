@@ -756,6 +756,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
+	public void testDeclaringTypeWithSubtype11() throws Exception {
+		// Class down the hierarchy implements two interfaces. Should fail #159.
+		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+	}
+
 	public void testDeclaringTypeWithSupertype() throws Exception {
 		// this test has a field in the super type but the method to migrate
 		// does not access it.
