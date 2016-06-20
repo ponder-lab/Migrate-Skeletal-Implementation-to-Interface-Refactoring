@@ -106,6 +106,7 @@ public class Messages extends NLS {
 	public static String MethodContainsCallToProtectedObjectMethod;
 	public static String MethodContainsSuperReference;
 	public static String MethodContainsTypeIncompatibleThisReference;
+	public static String SourceMethodProvidesImplementationsForMultipleMethods;
 
 	static {
 		// initialize resource bundle

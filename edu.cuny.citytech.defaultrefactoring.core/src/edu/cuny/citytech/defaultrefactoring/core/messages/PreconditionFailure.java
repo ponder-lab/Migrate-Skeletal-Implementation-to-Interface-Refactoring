@@ -96,7 +96,8 @@ public enum PreconditionFailure {
 	TargetMethodHasMultipleSourceMethods(Messages.TargetMethodHasMultipleSourceMethods),
 	MethodContainsCallToProtectedObjectMethod(Messages.MethodContainsCallToProtectedObjectMethod), 
 	MethodContainsSuperReference(Messages.MethodContainsSuperReference),
-	MethodContainsTypeIncompatibleThisReference(Messages.MethodContainsTypeIncompatibleThisReference);
+	MethodContainsTypeIncompatibleThisReference(Messages.MethodContainsTypeIncompatibleThisReference),
+	SourceMethodProvidesImplementationsForMultipleMethods(Messages.SourceMethodProvidesImplementationsForMultipleMethods);
 
 	private String message;
 

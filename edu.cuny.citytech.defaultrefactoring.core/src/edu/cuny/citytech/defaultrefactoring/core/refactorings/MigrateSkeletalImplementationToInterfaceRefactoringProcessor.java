@@ -1110,7 +1110,71 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (numberOfImplementedMethods > 1)
 			addErrorAndMark(status, PreconditionFailure.SourceMethodImplementsMultipleMethods, sourceMethod);
 
+		// for each subclass of the declaring type.
+		for (IType subclass : hierarchy.getSubclasses(sourceMethod.getDeclaringType())) {
+			status.merge(checkClassForMissingSourceMethodImplementation(sourceMethod, subclass, hierarchy));
+		}
+
 		return status;
+	}
+
+	/**
+	 * Checks the given class and its subclasses for any required
+	 * implementations of the source method. The required implementations are
+	 * deemed by the interfaces the given class implements.
+	 * 
+	 * @param sourceMethod
+	 *            The source method being migrated to an interface.
+	 * @param clazz
+	 *            The class to check for any missing needed implementations of
+	 *            the source method.
+	 * @param declaringTypeHierarchy
+	 *            Hierarchy of the source method's declaring type.
+	 * @return {@link RefactoringStatus} indicating the result of the
+	 *         precondition check.
+	 * @throws JavaModelException
+	 *             When asserting that the given {@link IType} is indeed a
+	 *             class.
+	 */
+	private RefactoringStatus checkClassForMissingSourceMethodImplementation(IMethod sourceMethod, IType clazz,
+			ITypeHierarchy declaringTypeHierarchy) throws JavaModelException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		Assert.isTrue(clazz.isClass());
+
+		// does the class have an implementation or declaration of the source
+		// method?
+		IMethod[] classMethodMatchingSourceMethod = clazz.findMethods(sourceMethod);
+		if (classMethodMatchingSourceMethod != null && classMethodMatchingSourceMethod.length > 0)
+			// in this case, the class has an implementation. No need to check
+			// any interfaces or subclasses.
+			// because any interfaces would be satisfied and any unsatisfied
+			// interfaces will inherit the method from this class.
+			return status;
+		// otherwise, no matching methods were found in the given class.
+		else {
+			// retrieve all super interfaces from the class.
+			IType[] superInterfaces = declaringTypeHierarchy.getSuperInterfaces(clazz);
+
+			// for each super interface of the given class.
+			for (IType superInterface : superInterfaces) {
+				IMethod[] interfaceMethodMatchingSourceMethod = superInterface.findMethods(sourceMethod);
+				if (interfaceMethodMatchingSourceMethod != null && interfaceMethodMatchingSourceMethod.length > 0)
+					// there are multiple method definitions stemming from
+					// interfaces.
+					// this class doesn't have an implementation of the source
+					// method nor does it inherit it.
+					addErrorAndMark(status, PreconditionFailure.SourceMethodProvidesImplementationsForMultipleMethods,
+							sourceMethod, superInterface);
+			}
+
+			// check subclasses of the given class.
+			for (IType subclass : declaringTypeHierarchy.getSubclasses(clazz))
+				status.merge(
+						checkClassForMissingSourceMethodImplementation(sourceMethod, subclass, declaringTypeHierarchy));
+
+			return status;
+		}
 	}
 
 	private Optional<IType> getDestinationInterface(IMethod sourceMethod) throws JavaModelException {
