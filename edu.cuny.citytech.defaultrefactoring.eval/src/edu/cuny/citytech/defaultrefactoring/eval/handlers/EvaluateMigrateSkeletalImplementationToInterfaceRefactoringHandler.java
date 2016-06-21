@@ -53,6 +53,7 @@ import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
 public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler extends AbstractHandler {
 
 	private static final boolean ALLOW_CONCRETE_CLASSES = true;
+	private static final boolean BUILD_WORKSPACE = false;
 
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -68,10 +69,12 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 			CSVPrinter errorPrinter = null;
 
 			try {
-				// build the workspace.
-				monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
-				ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD,
-						new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+				if (BUILD_WORKSPACE) {
+					// build the workspace.
+					monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
+					ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD,
+							new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+				}
 
 				IJavaProject[] javaProjects = Util.getSelectedJavaProjectsFromEvent(event);
 
