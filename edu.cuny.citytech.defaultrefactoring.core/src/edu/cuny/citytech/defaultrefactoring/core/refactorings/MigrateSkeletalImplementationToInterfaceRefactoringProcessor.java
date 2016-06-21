@@ -1157,8 +1157,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			return status;
 		// otherwise, no matching methods were found in the given class.
 		else {
-			// retrieve all super interfaces from the class.
-			IType[] superInterfaces = declaringTypeHierarchy.getSuperInterfaces(clazz);
+			// retrieve super interfaces of the class.
+			IType[] superInterfaces = getSuperInterfaces(clazz, declaringTypeHierarchy,
+					monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+
 			try {
 				monitor.ifPresent(m -> m.beginTask("Checking class for missing source method implementation ...",
 						superInterfaces.length));
@@ -1198,6 +1200,51 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				monitor.ifPresent(IProgressMonitor::done);
 			}
 		}
+	}
+
+	/**
+	 * Workaround
+	 * org.eclipse.jdt.core.ITypeHierarchy.getAllSuperInterfaces(IType) does not
+	 * seem to consider interface hierarchy
+	 * {@linkplain https://bugs.eclipse.org/bugs/show_bug.cgi?id=496503}.
+	 * 
+	 * Returns the direct resolved interfaces that the given type implements or
+	 * extends, in no particular order, limited to the interfaces in this type
+	 * hierarchy's graph. For classes, this gives the interfaces that the class
+	 * implements, as well as the interfaces that those interfaces extend. For
+	 * interfaces, this gives the interfaces that the interface extends.
+	 *
+	 * @param type
+	 *            the given type
+	 * @param typeHierarchy
+	 *            The type hierarchy to search.
+	 * @param monitor
+	 *            An optional progress monitor.
+	 * @return the direct resolved interfaces that the given type implements
+	 *         and/or extends limited to the interfaces in this type hierarchy's
+	 *         graph.
+	 * @throws JavaModelException
+	 *             On a java model error.
+	 * @see org.eclipse.jdt.core.ITypeHierarchy#getSuperInterfaces(IType)
+	 */
+	private static IType[] getSuperInterfaces(IType type, ITypeHierarchy typeHierarchy,
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
+		Set<IType> ret = new LinkedHashSet<>();
+
+		IType[] superInterfaces = typeHierarchy.getSuperInterfaces(type);
+		ret.addAll(Arrays.asList(superInterfaces));
+
+		monitor.ifPresent(m -> m.beginTask("Retreiving super interfaces ...", superInterfaces.length));
+		try {
+			for (IType superInterface : superInterfaces) {
+				ret.addAll(Arrays
+						.asList(getSuperInterfaces(superInterface, monitor.map(m -> new SubProgressMonitor(m, 1)))));
+			}
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+
+		return ret.toArray(new IType[ret.size()]);
 	}
 
 	private Optional<IType> getDestinationInterface(IMethod sourceMethod) throws JavaModelException {
