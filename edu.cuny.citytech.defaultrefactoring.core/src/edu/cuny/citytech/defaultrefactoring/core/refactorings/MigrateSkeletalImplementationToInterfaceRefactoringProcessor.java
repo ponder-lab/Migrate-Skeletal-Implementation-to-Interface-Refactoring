@@ -1140,7 +1140,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			ITypeHierarchy declaringTypeHierarchy) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
-		Assert.isTrue(clazz.isClass());
+		if (!clazz.isClass())
+			throw new IllegalArgumentException("Expecting class: " + clazz);
 
 		// does the class have an implementation or declaration of the source
 		// method?
