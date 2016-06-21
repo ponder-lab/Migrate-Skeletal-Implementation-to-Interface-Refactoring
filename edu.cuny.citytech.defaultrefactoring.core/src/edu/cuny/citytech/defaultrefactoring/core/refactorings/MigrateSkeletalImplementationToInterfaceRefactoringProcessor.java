@@ -1099,22 +1099,28 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
-		ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
-		IType[] declaringTypeSuperInterfaces = hierarchy.getAllSuperInterfaces(sourceMethod.getDeclaringType());
+		monitor.ifPresent(m -> m.beginTask("Checking valid interfaces in declaring type hierarchy ...",
+				IProgressMonitor.UNKNOWN));
+		try {
+			ITypeHierarchy hierarchy = this.getDeclaringTypeHierarchy(sourceMethod, monitor);
+			IType[] declaringTypeSuperInterfaces = hierarchy.getAllSuperInterfaces(sourceMethod.getDeclaringType());
 
-		// the number of methods sourceMethod is implementing.
-		long numberOfImplementedMethods = Arrays.stream(declaringTypeSuperInterfaces).parallel().distinct()
-				.flatMap(i -> Arrays.stream(Optional.ofNullable(i.findMethods(sourceMethod)).orElse(new IMethod[] {})))
-				.count();
+			// the number of methods sourceMethod is implementing.
+			long numberOfImplementedMethods = Arrays.stream(declaringTypeSuperInterfaces).parallel().distinct().flatMap(
+					i -> Arrays.stream(Optional.ofNullable(i.findMethods(sourceMethod)).orElse(new IMethod[] {})))
+					.count();
 
-		if (numberOfImplementedMethods > 1)
-			addErrorAndMark(status, PreconditionFailure.SourceMethodImplementsMultipleMethods, sourceMethod);
+			if (numberOfImplementedMethods > 1)
+				addErrorAndMark(status, PreconditionFailure.SourceMethodImplementsMultipleMethods, sourceMethod);
 
-		// for each subclass of the declaring type.
-		for (IType subclass : hierarchy.getSubclasses(sourceMethod.getDeclaringType())) {
-			status.merge(checkClassForMissingSourceMethodImplementation(sourceMethod, subclass, hierarchy));
+			// for each subclass of the declaring type.
+			for (IType subclass : hierarchy.getSubclasses(sourceMethod.getDeclaringType())) {
+				status.merge(checkClassForMissingSourceMethodImplementation(sourceMethod, subclass, hierarchy,
+						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))));
+			}
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
 		}
-
 		return status;
 	}
 
@@ -1137,7 +1143,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *             class.
 	 */
 	private RefactoringStatus checkClassForMissingSourceMethodImplementation(IMethod sourceMethod, IType clazz,
-			ITypeHierarchy declaringTypeHierarchy) throws JavaModelException {
+			ITypeHierarchy declaringTypeHierarchy, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		// does the class have an implementation or declaration of the source
@@ -1153,25 +1159,33 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		else {
 			// retrieve all super interfaces from the class.
 			IType[] superInterfaces = declaringTypeHierarchy.getSuperInterfaces(clazz);
+			try {
+				monitor.ifPresent(m -> m.beginTask("Checking class for missing source method implementation ...",
+						superInterfaces.length));
 
-			// for each super interface of the given class.
-			for (IType superInterface : superInterfaces) {
-				IMethod[] interfaceMethodMatchingSourceMethod = superInterface.findMethods(sourceMethod);
+				// for each super interface of the given class.
+				for (IType superInterface : superInterfaces) {
+						IMethod[] interfaceMethodMatchingSourceMethod = superInterface.findMethods(sourceMethod);
 				if (interfaceMethodMatchingSourceMethod != null && interfaceMethodMatchingSourceMethod.length > 0)
 					// there are multiple method definitions stemming from
-					// interfaces.
+							// interfaces.
 					// this class doesn't have an implementation of the source
-					// method nor does it inherit it.
+							// method nor does it inherit it.
 					addErrorAndMark(status, PreconditionFailure.SourceMethodProvidesImplementationsForMultipleMethods,
-							sourceMethod, superInterface);
-			}
+									sourceMethod, superInterface);
+					}
+					monitor.ifPresent(m -> m.worked(1));
+				}
 
-			// check subclasses of the given class.
-			for (IType subclass : declaringTypeHierarchy.getSubclasses(clazz))
+				// check subclasses of the given class.
+				for (IType subclass : declaringTypeHierarchy.getSubclasses(clazz))
 				status.merge(
 						checkClassForMissingSourceMethodImplementation(sourceMethod, subclass, declaringTypeHierarchy));
 
-			return status;
+				return status;
+			} finally {
+				monitor.ifPresent(IProgressMonitor::done);
+			}
 		}
 	}
 
