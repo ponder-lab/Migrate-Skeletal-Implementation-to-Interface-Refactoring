@@ -804,9 +804,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					// sub-type of the member's declaring type. Otherwise,
 					// the answer is no.
 					return hierarchy.contains(declaringType);
+				else
+					return false; // not accessible.
 			} else
 				throw new IllegalStateException("Member: " + member + " has no known visibility.");
-			return true;
 		}
 		return false;
 	}
