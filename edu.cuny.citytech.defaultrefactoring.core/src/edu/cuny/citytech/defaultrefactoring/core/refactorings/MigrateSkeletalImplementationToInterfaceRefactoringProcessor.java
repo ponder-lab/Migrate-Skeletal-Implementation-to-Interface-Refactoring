@@ -1163,15 +1163,25 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				monitor.ifPresent(m -> m.beginTask("Checking class for missing source method implementation ...",
 						superInterfaces.length));
 
+				// retrieve the destination interface.
+				IType destinationInterface = getTargetMethod(sourceMethod,
+						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))).getDeclaringType();
+
 				// for each super interface of the given class.
 				for (IType superInterface : superInterfaces) {
+					// if it is not equal to the destination interface.
+					if (!superInterface.equals(destinationInterface)) {
 						IMethod[] interfaceMethodMatchingSourceMethod = superInterface.findMethods(sourceMethod);
-				if (interfaceMethodMatchingSourceMethod != null && interfaceMethodMatchingSourceMethod.length > 0)
-					// there are multiple method definitions stemming from
+						if (interfaceMethodMatchingSourceMethod != null
+								&& interfaceMethodMatchingSourceMethod.length > 0)
+							// there are multiple method definitions stemming
+							// from
 							// interfaces.
-					// this class doesn't have an implementation of the source
+							// this class doesn't have an implementation of the
+							// source
 							// method nor does it inherit it.
-					addErrorAndMark(status, PreconditionFailure.SourceMethodProvidesImplementationsForMultipleMethods,
+							addErrorAndMark(status,
+									PreconditionFailure.SourceMethodProvidesImplementationsForMultipleMethods,
 									sourceMethod, superInterface);
 					}
 					monitor.ifPresent(m -> m.worked(1));
@@ -1179,8 +1189,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				// check subclasses of the given class.
 				for (IType subclass : declaringTypeHierarchy.getSubclasses(clazz))
-				status.merge(
-						checkClassForMissingSourceMethodImplementation(sourceMethod, subclass, declaringTypeHierarchy));
+					status.merge(checkClassForMissingSourceMethodImplementation(sourceMethod, subclass,
+							declaringTypeHierarchy,
+							monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))));
 
 				return status;
 			} finally {
