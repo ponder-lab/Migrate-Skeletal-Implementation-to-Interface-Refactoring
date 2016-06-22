@@ -4,7 +4,10 @@ TABLE=$2
 USER=
 PASSWORD=
 HOST="127.0.0.1"
-mysql --local-infile -D $DATABASE -u $USER -p$PASSWORD -h $HOST --execute="LOAD DATA LOCAL INFILE '$TABLE.csv' \
+USER="rkhatchadourian"
+PASSWORD="Its7eK7dap8D"
+mysql --local-infile -D $DATABASE -u $USER -p$PASSWORD -h $HOST --execute="TRUNCATE $TABLE;\
+    LOAD DATA LOCAL INFILE '$TABLE.csv' \
     INTO TABLE $TABLE \
     FIELDS TERMINATED BY ','\
     ENCLOSED BY '\"'\
