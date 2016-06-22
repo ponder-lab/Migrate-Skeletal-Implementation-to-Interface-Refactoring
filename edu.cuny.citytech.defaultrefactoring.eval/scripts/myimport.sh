@@ -6,6 +6,7 @@ PASSWORD=
 HOST="127.0.0.1"
 USER="rkhatchadourian"
 PASSWORD="Its7eK7dap8D"
+dos2unix $TABLE.csv
 mysql --local-infile -D $DATABASE -u $USER -p$PASSWORD -h $HOST --execute="\
     TRUNCATE $TABLE; \
     LOAD DATA LOCAL INFILE '$TABLE.csv' \
@@ -15,5 +16,4 @@ mysql --local-infile -D $DATABASE -u $USER -p$PASSWORD -h $HOST --execute="\
     LINES TERMINATED BY '\n'\
     IGNORE 1 LINES;\
     SHOW WARNINGS" > $TABLE.output
-dos2unix $TABLE.csv
 cat $TABLE.output
