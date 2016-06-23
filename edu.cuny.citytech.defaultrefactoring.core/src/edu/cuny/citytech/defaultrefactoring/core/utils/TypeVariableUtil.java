@@ -73,12 +73,11 @@ public class TypeVariableUtil {
 	private static TypeVariableMaplet[] signaturesToParameters(final String[] domain, final ITypeParameter[] range) {
 		Assert.isNotNull(domain);
 		Assert.isNotNull(range);
-		Assert.isTrue(domain.length == 0 || domain.length == range.length);
 
 		final List<TypeVariableMaplet> list = new ArrayList<TypeVariableMaplet>();
 		String source = null;
 		String target = null;
-		for (int index = 0; index < domain.length; index++) {
+		for (int index = 0; index < Math.min(domain.length, range.length); index++) {
 			source = Signature.toString(domain[index]);
 			target = range[index].getElementName();
 			list.add(new TypeVariableMaplet(source, index, target, index));
