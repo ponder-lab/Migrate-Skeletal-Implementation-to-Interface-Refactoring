@@ -1877,7 +1877,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							.stream(typeBinding.getInterfaces()).anyMatch(itb -> itb.isEqualTo(otherTypeBinding)));
 	}
 
-	@SuppressWarnings("unused")
 	private ITypeBinding resolveReturnTypeBinding(IMethod method, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		MethodDeclaration methodDeclarationNode = ASTNodeSearchUtil.getMethodDeclarationNode(method,
