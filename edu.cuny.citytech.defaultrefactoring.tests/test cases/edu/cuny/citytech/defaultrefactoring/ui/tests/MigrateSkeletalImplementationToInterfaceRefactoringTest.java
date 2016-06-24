@@ -284,7 +284,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodContainedInTypeWithInitializer() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithMoreThanOneMethod() throws Exception {
