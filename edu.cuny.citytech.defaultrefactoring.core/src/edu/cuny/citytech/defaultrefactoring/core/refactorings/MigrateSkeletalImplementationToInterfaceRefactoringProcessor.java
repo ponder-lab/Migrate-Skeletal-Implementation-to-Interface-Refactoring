@@ -1298,9 +1298,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// the particular pattern we are targeting.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesThatDontImplementInterfaces, sourceMethod,
 					type);
-		if (Flags.isStatic(type.getFlags()))
-			// TODO no static types for now.
-			addErrorAndMark(status, PreconditionFailure.NoMethodsInStaticTypes, sourceMethod, type);
 
 		status.merge(checkDeclaringTypeHierarchy(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1))));
 
