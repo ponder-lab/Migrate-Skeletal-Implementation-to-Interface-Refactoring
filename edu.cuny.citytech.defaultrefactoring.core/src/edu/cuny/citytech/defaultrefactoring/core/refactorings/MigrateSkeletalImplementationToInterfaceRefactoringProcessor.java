@@ -373,21 +373,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			}
 		}
 
-		private boolean isAssignmentCompatible(ITypeBinding typeBinding, ITypeBinding otherTypeBinding) {
-			// Workaround
-			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=493965.
-			if (typeBinding == null && otherTypeBinding == null)
-				return true;
-			else if (typeBinding == null || otherTypeBinding == null)
-				return false;
-			else
-				return typeBinding.isAssignmentCompatible(otherTypeBinding)
-						|| typeBinding.isInterface() && otherTypeBinding.isInterface()
-								&& (typeBinding.isEqualTo(otherTypeBinding)
-										|| Arrays.stream(typeBinding.getInterfaces())
-												.anyMatch(itb -> itb.isEqualTo(otherTypeBinding)));
-		}
-
 		private void processAssignment(ASTNode node, ThisExpression thisExpression,
 				ITypeBinding destinationInterfaceTypeBinding, Expression leftHandSide, Expression rightHandSide) {
 			// if `this` appears on the LHS.
@@ -1833,6 +1818,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod, targetMethod);
 
 		return status;
+	}
+
+	private static boolean isAssignmentCompatible(ITypeBinding typeBinding, ITypeBinding otherTypeBinding) {
+		// Workaround
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=493965.
+		if (typeBinding == null && otherTypeBinding == null)
+			return true;
+		else if (typeBinding == null || otherTypeBinding == null)
+			return false;
+		else
+			return typeBinding.isAssignmentCompatible(otherTypeBinding) || typeBinding.isInterface()
+					&& otherTypeBinding.isInterface() && (typeBinding.isEqualTo(otherTypeBinding) || Arrays
+							.stream(typeBinding.getInterfaces()).anyMatch(itb -> itb.isEqualTo(otherTypeBinding)));
 	}
 
 	@SuppressWarnings("unused")
