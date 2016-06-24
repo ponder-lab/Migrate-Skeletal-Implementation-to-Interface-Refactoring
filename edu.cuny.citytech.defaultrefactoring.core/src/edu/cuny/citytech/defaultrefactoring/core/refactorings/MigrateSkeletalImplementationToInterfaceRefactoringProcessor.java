@@ -1283,9 +1283,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.isMember())
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInMemberTypes, sourceMethod, type);
-		if (type.getInitializers().length != 0)
-			// TODO for now.
-			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithInitializers, sourceMethod, type);
 		if (type.getTypes().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithType, sourceMethod, type);
