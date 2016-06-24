@@ -1854,6 +1854,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							}
 						
 						monitor.ifPresent(m -> m.worked(1));
+
+						/*
+						 * RK: Not sure if we need this. TypeVariableMaplet[]
+						 * mapping = TypeVariableUtil.
+						 * sourceTypeArgumentsToTargetTypeArguments(
+						 * sourceMethodReturnTypeBinding,
+						 * targetMethodReturnTypeBinding);
+						 * 
+						 * final String[] unmapped =
+						 * TypeVariableUtil.getUnmappedVariables(mapping,
+						 * sourceMethod.getDeclaringType(), sourceMethod);
+						 */
 					}
 				}
 			}

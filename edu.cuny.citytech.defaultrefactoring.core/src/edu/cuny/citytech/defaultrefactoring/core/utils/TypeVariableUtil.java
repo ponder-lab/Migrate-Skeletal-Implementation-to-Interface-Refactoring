@@ -3,16 +3,19 @@ package edu.cuny.citytech.defaultrefactoring.core.utils;
 import static org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableUtil.composeMappings;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.eclipse.core.runtime.Assert;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
 
 /**
@@ -87,6 +90,36 @@ public class TypeVariableUtil {
 		return result;
 	}
 
+	public static TypeVariableMaplet[] sourceTypeArgumentsToTargetTypeArguments(ITypeBinding sourceTypeBinding,
+			ITypeBinding targetTypeBinding) {
+		ITypeBinding[] domain = sourceTypeBinding.getTypeArguments();
+		if (domain.length > 0) {
+			String qualifiedName = targetTypeBinding.getQualifiedName();
+
+			// RK: strip off bounds if present. Otherwise, createTypeSignature()
+			// won't work.
+			qualifiedName = stripBoundsFromFullyQualifiedParameterizedName(qualifiedName);
+
+			String signature = null;
+			try {
+				signature = Signature.createTypeSignature(qualifiedName,
+						((IType) targetTypeBinding.getJavaElement()).isResolved());
+			} catch (IllegalArgumentException e) {
+				throw new IllegalArgumentException(
+						"Could not create type signature for: " + targetTypeBinding.getQualifiedName(), e);
+			}
+
+			if (signature != null) {
+				String[] range = getVariableSignatures(signature);
+				if (range.length > 0)
+					return parametersToSignatures(
+							Arrays.stream(domain).map(ITypeBinding::getName).toArray(String[]::new), range, true);
+			}
+		}
+
+		return new TypeVariableMaplet[0];
+	}
+
 	/**
 	 * Returns a type variable mapping from a subclass to a superclass.
 	 *
@@ -123,7 +156,9 @@ public class TypeVariableUtil {
 			if (signature != null) {
 				final String[] range = getVariableSignatures(signature);
 				if (range.length > 0)
-					return parametersToSignatures(domain, range, true);
+					return parametersToSignatures(
+							Arrays.stream(domain).map(IJavaElement::getElementName).toArray(String[]::new), range,
+							true);
 			}
 		}
 		return new TypeVariableMaplet[0];
@@ -226,13 +261,13 @@ public class TypeVariableUtil {
 	 *            <code>false</code> if the names should be compared
 	 * @return a possibly empty type variable mapping
 	 */
-	private static TypeVariableMaplet[] parametersToSignatures(final ITypeParameter[] domain, final String[] range,
+	private static TypeVariableMaplet[] parametersToSignatures(final String[] domain, final String[] range,
 			final boolean indexes) {
 		Assert.isNotNull(domain);
 		Assert.isNotNull(range);
 
 		final Set<TypeVariableMaplet> set = new HashSet<TypeVariableMaplet>();
-		ITypeParameter source = null;
+		String source = null;
 		String target = null;
 		String element = null;
 		String signature = null;
@@ -240,7 +275,7 @@ public class TypeVariableUtil {
 			source = domain[index];
 			for (int offset = 0; offset < range.length; offset++) {
 				target = range[offset];
-				element = source.getElementName();
+				element = source;
 				signature = Signature.toString(target);
 				if (indexes) {
 					if (offset == index)
