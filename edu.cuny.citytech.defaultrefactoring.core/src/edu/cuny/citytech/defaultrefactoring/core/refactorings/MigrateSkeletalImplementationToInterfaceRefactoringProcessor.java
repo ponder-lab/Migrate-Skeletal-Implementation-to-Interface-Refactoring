@@ -1289,15 +1289,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.getTypes().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithType, sourceMethod, type);
-		if (type.getSuperInterfaceNames().length == 0)
-			// TODO enclosing type must implement an interface, at least for
-			// now,
-			// which one of which will become the target interface.
-			// it is probably possible to still perform the refactoring
-			// without this condition but I believe that this is
-			// the particular pattern we are targeting.
-			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesThatDontImplementInterfaces, sourceMethod,
-					type);
+
+		// TODO enclosing type must implement an interface, at least for
+		// now,
+		// which one of which will become the target interface.
+		// it is probably possible to still perform the refactoring
+		// without this condition but I believe that this is
+		// the particular pattern we are targeting.
 
 		status.merge(checkDeclaringTypeHierarchy(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1))));
 

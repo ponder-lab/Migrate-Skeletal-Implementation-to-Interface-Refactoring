@@ -336,7 +336,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodDeclaredInTypeThatImplementsInterfaceWithSuperInterfaces2() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatThrowsAnException() throws Exception {
@@ -630,7 +630,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidClass5() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDestinationInterfaceHierarchyWithInvalidInterface() throws Exception {
@@ -690,8 +690,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass3() throws Exception {
-		// TODO: #128
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testDeclaringTypeHierarchyWithInvalidClass4() throws Exception {
