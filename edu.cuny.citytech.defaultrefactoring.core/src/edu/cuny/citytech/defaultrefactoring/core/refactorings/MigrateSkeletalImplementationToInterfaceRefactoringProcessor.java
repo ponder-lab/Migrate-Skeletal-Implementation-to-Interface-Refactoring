@@ -1531,7 +1531,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						pm.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))) == null)
 					addErrorAndMark(status, PreconditionFailure.SourceMethodHasNoTargetMethod, sourceMethod);
 				else {
-					status.merge(checkParameters(sourceMethod));
+					status.merge(checkParameters(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkReturnType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
@@ -1766,32 +1766,94 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	/**
 	 * Check that the annotations in the parameters are consistent between the
-	 * source and target.
+	 * source and target, as well as type arguments.
 	 * 
 	 * FIXME: What if the annotation type is not available in the target?
 	 * 
 	 * @param sourceMethod
 	 *            The method to check.
+	 * @param monitor
+	 *            An optional {@link IProgressMonitor}.
 	 * @return {@link RefactoringStatus} indicating the result of the check.
 	 * @throws JavaModelException
 	 */
-	private RefactoringStatus checkParameters(IMethod sourceMethod) throws JavaModelException {
+	private RefactoringStatus checkParameters(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
-		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
+		ILocalVariable[] sourceMethodParameters = sourceMethod.getParameters();
 
-		// for each parameter.
-		for (int i = 0; i < sourceMethod.getParameters().length; i++) {
-			ILocalVariable sourceParameter = sourceMethod.getParameters()[i];
+		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking,
+				sourceMethodParameters.length * 2 + 1));
+		try {
+			IMethod targetMethod = getTargetMethod(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)));
 
-			// get the corresponding target parameter.
-			ILocalVariable targetParameter = targetMethod.getParameters()[i];
+			// for each parameter.
+			for (int i = 0; i < sourceMethodParameters.length; i++) {
+				ILocalVariable sourceParameter = sourceMethodParameters[i];
 
-			if (!checkAnnotations(sourceParameter, targetParameter).isOK())
-				addErrorAndMark(status, PreconditionFailure.MethodContainsInconsistentParameterAnnotations,
-						sourceMethod, targetMethod);
+				// get the corresponding target parameter.
+				ILocalVariable targetParameter = targetMethod.getParameters()[i];
+
+				if (!checkAnnotations(sourceParameter, targetParameter).isOK())
+					addErrorAndMark(status, PreconditionFailure.MethodContainsInconsistentParameterAnnotations,
+							sourceMethod, targetMethod);
+
+				monitor.ifPresent(m -> m.worked(1));
+			}
+
+			// check generics.
+			IMethodBinding sourceMethodBinding = resolveMethodBinding(sourceMethod, monitor);
+			IMethodBinding targetMethodBinding = resolveMethodBinding(targetMethod, monitor);
+
+			if (targetMethodBinding != null) {
+				ITypeBinding[] sourceMethodParameterTypes = sourceMethodBinding.getParameterTypes();
+				ITypeBinding[] targetMethodParameterTypes = targetMethodBinding.getParameterTypes();
+
+				for (int i = 0; i < sourceMethodParameterTypes.length; i++) {
+					monitor.ifPresent(m -> m.worked(1));
+
+					ITypeBinding[] sourceMethodParameterTypeParameters = sourceMethodParameterTypes[i]
+							.getTypeArguments();
+					ITypeBinding[] targetMethodParamaterTypeParameters = targetMethodParameterTypes[i]
+							.getTypeArguments();
+
+					boolean hasAssignmentIncompatibleTypeParameter = false;
+
+					if (sourceMethodParameterTypeParameters.length != targetMethodParamaterTypeParameters.length) {
+						addErrorAndMark(status, PreconditionFailure.MethodContainsIncompatibleParameterTypeParameters,
+								sourceMethod, targetMethod);
+						break; // no more parameter types.
+					} else
+						for (int j = 0; j < sourceMethodParameterTypeParameters.length; j++)
+							if (!isAssignmentCompatible(sourceMethodParameterTypeParameters[j],
+									targetMethodParamaterTypeParameters[j])) {
+								addErrorAndMark(status,
+										PreconditionFailure.MethodContainsIncompatibleParameterTypeParameters,
+										sourceMethod, targetMethod);
+								hasAssignmentIncompatibleTypeParameter = true;
+								break; // no more type parameters.
+							}
+
+					if (hasAssignmentIncompatibleTypeParameter)
+						break; // no more parameter types.
+				}
+			}
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
 		}
-
 		return status;
+	}
+
+	private IMethodBinding resolveMethodBinding(IMethod method, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		MethodDeclaration methodDeclarationNode = ASTNodeSearchUtil.getMethodDeclarationNode(method,
+				getCompilationUnit(method.getTypeRoot(),
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+
+		if (methodDeclarationNode != null)
+			return methodDeclarationNode.resolveBinding();
+		else
+			return null;
 	}
 
 	/**
@@ -1852,7 +1914,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 										targetMethod);
 								break;
 							}
-						
+
 						monitor.ifPresent(m -> m.worked(1));
 					}
 				}
