@@ -373,21 +373,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			}
 		}
 
-		private boolean isAssignmentCompatible(ITypeBinding typeBinding, ITypeBinding otherTypeBinding) {
-			// Workaround
-			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=493965.
-			if (typeBinding == null && otherTypeBinding == null)
-				return true;
-			else if (typeBinding == null || otherTypeBinding == null)
-				return false;
-			else
-				return typeBinding.isAssignmentCompatible(otherTypeBinding)
-						|| typeBinding.isInterface() && otherTypeBinding.isInterface()
-								&& (typeBinding.isEqualTo(otherTypeBinding)
-										|| Arrays.stream(typeBinding.getInterfaces())
-												.anyMatch(itb -> itb.isEqualTo(otherTypeBinding)));
-		}
-
 		private void processAssignment(ASTNode node, ThisExpression thisExpression,
 				ITypeBinding destinationInterfaceTypeBinding, Expression leftHandSide, Expression rightHandSide) {
 			// if `this` appears on the LHS.
@@ -1546,8 +1531,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						pm.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))) == null)
 					addErrorAndMark(status, PreconditionFailure.SourceMethodHasNoTargetMethod, sourceMethod);
 				else {
-					status.merge(checkParameters(sourceMethod));
-					status.merge(checkReturnType(sourceMethod));
+					status.merge(checkParameters(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
+					status.merge(checkReturnType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkProjectCompliance(sourceMethod));
@@ -1572,9 +1557,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final IType declaring = sourceMethod.getDeclaringType();
 			final ITypeParameter[] parameters = declaring.getTypeParameters();
 			if (parameters.length > 0) {
-			monitor.ifPresent(m -> m.beginTask("Retrieving target method.", IProgressMonitor.UNKNOWN));
-			IMethod targetMethod = getTargetMethod(sourceMethod,
-					monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+				monitor.ifPresent(m -> m.beginTask("Retrieving target method.", IProgressMonitor.UNKNOWN));
+				IMethod targetMethod = getTargetMethod(sourceMethod,
+						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
 
 				final TypeVariableMaplet[] mapping = TypeVariableUtil.subTypeToInheritedType(declaring,
 						targetMethod.getDeclaringType());
@@ -1781,32 +1766,100 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	/**
 	 * Check that the annotations in the parameters are consistent between the
-	 * source and target.
+	 * source and target, as well as type arguments.
 	 * 
 	 * FIXME: What if the annotation type is not available in the target?
 	 * 
 	 * @param sourceMethod
 	 *            The method to check.
+	 * @param monitor
+	 *            An optional {@link IProgressMonitor}.
 	 * @return {@link RefactoringStatus} indicating the result of the check.
 	 * @throws JavaModelException
 	 */
-	private RefactoringStatus checkParameters(IMethod sourceMethod) throws JavaModelException {
+	private RefactoringStatus checkParameters(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
-		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
+		ILocalVariable[] sourceMethodParameters = sourceMethod.getParameters();
 
-		// for each parameter.
-		for (int i = 0; i < sourceMethod.getParameters().length; i++) {
-			ILocalVariable sourceParameter = sourceMethod.getParameters()[i];
+		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking,
+				sourceMethodParameters.length * 2 + 1));
+		try {
+			IMethod targetMethod = getTargetMethod(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)));
 
-			// get the corresponding target parameter.
-			ILocalVariable targetParameter = targetMethod.getParameters()[i];
+			// for each parameter.
+			for (int i = 0; i < sourceMethodParameters.length; i++) {
+				ILocalVariable sourceParameter = sourceMethodParameters[i];
 
-			if (!checkAnnotations(sourceParameter, targetParameter).isOK())
-				addErrorAndMark(status, PreconditionFailure.MethodContainsInconsistentParameterAnnotations,
-						sourceMethod, targetMethod);
+				// get the corresponding target parameter.
+				ILocalVariable targetParameter = targetMethod.getParameters()[i];
+
+				if (!checkAnnotations(sourceParameter, targetParameter).isOK())
+					addErrorAndMark(status, PreconditionFailure.MethodContainsInconsistentParameterAnnotations,
+							sourceMethod, targetMethod);
+
+				monitor.ifPresent(m -> m.worked(1));
+			}
+
+			// check generics #160.
+			IMethodBinding sourceMethodBinding = resolveMethodBinding(sourceMethod, monitor);
+			IMethodBinding targetMethodBinding = resolveMethodBinding(targetMethod, monitor);
+
+			if (targetMethodBinding != null) {
+				ITypeBinding[] sourceMethodParameterTypes = sourceMethodBinding.getParameterTypes();
+				ITypeBinding[] targetMethodParameterTypes = targetMethodBinding.getParameterTypes();
+
+				for (int i = 0; i < sourceMethodParameterTypes.length; i++) {
+					monitor.ifPresent(m -> m.worked(1));
+
+					ITypeBinding[] sourceMethodParameterTypeParameters = sourceMethodParameterTypes[i]
+							.getTypeArguments();
+					ITypeBinding[] targetMethodParamaterTypeParameters = targetMethodParameterTypes[i]
+							.getTypeArguments();
+
+					boolean hasAssignmentIncompatibleTypeParameter = false;
+
+					if (sourceMethodParameterTypeParameters.length != targetMethodParamaterTypeParameters.length) {
+						addErrorAndMark(status, PreconditionFailure.MethodContainsIncompatibleParameterTypeParameters,
+								sourceMethod, targetMethod);
+						break; // no more parameter types.
+					} else
+						for (int j = 0; j < sourceMethodParameterTypeParameters.length; j++) {
+							// if both aren't type variables.
+							if (!typeArgumentsAreTypeVariables(sourceMethodParameterTypeParameters[j],
+									targetMethodParamaterTypeParameters[j])) {
+								// then check if they are assignment compatible.
+								if (!isAssignmentCompatible(sourceMethodParameterTypeParameters[j],
+										targetMethodParamaterTypeParameters[j])) {
+									addErrorAndMark(status,
+											PreconditionFailure.MethodContainsIncompatibleParameterTypeParameters,
+											sourceMethod, targetMethod);
+									hasAssignmentIncompatibleTypeParameter = true;
+									break; // no more type parameters.
+								}
+							}
+						}
+
+					if (hasAssignmentIncompatibleTypeParameter)
+						break; // no more parameter types.
+				}
+			}
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
 		}
-
 		return status;
+	}
+
+	private IMethodBinding resolveMethodBinding(IMethod method, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		MethodDeclaration methodDeclarationNode = ASTNodeSearchUtil.getMethodDeclarationNode(method,
+				getCompilationUnit(method.getTypeRoot(),
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+
+		if (methodDeclarationNode != null)
+			return methodDeclarationNode.resolveBinding();
+		else
+			return null;
 	}
 
 	/**
@@ -1820,22 +1873,87 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @return {@link RefactoringStatus} indicating the result of the check.
 	 * @throws JavaModelException
 	 */
-	private RefactoringStatus checkReturnType(IMethod sourceMethod) throws JavaModelException {
+	private RefactoringStatus checkReturnType(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
-		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
-		String sourceMethodReturnType = Util.getQualifiedNameFromTypeSignature(sourceMethod.getReturnType(),
-				sourceMethod.getDeclaringType());
-		String targetMethodReturnType = Util.getQualifiedNameFromTypeSignature(targetMethod.getReturnType(),
-				targetMethod.getDeclaringType());
+		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, 4));
+		try {
+			IMethod targetMethod = getTargetMethod(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)));
 
-		if (!sourceMethodReturnType.equals(targetMethodReturnType))
-			addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod, targetMethod);
+			String sourceMethodReturnType = Util.getQualifiedNameFromTypeSignature(sourceMethod.getReturnType(),
+					sourceMethod.getDeclaringType());
+			String targetMethodReturnType = Util.getQualifiedNameFromTypeSignature(targetMethod.getReturnType(),
+					targetMethod.getDeclaringType());
+
+			if (!sourceMethodReturnType.equals(targetMethodReturnType)) {
+				addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod, targetMethod);
+				monitor.ifPresent(m -> m.worked(3));
+			} else {
+				monitor.ifPresent(m -> m.worked(1));
+
+				// check generics #160.
+				ITypeBinding sourceMethodReturnTypeBinding = resolveReturnTypeBinding(sourceMethod, Optional.empty());
+				ITypeBinding[] sourceMethodReturnTypeTypeArguments = sourceMethodReturnTypeBinding.getTypeArguments();
+
+				if (sourceMethodReturnTypeTypeArguments.length > 0) {
+					// type arguments exist in the return type of the source
+					// method.
+					ITypeBinding targetMethodReturnTypeBinding = resolveReturnTypeBinding(targetMethod,
+							Optional.empty());
+					ITypeBinding[] targetMethodReturnTypeTypeArguments = targetMethodReturnTypeBinding
+							.getTypeArguments();
+
+					// are the type arguments the same length?
+					if (sourceMethodReturnTypeTypeArguments.length != targetMethodReturnTypeTypeArguments.length) {
+						addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod,
+								targetMethod);
+						monitor.ifPresent(m -> m.worked(2));
+					} else {
+						monitor.ifPresent(m -> m.worked(1));
+
+						// are the type arguments compatible?
+						for (int i = 0; i < sourceMethodReturnTypeTypeArguments.length; i++) {
+							if (!typeArgumentsAreTypeVariables(sourceMethodReturnTypeTypeArguments[i],
+									targetMethodReturnTypeTypeArguments[i])) {
+								// then, we should check their assignment
+								// compatibility.
+								if (!isAssignmentCompatible(sourceMethodReturnTypeTypeArguments[i],
+										targetMethodReturnTypeTypeArguments[i])) {
+									addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes,
+											sourceMethod, targetMethod);
+									break;
+								}
+							}
+							monitor.ifPresent(m -> m.worked(1));
+						}
+					}
+				}
+			}
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
 
 		return status;
 	}
 
-	@SuppressWarnings("unused")
+	private boolean typeArgumentsAreTypeVariables(ITypeBinding typeArgument, ITypeBinding otherTypeArgument) {
+		return typeArgument.isTypeVariable() && otherTypeArgument.isTypeVariable();
+	}
+
+	private static boolean isAssignmentCompatible(ITypeBinding typeBinding, ITypeBinding otherTypeBinding) {
+		// Workaround
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=493965.
+		if (typeBinding == null && otherTypeBinding == null)
+			return true;
+		else if (typeBinding == null || otherTypeBinding == null)
+			return false;
+		else
+			return typeBinding.isAssignmentCompatible(otherTypeBinding) || typeBinding.isInterface()
+					&& otherTypeBinding.isInterface() && (typeBinding.isEqualTo(otherTypeBinding) || Arrays
+							.stream(typeBinding.getInterfaces()).anyMatch(itb -> itb.isEqualTo(otherTypeBinding)));
+	}
+
 	private ITypeBinding resolveReturnTypeBinding(IMethod method, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		MethodDeclaration methodDeclarationNode = ASTNodeSearchUtil.getMethodDeclarationNode(method,

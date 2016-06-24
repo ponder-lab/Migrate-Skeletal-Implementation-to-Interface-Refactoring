@@ -107,6 +107,7 @@ public class Messages extends NLS {
 	public static String MethodContainsSuperReference;
 	public static String MethodContainsTypeIncompatibleThisReference;
 	public static String SourceMethodProvidesImplementationsForMultipleMethods;
+	public static String MethodContainsIncompatibleParameterTypeParameters;
 
 	static {
 		// initialize resource bundle

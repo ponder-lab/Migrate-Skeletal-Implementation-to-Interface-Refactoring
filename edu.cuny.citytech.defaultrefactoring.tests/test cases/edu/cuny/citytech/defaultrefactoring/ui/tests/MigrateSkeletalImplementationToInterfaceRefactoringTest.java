@@ -363,10 +363,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// Should fail as the generics don't match up.
 		helperFail(new String[] { "m" }, new String[][] { new String[] { "QC<QInteger;>;" } });
 	}
-
+	
 	public void testMethodWithParameters3() throws Exception {
-		// TODO: Should pass as we can substitute the type parameters #160.
-		helperFail(new String[] { "m" }, new String[][] { new String[] { "QC<QE;>;" } });
+		// Should pass as we can substitute the type parameters.
+		helperPass(new String[] { "m" }, new String[][] { new String[] { "QC<QE;>;" } });
 	}
 
 	public void testMethodWithAnnotatedParameters() throws Exception {
@@ -441,10 +441,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// should fail because the generics don't match up.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-
+	
 	public void testMethodWithReturnType6() throws Exception {
-		// TODO: should pass because we can substitute type parameters #160.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// should pass because we can substitute type parameters.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodWithTypeParameters() throws Exception {
