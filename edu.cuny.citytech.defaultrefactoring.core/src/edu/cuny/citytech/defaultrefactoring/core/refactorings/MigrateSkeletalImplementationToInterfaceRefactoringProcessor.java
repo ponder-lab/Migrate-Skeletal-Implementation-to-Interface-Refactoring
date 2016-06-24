@@ -1532,7 +1532,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					addErrorAndMark(status, PreconditionFailure.SourceMethodHasNoTargetMethod, sourceMethod);
 				else {
 					status.merge(checkParameters(sourceMethod));
-					status.merge(checkReturnType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
+					status.merge(checkReturnType(sourceMethod));
 					status.merge(checkAccesses(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkGenericDeclaringType(sourceMethod, pm.map(m -> new SubProgressMonitor(m, 1))));
 					status.merge(checkProjectCompliance(sourceMethod));
@@ -1557,9 +1557,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final IType declaring = sourceMethod.getDeclaringType();
 			final ITypeParameter[] parameters = declaring.getTypeParameters();
 			if (parameters.length > 0) {
-				monitor.ifPresent(m -> m.beginTask("Retrieving target method.", IProgressMonitor.UNKNOWN));
-				IMethod targetMethod = getTargetMethod(sourceMethod,
-						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+			monitor.ifPresent(m -> m.beginTask("Retrieving target method.", IProgressMonitor.UNKNOWN));
+			IMethod targetMethod = getTargetMethod(sourceMethod,
+					monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
 
 				final TypeVariableMaplet[] mapping = TypeVariableUtil.subTypeToInheritedType(declaring,
 						targetMethod.getDeclaringType());
@@ -1805,61 +1805,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @return {@link RefactoringStatus} indicating the result of the check.
 	 * @throws JavaModelException
 	 */
-	private RefactoringStatus checkReturnType(IMethod sourceMethod, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
+	private RefactoringStatus checkReturnType(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
+		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
-		monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, 4));
-		try {
-			IMethod targetMethod = getTargetMethod(sourceMethod, monitor.map(m -> new SubProgressMonitor(m, 1)));
+		String sourceMethodReturnType = Util.getQualifiedNameFromTypeSignature(sourceMethod.getReturnType(),
+				sourceMethod.getDeclaringType());
+		String targetMethodReturnType = Util.getQualifiedNameFromTypeSignature(targetMethod.getReturnType(),
+				targetMethod.getDeclaringType());
 
-			String sourceMethodReturnType = Util.getQualifiedNameFromTypeSignature(sourceMethod.getReturnType(),
-					sourceMethod.getDeclaringType());
-			String targetMethodReturnType = Util.getQualifiedNameFromTypeSignature(targetMethod.getReturnType(),
-					targetMethod.getDeclaringType());
-
-			if (!sourceMethodReturnType.equals(targetMethodReturnType)) {
-				addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod, targetMethod);
-				monitor.ifPresent(m -> m.worked(3));
-			} else {
-				monitor.ifPresent(m -> m.worked(1));
-
-				// check generics.
-				ITypeBinding sourceMethodReturnTypeBinding = resolveReturnTypeBinding(sourceMethod, Optional.empty());
-				ITypeBinding[] sourceMethodReturnTypeTypeArguments = sourceMethodReturnTypeBinding.getTypeArguments();
-
-				if (sourceMethodReturnTypeTypeArguments.length > 0) {
-					// type arguments exist in the return type of the source
-					// method.
-					ITypeBinding targetMethodReturnTypeBinding = resolveReturnTypeBinding(targetMethod,
-							Optional.empty());
-					ITypeBinding[] targetMethodReturnTypeTypeArguments = targetMethodReturnTypeBinding
-							.getTypeArguments();
-
-					// are the type arguments the same length?
-					if (sourceMethodReturnTypeTypeArguments.length != targetMethodReturnTypeTypeArguments.length) {
-						addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod,
-								targetMethod);
-						monitor.ifPresent(m -> m.worked(2));
-					} else {
-						monitor.ifPresent(m -> m.worked(1));
-
-						// are the type arguments compatible?
-						for (int i = 0; i < sourceMethodReturnTypeTypeArguments.length; i++)
-							if (!isAssignmentCompatible(sourceMethodReturnTypeTypeArguments[i],
-									targetMethodReturnTypeTypeArguments[i])) {
-								addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod,
-										targetMethod);
-								break;
-							}
-						
-						monitor.ifPresent(m -> m.worked(1));
-					}
-				}
-			}
-		} finally {
-			monitor.ifPresent(IProgressMonitor::done);
-		}
+		if (!sourceMethodReturnType.equals(targetMethodReturnType))
+			addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod, targetMethod);
 
 		return status;
 	}
