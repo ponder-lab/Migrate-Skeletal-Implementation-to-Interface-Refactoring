@@ -1554,13 +1554,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			final IMember[] pullables = new IMember[] { sourceMethod };
 			monitor.ifPresent(m -> m.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, pullables.length));
 
+			final IType declaring = sourceMethod.getDeclaringType();
+			final ITypeParameter[] parameters = declaring.getTypeParameters();
+			if (parameters.length > 0) {
 			monitor.ifPresent(m -> m.beginTask("Retrieving target method.", IProgressMonitor.UNKNOWN));
 			IMethod targetMethod = getTargetMethod(sourceMethod,
 					monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
 
-			final IType declaring = sourceMethod.getDeclaringType();
-			final ITypeParameter[] parameters = declaring.getTypeParameters();
-			if (parameters.length > 0) {
 				final TypeVariableMaplet[] mapping = TypeVariableUtil.subTypeToInheritedType(declaring,
 						targetMethod.getDeclaringType());
 				IMember member = null;
