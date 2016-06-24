@@ -3,9 +3,9 @@ DATABASE=$1
 TABLE=$2
 USER=
 PASSWORD=
-HOST="127.0.0.1"
-USER="rkhatchadourian"
-PASSWORD="Its7eK7dap8D"
+HOST=
+USER=
+PASSWORD=
 dos2unix $TABLE.csv
 mysql --local-infile -D $DATABASE -u $USER -p$PASSWORD -h $HOST --execute="\
     TRUNCATE $TABLE; \
