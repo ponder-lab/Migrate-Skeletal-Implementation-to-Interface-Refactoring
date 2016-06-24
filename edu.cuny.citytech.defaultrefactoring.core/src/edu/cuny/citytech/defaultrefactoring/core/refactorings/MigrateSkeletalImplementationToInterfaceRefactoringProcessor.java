@@ -1801,7 +1801,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				monitor.ifPresent(m -> m.worked(1));
 			}
 
-			// check generics.
+			// check generics #160.
 			IMethodBinding sourceMethodBinding = resolveMethodBinding(sourceMethod, monitor);
 			IMethodBinding targetMethodBinding = resolveMethodBinding(targetMethod, monitor);
 
@@ -1824,15 +1824,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 								sourceMethod, targetMethod);
 						break; // no more parameter types.
 					} else
-						for (int j = 0; j < sourceMethodParameterTypeParameters.length; j++)
-							if (!isAssignmentCompatible(sourceMethodParameterTypeParameters[j],
+						for (int j = 0; j < sourceMethodParameterTypeParameters.length; j++) {
+							// if both aren't type variables.
+							if (!typeArgumentsAreTypeVariables(sourceMethodParameterTypeParameters[j],
 									targetMethodParamaterTypeParameters[j])) {
-								addErrorAndMark(status,
-										PreconditionFailure.MethodContainsIncompatibleParameterTypeParameters,
-										sourceMethod, targetMethod);
-								hasAssignmentIncompatibleTypeParameter = true;
-								break; // no more type parameters.
+								// then check if they are assignment compatible.
+								if (!isAssignmentCompatible(sourceMethodParameterTypeParameters[j],
+										targetMethodParamaterTypeParameters[j])) {
+									addErrorAndMark(status,
+											PreconditionFailure.MethodContainsIncompatibleParameterTypeParameters,
+											sourceMethod, targetMethod);
+									hasAssignmentIncompatibleTypeParameter = true;
+									break; // no more type parameters.
+								}
 							}
+						}
 
 					if (hasAssignmentIncompatibleTypeParameter)
 						break; // no more parameter types.
@@ -1886,7 +1892,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			} else {
 				monitor.ifPresent(m -> m.worked(1));
 
-				// check generics.
+				// check generics #160.
 				ITypeBinding sourceMethodReturnTypeBinding = resolveReturnTypeBinding(sourceMethod, Optional.empty());
 				ITypeBinding[] sourceMethodReturnTypeTypeArguments = sourceMethodReturnTypeBinding.getTypeArguments();
 
@@ -1907,15 +1913,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						monitor.ifPresent(m -> m.worked(1));
 
 						// are the type arguments compatible?
-						for (int i = 0; i < sourceMethodReturnTypeTypeArguments.length; i++)
-							if (!isAssignmentCompatible(sourceMethodReturnTypeTypeArguments[i],
+						for (int i = 0; i < sourceMethodReturnTypeTypeArguments.length; i++) {
+							if (!typeArgumentsAreTypeVariables(sourceMethodReturnTypeTypeArguments[i],
 									targetMethodReturnTypeTypeArguments[i])) {
-								addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes, sourceMethod,
-										targetMethod);
-								break;
+								// then, we should check their assignment
+								// compatibility.
+								if (!isAssignmentCompatible(sourceMethodReturnTypeTypeArguments[i],
+										targetMethodReturnTypeTypeArguments[i])) {
+									addErrorAndMark(status, PreconditionFailure.IncompatibleMethodReturnTypes,
+											sourceMethod, targetMethod);
+									break;
+								}
 							}
-
-						monitor.ifPresent(m -> m.worked(1));
+							monitor.ifPresent(m -> m.worked(1));
+						}
 					}
 				}
 			}
@@ -1924,6 +1935,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 
 		return status;
+	}
+
+	private boolean typeArgumentsAreTypeVariables(ITypeBinding typeArgument, ITypeBinding otherTypeArgument) {
+		return typeArgument.isTypeVariable() && otherTypeArgument.isTypeVariable();
 	}
 
 	private static boolean isAssignmentCompatible(ITypeBinding typeBinding, ITypeBinding otherTypeBinding) {
