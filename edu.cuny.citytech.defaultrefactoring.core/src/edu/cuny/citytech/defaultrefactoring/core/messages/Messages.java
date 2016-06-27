@@ -108,6 +108,7 @@ public class Messages extends NLS {
 	public static String MethodContainsTypeIncompatibleThisReference;
 	public static String SourceMethodProvidesImplementationsForMultipleMethods;
 	public static String MethodContainsIncompatibleParameterTypeParameters;
+	public static String MethodContainsQualifiedThisExpression;
 
 	static {
 		// initialize resource bundle

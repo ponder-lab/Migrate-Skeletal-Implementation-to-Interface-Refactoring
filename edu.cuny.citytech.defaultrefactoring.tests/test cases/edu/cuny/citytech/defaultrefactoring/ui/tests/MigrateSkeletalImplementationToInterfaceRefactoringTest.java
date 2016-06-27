@@ -169,6 +169,27 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodDeclaredInMemberType() throws Exception {
+		helperPass("B", new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodDeclaredInMemberType2() throws Exception {
+		// qualified this expression refers to the outer class. Should fail as
+		// there will be no such outer class after the refactoring.
+		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
+	}
+
+	public void testMethodDeclaredInMemberType3() throws Exception {
+		// qualified this expression refers to the inner (declaring) class.
+		// Should fail as the inner class won't be available after the
+		// refactoring.
+		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodDeclaredInMemberType4() throws Exception {
+		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
+	}
+	
+	public void testMethodDeclaredInMemberType5() throws Exception {
 		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
 	}
 
@@ -352,7 +373,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodDeclaredInStaticType() throws Exception {
-		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
+		helperPass("B", new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodWithParameters() throws Exception {
@@ -363,7 +384,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// Should fail as the generics don't match up.
 		helperFail(new String[] { "m" }, new String[][] { new String[] { "QC<QInteger;>;" } });
 	}
-	
+
 	public void testMethodWithParameters3() throws Exception {
 		// Should pass as we can substitute the type parameters.
 		helperPass(new String[] { "m" }, new String[][] { new String[] { "QC<QE;>;" } });
@@ -441,7 +462,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// should fail because the generics don't match up.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodWithReturnType6() throws Exception {
 		// should pass because we can substitute type parameters.
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });

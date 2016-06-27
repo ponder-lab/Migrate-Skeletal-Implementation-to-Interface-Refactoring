@@ -154,6 +154,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		private boolean methodContainsSuperReference;
 		private boolean methodContainsCallToProtectedObjectMethod;
 		private boolean methodContainsTypeIncompatibleThisReference;
+		private boolean methodContainsQualifiedThisExpression;
 		private Set<IMethod> calledProtectedObjectMethodSet = new HashSet<>();
 		private IMethod sourceMethod;
 		private Optional<IProgressMonitor> monitor;
@@ -184,6 +185,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		protected boolean doesMethodContainsTypeIncompatibleThisReference() {
 			return methodContainsTypeIncompatibleThisReference;
+		}
+
+		protected boolean doesMethodContainQualifiedThisExpression() {
+			return methodContainsQualifiedThisExpression;
 		}
 
 		@Override
@@ -238,6 +243,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			 * Assignment is only one kind of expression, we need to also look
 			 * at comparison and switches.
 			 */
+			if (node.getQualifier() != null)
+				this.methodContainsQualifiedThisExpression = true;
+
 			ASTNode parent = node.getParent();
 			process(parent, node);
 			return super.visit(node);
@@ -1280,9 +1288,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.isLocal())
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInLocals, sourceMethod, type);
-		if (type.isMember())
-			// TODO for now.
-			addErrorAndMark(status, PreconditionFailure.NoMethodsInMemberTypes, sourceMethod, type);
 		if (type.getTypes().length != 0)
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithType, sourceMethod, type);
@@ -2025,6 +2030,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							// FIXME: The error context should be the this
 							// reference that caused the error.
 							addErrorAndMark(status, PreconditionFailure.MethodContainsTypeIncompatibleThisReference,
+									sourceMethod);
+						}
+
+						if (sourceMethod.getDeclaringType().isMember()
+								&& visitor.doesMethodContainQualifiedThisExpression()) {
+							// FIXME: The error context should be the this
+							// reference that caused the error.
+							addErrorAndMark(status, PreconditionFailure.MethodContainsQualifiedThisExpression,
 									sourceMethod);
 						}
 					}
