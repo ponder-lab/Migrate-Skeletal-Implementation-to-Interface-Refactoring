@@ -1,11 +1,7 @@
 #!/bin/bash
 DATABASE=$1
 TABLE=$2
-USER=
-PASSWORD=
-HOST=
-USER=
-PASSWORD=
+. myimport.cfg
 dos2unix $TABLE.csv
 mysql --local-infile -D $DATABASE -u $USER -p$PASSWORD -h $HOST --execute="\
     TRUNCATE $TABLE; \
