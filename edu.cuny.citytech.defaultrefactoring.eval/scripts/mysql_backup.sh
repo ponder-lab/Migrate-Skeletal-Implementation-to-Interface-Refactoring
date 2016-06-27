@@ -8,7 +8,7 @@ FTP_USER=""
 FTP_PASSWORD=""
 DAYS_TO_KEEP=14
  
-for db in $DATABASES; do
+for db in ${DATABASES[*]}; do
 	FILE=$OUTPUT/`date +%Y%m%d`.$db.sql
 	echo "Dumping database: $db to: $FILE"
 	mysqldump --force --opt --user=$DB_USER --password=$DB_PASSWORD --databases $db > $FILE
