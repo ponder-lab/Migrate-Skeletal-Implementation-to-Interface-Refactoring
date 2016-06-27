@@ -184,11 +184,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// refactoring.
 		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodDeclaredInMemberType4() throws Exception {
 		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
 	}
-	
+
 	public void testMethodDeclaredInMemberType5() throws Exception {
 		helperFail("B", new String[] { "m" }, new String[][] { new String[0] });
 	}
@@ -259,21 +259,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodContainedInTypeWithField11() throws Exception {
-		// Same as 7 but in an inner class. Should pass.
-		// TODO: #95.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// Same as 7 but in an inner class. Should pass #95.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField12() throws Exception {
-		// Same as 11 but a public field. Should pass.
-		// TODO: #96.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// Same as 11 but a public field. Should pass #96.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField13() throws Exception {
-		// Same as 11 but a protected field. Should pass.
-		// TODO: #97.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// Same as 11 but a protected field. Should pass #97.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField14() throws Exception {
@@ -282,21 +279,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodContainedInTypeWithField15() throws Exception {
-		// Same as 7 but in a static inner class. Should pass.
-		// TODO: #98.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// Same as 7 but in a static inner class. Should pass #98.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField16() throws Exception {
-		// Same as 15 but a public field. Should pass.
-		// TODO: #99
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// Same as 15 but a public field. Should pass #99.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField17() throws Exception {
-		// Same as 15 but a protected field. Should pass.
-		// TODO: #100.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// Same as 15 but a protected field. Should pass #100.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodContainedInTypeWithField18() throws Exception {
@@ -867,16 +861,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodThatCallsAnotherMethod5() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// TODO: This should fail because the implicit parameter of the
+		// constructor call is actually `this` due to the inner class #162.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatCallsAnotherMethod6() throws Exception {
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// TODO: Should fail #162.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatCallsAnotherMethod7() throws Exception {
-		// this should pass. TODO: #78.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// this should pass #78.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatCallsAnotherMethod8() throws Exception {
@@ -906,8 +903,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 
 	public void testMethodThatCallsAnotherMethod12() throws Exception {
 		// like testMethodThatCallsAnotherMethod5 but call ctor instead of a
-		// method. Should fail.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// method.
+		// TODO: Should fail #162.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatCallsAnotherMethod13() throws Exception {
@@ -977,12 +975,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodThatAccessesType2() throws Exception {
-		// TODO: #77. This test should actually pass.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// This test should pass #77.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatAccessesType3() throws Exception {
-		// TODO: #77. This test should fail but for the right reasons.
+		// This test should fail #77.
 		helperFail(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
@@ -995,8 +993,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	}
 
 	public void testMethodThatAccessesType6() throws Exception {
-		// TODO: #77. Should pass.
-		helperFail(new String[] { "m" }, new String[][] { new String[0] });
+		// Should pass #77.
+		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
 	public void testMethodThatAccessesType7() throws Exception {

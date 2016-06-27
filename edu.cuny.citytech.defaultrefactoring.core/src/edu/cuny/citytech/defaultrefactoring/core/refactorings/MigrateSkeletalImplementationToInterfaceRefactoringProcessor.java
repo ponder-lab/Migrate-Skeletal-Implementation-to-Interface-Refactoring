@@ -1288,9 +1288,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		if (type.isLocal())
 			// TODO for now.
 			addErrorAndMark(status, PreconditionFailure.NoMethodsInLocals, sourceMethod, type);
-		if (type.getTypes().length != 0)
-			// TODO for now.
-			addErrorAndMark(status, PreconditionFailure.NoMethodsInTypesWithType, sourceMethod, type);
 
 		// TODO enclosing type must implement an interface, at least for
 		// now,

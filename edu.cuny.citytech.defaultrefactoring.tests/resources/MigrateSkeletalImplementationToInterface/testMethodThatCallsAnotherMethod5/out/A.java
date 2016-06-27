@@ -1,15 +1,17 @@
 package p;
 
-import p.A.B;
+import p.A.C;
 
 interface I {
 	default void m() {
-		B b;
+		new C().n();
 	}
 }
 
 public abstract class A implements I {
-
-	class B {
+	
+	class C {
+		void n() {
+		}
 	}
 }
