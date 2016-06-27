@@ -1,13 +1,5 @@
 #!/bin/bash
-DB_USER=""
-DB_PASSWORD=""
-OUTPUT=""
-DATABASES=("")
-FTP_SERVER=""
-FTP_USER=""
-FTP_PASSWORD=""
-DAYS_TO_KEEP=14
- 
+. mysql_backup.cfg 
 for db in ${DATABASES[*]}; do
 	FILE=$OUTPUT/`date +%Y%m%d`.$db.sql
 	echo "Dumping database: $db to: $FILE"
