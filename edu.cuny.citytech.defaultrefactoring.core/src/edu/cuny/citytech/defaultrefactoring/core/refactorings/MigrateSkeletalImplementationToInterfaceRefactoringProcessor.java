@@ -2698,7 +2698,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				targetMethod = getMethodTargetInterfaceTargetMethodTable().get(sourceMethod, destinationInterface);
 			else if (destinationInterface != null) {
 				targetMethod = findTargetMethod(sourceMethod, destinationInterface);
-				getMethodTargetInterfaceTargetMethodTable().put(sourceMethod, destinationInterface, targetMethod);
+
+				if (targetMethod == null)
+					logWarning("Could not retrieve target method for source method: " + sourceMethod
+							+ " and destination interface: " + destinationInterface);
+				else
+					getMethodTargetInterfaceTargetMethodTable().put(sourceMethod, destinationInterface, targetMethod);
 			}
 
 			getMethodToTargetMethodMap().put(sourceMethod, targetMethod);
