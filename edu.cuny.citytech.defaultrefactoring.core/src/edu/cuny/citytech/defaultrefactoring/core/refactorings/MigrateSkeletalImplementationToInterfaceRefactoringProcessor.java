@@ -537,7 +537,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * The minimum logging level, one of the constants in
 	 * org.eclipse.core.runtime.IStatus.
 	 */
-	private int loggingLevel = IStatus.WARNING;
+	private static int loggingLevel = IStatus.WARNING;
 
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
@@ -2775,9 +2775,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			return false;
 	}
 
-	private void log(int severity, String message) {
-		if (severity >= this.getLoggingLevel()) {
-			String name = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
+	private static void log(int severity, String message) {
+		if (severity >= getLoggingLevel()) {
+			String name = FrameworkUtil.getBundle(MigrateSkeletalImplementationToInterfaceRefactoringProcessor.class)
+					.getSymbolicName();
 			IStatus status = new Status(severity, name, message);
 			JavaPlugin.log(status);
 		}
@@ -2787,7 +2788,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		log(IStatus.INFO, message);
 	}
 
-	private void logWarning(String message) {
+	private static void logWarning(String message) {
 		log(IStatus.WARNING, message);
 	}
 
@@ -2863,12 +2864,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *            The minimum logging level to set.
 	 * @see org.eclipse.core.runtime.IStatus.
 	 */
-	public void setLoggingLevel(int level) {
-		this.loggingLevel = level;
+	public static void setLoggingLevel(int level) {
+		loggingLevel = level;
 	}
 
-	protected int getLoggingLevel() {
-		return this.loggingLevel;
+	protected static int getLoggingLevel() {
+		return loggingLevel;
 	}
 
 	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
