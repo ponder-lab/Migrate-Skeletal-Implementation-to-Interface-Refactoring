@@ -363,7 +363,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (object == thisExpression) {
 					// get the type binding from the corresponding
 					// parameter.
-					ITypeBinding parameterTypeBinding = methodBinding.getParameterTypes()[i];
+					ITypeBinding parameterTypeBinding;
+
+					// varargs case.
+					// if we are at or past the last parameter and the method is
+					// vararg.
+					if (i >= methodBinding.getParameterTypes().length - 1 && methodBinding.isVarargs()) {
+						// assign the parameter type binding to be the scalar
+						// type of the last parameter type.
+						parameterTypeBinding = methodBinding
+								.getParameterTypes()[methodBinding.getParameterTypes().length - 1].getElementType();
+						Assert.isNotNull(parameterTypeBinding,
+								"The last parameter of a vararg method should be an array.");
+					} else
+						parameterTypeBinding = methodBinding.getParameterTypes()[i];
 
 					// the type of this will change to the destination
 					// interface. Let's check whether an expression of
