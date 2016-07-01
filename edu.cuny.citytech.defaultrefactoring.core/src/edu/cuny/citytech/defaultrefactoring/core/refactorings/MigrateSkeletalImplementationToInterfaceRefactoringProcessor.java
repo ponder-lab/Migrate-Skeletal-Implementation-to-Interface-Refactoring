@@ -561,7 +561,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
 			final CodeGenerationSettings settings, boolean layer, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
+					throws JavaModelException {
 		try {
 			this.settings = settings;
 			this.layer = layer;
@@ -830,9 +830,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				continue;
 
 			if (!canBeAccessedFrom(sourceMethod, type, destination, hierarchy) && !pulledUpList.contains(type)) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
-						PreconditionFailure.TypeNotAccessible.getMessage(),
-						new String[] { JavaElementLabels.getTextLabel(type, JavaElementLabels.ALL_FULLY_QUALIFIED),
+				final String message = org.eclipse.jdt.internal.corext.util.Messages
+						.format(PreconditionFailure.TypeNotAccessible.getMessage(),
+								new String[] { JavaElementLabels.getTextLabel(type,
+										JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(type),
 						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
@@ -868,10 +869,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					|| Flags.isEnum(accessedField.getFlags());
 
 			if (!isAccessible) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
-						PreconditionFailure.FieldNotAccessible.getMessage(),
-						new String[] {
-								JavaElementLabels.getTextLabel(accessedField, JavaElementLabels.ALL_FULLY_QUALIFIED),
+				final String message = org.eclipse.jdt.internal.corext.util.Messages
+						.format(PreconditionFailure.FieldNotAccessible.getMessage(),
+								new String[] {
+										JavaElementLabels.getTextLabel(accessedField,
+												JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedField),
 						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
@@ -884,8 +886,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// First, find all references of the accessed field in the
 				// source method.
 				FieldAccessAnalysisSearchRequestor requestor = new FieldAccessAnalysisSearchRequestor(monitor);
-				this.getSearchEngine().search(
-						SearchPattern.createPattern(accessedField, IJavaSearchConstants.REFERENCES,
+				this.getSearchEngine()
+						.search(SearchPattern.createPattern(accessedField, IJavaSearchConstants.REFERENCES,
 								SearchPattern.R_EXACT_MATCH),
 						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
 						SearchEngine.createJavaSearchScope(new IJavaElement[] { sourceMethod }), requestor,
@@ -1393,8 +1395,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (interfaceMethods != null)
 					// the matching methods cannot already be default.
 					for (IMethod method : interfaceMethods)
-					if (!JdtFlags.isDefaultMethod(method))
-					ret.add(superInterface);
+						if (!JdtFlags.isDefaultMethod(method))
+							ret.add(superInterface);
 			}
 
 			return ret.toArray(new IType[ret.size()]);
