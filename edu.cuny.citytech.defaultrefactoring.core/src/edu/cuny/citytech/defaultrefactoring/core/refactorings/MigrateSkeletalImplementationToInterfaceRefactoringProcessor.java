@@ -1041,6 +1041,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						IMethod javaElement = (IMethod) binding.getJavaElement();
 						return javaElement;
 					}
+					case ASTNode.TYPE_DECLARATION: {
+						//no ctor reference here.
+						return null;
+					}
 					default: {
 						// try the parent node.
 						return extractConstructor(node.getParent());
