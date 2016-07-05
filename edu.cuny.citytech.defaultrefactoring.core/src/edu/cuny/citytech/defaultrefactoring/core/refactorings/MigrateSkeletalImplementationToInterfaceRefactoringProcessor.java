@@ -1047,6 +1047,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					}
 					default: {
 						// try the parent node.
+						logInfo("Getting parent of: " + node + ". Node type is: " + node.getNodeType());
 						return extractConstructor(node.getParent());
 					}
 					}
