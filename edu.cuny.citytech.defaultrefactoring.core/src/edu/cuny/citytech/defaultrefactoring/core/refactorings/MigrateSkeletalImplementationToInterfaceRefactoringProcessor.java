@@ -1042,7 +1042,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						return javaElement;
 					}
 					case ASTNode.TYPE_DECLARATION: {
-						//no ctor reference here.
+						// no ctor reference here.
 						return null;
 					}
 					default: {
@@ -1698,8 +1698,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				IAnnotation targetAnnotation = target.getAnnotation(sourceAnnotation.getElementName());
 				IMemberValuePair[] targetPairs = targetAnnotation.getMemberValuePairs();
 
-				// sanity check.
-				Assert.isTrue(sourcePairs.length == targetPairs.length, "Source and target pairs differ.");
+				if (sourcePairs.length != targetPairs.length) {
+					// TODO: Can perhaps analyze this situation further by
+					// looking up default field values.
+					logWarning(
+							"There may be differences in the length of the value vectors as some annotations may use default field values.");
+					return new RefactoringStatus();
+				}
 
 				Arrays.parallelSort(sourcePairs, Comparator.comparing(IMemberValuePair::getMemberName));
 				Arrays.parallelSort(targetPairs, Comparator.comparing(IMemberValuePair::getMemberName));
