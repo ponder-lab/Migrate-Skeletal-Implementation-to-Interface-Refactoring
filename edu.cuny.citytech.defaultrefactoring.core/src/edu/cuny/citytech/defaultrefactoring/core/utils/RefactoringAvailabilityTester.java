@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IMethod;
@@ -48,6 +49,8 @@ public final class RefactoringAvailabilityTester {
 		if (JdtFlags.isSynchronized(method))
 			return false;
 		if (JdtFlags.isFinal(method))
+			return false;
+		if (method.getResource().isDerived(IResource.CHECK_ANCESTORS))
 			return false;
 
 		final IType declaring = method.getDeclaringType();
