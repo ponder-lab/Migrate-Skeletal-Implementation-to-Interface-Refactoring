@@ -24,6 +24,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -696,6 +697,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				status.merge(writabilitiy);
 				if (!writabilitiy.isOK())
 					addUnmigratableMethod(sourceMethod, writabilitiy.getEntryWithHighestSeverity());
+
+				// Make sure it's not in a derived resource.
+				if (targetInterface.get().getResource().isDerived(IResource.CHECK_ANCESTORS))
+					addErrorAndMark(status, PreconditionFailure.DestinationInterfaceIsDerived, sourceMethod,
+							targetInterface.get());
 
 				// Make sure it doesn't have compilation errors.
 				RefactoringStatus structure = checkStructure(targetInterface.get());
@@ -1493,6 +1499,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					status.merge(structureStatus);
 					addUnmigratableMethod(sourceMethod, structureStatus.getEntryWithHighestSeverity());
 				}
+
+				// the source method should not be included in a derived
+				// resource.
+				if (sourceMethod.getResource().isDerived(IResource.CHECK_ANCESTORS))
+					addErrorAndMark(status, PreconditionFailure.SourceMethodIsDerived, sourceMethod);
 
 				if (sourceMethod.isConstructor()) {
 					RefactoringStatusEntry entry = addError(status, sourceMethod, PreconditionFailure.NoConstructors,

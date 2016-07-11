@@ -109,6 +109,8 @@ public class Messages extends NLS {
 	public static String SourceMethodProvidesImplementationsForMultipleMethods;
 	public static String MethodContainsIncompatibleParameterTypeParameters;
 	public static String MethodContainsQualifiedThisExpression;
+	public static String DestinationInterfaceIsDerived;
+	public static String SourceMethodIsDerived;
 
 	static {
 		// initialize resource bundle

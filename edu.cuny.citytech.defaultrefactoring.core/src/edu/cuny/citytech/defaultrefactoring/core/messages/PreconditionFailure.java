@@ -99,7 +99,9 @@ public enum PreconditionFailure {
 	MethodContainsTypeIncompatibleThisReference(Messages.MethodContainsTypeIncompatibleThisReference),
 	SourceMethodProvidesImplementationsForMultipleMethods(Messages.SourceMethodProvidesImplementationsForMultipleMethods),
 	MethodContainsIncompatibleParameterTypeParameters(Messages.MethodContainsIncompatibleParameterTypeParameters),
-	MethodContainsQualifiedThisExpression(Messages.MethodContainsQualifiedThisExpression);
+	MethodContainsQualifiedThisExpression(Messages.MethodContainsQualifiedThisExpression),
+	DestinationInterfaceIsDerived(Messages.DestinationInterfaceIsDerived), 
+	SourceMethodIsDerived(Messages.SourceMethodIsDerived);
 
 	private String message;
 
