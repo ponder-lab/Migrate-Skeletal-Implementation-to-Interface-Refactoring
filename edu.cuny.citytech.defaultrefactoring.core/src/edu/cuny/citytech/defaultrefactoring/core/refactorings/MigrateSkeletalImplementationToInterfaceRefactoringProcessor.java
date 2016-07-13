@@ -165,6 +165,42 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
 
+	private final class SuperReferenceFinder extends ASTVisitor {
+		private boolean encounteredSuper;
+
+		private SuperReferenceFinder(boolean visitDocTags) {
+			super(visitDocTags);
+		}
+
+		@Override
+		public boolean visit(SuperConstructorInvocation node) {
+			encounteredSuper = true;
+			return false;
+		}
+
+		@Override
+		public boolean visit(SuperFieldAccess node) {
+			encounteredSuper = true;
+			return false;
+		}
+
+		@Override
+		public boolean visit(SuperMethodInvocation node) {
+			encounteredSuper = true;
+			return false;
+		}
+
+		@Override
+		public boolean visit(SuperMethodReference node) {
+			encounteredSuper = true;
+			return false;
+		}
+
+		public boolean hasEncounteredSuper() {
+			return encounteredSuper;
+		}
+	}
+
 	private final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 		private boolean methodContainsSuperReference;
 		private boolean methodContainsCallToProtectedObjectMethod;
@@ -2462,7 +2498,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// transformation.
 				if (!checkedDeclaringTypes.contains(sourceMethod.getDeclaringType())) {
 					// if we can remove the declaring type.
-					if (canRemove(sourceMethod.getDeclaringType(), migratableMethods)) {
+					if (canRemove(sourceMethod, sourceMethod.getDeclaringType(), migratableMethods,
+							Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)))) {
 						// add to set.
 						emptyDeclaringTypes.add(sourceMethod.getDeclaringType());
 
@@ -2812,9 +2849,46 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private boolean canRemove(IType type, Set<IMethod> methodsToMigrate) throws JavaModelException {
-		// TODO: Add code to also remove concrete types #25.
-		return JdtFlags.isAbstract(type) && willBeEmpty(type, methodsToMigrate);
+	private boolean canRemove(IMethod sourceMethod, IType type, Set<IMethod> methodsToMigrate,
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
+		monitor.ifPresent(m -> m.beginTask("Checking if type can be removed ...", IProgressMonitor.UNKNOWN));
+		try {
+			// TODO: Add code to also remove concrete types #25.
+			return JdtFlags.isAbstract(type) && willBeEmpty(type, methodsToMigrate)
+					&& !directSubclassesContainSuperReferences(sourceMethod, type,
+							monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+	}
+
+	private boolean directSubclassesContainSuperReferences(IMethod sourceMethod, IType type,
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
+		monitor.ifPresent(m -> m.beginTask("Checking for super references ...", IProgressMonitor.UNKNOWN));
+		try {
+			IType[] subclasses = getTypeHierarchy(type,
+					monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))).getSubclasses(type);
+
+			for (IType subclass : subclasses) {
+				IMethod[] methods = subclass.findMethods(sourceMethod);
+				if (methods != null) {
+					for (IMethod method : methods) {
+						CompilationUnit unit = getCompilationUnit(method.getTypeRoot(),
+								monitor.map(m -> (IProgressMonitor) new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))
+										.orElseGet(NullProgressMonitor::new));
+
+						SuperReferenceFinder finder = new SuperReferenceFinder(false);
+						unit.accept(finder);
+
+						if (finder.hasEncounteredSuper())
+							return true;
+					}
+				}
+			}
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+		return false;
 	}
 
 	/**

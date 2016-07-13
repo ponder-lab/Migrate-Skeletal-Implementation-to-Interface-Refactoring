@@ -9,7 +9,10 @@ interface J extends I {
 	void m();
 }
 
-abstract class C implements J, I {
+public abstract class A implements I {
+}
+
+abstract class C extends A implements J {
 	@Override
 	public void m() {
 		super.m();
