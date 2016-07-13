@@ -315,7 +315,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// referencing a type
 		// variable that is not present in the super class
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=495874.
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, false);
 	}
 
 	public void testMethodContainedInTypeWithTypeParameters3() throws Exception {
@@ -335,7 +335,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// FIXME: This should fail. Blocked on: 495877: Pull Up ignores type
 		// parameter bounds
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=495877.
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, false);
 	}
 
 	public void testMethodContainedInTypeWithSuperTypes() throws Exception {
@@ -887,12 +887,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 	public void testMethodThatCallsAnotherMethod5() throws Exception {
 		// TODO: This should fail because the implicit parameter of the
 		// constructor call is actually `this` due to the inner class #162.
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, false);
 	}
 
 	public void testMethodThatCallsAnotherMethod6() throws Exception {
 		// TODO: Should fail #162.
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, false);
 	}
 
 	public void testMethodThatCallsAnotherMethod7() throws Exception {
@@ -929,7 +929,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// like testMethodThatCallsAnotherMethod5 but call ctor instead of a
 		// method.
 		// TODO: Should fail #162.
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, false);
 	}
 
 	public void testMethodThatCallsAnotherMethod13() throws Exception {
@@ -1027,7 +1027,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		// referencing a type
 		// variable that is not present in the super class
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=495874.
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
+		helperPass(new String[] { "m" }, new String[][] { new String[0] }, false);
 	}
 
 	public void testMethodThatAccessesType8() throws Exception {
