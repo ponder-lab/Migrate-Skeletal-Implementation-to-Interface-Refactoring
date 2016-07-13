@@ -10,3 +10,6 @@ class B {
 	void n() {
 	}
 }
+
+abstract class A extends B implements I {
+}
