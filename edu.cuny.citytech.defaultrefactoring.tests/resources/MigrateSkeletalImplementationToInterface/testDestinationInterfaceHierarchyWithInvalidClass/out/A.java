@@ -5,8 +5,5 @@ interface I {
 	}
 }
 
-abstract class A implements I {
-}
-
 abstract class B implements I {
 }

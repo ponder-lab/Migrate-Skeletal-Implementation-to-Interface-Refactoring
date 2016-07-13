@@ -8,6 +8,3 @@ interface I {
 
 class B {
 }
-
-public abstract class A<E extends B> implements I {
-}

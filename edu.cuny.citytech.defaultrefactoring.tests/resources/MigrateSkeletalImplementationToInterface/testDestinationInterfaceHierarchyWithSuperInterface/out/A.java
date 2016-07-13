@@ -7,6 +7,3 @@ interface I extends J {
 
 interface J {
 }
-
-abstract class A implements I {
-}

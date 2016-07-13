@@ -5,6 +5,3 @@ interface I {
 		return 0;
 	}
 }
-
-abstract class A implements I {
-}

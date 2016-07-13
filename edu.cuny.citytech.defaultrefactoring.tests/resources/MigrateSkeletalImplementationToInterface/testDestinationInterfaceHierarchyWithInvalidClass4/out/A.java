@@ -8,8 +8,5 @@ interface J extends I {
 	}
 }
 
-abstract class A implements J {
-}
-
 abstract class B implements I {
 }

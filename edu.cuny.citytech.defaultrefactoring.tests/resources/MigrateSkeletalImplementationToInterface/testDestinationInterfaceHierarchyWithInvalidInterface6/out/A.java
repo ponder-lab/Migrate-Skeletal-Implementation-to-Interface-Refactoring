@@ -12,9 +12,6 @@ interface J extends I {
 	}
 }
 
-abstract class A implements I {
-}
-
 abstract class B implements J {
 }
 

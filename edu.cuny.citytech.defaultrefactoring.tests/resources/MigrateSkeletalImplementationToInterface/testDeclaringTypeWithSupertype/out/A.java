@@ -8,6 +8,3 @@ interface I {
 class B {
 	int f;
 }
-
-abstract class A extends B implements I {
-}

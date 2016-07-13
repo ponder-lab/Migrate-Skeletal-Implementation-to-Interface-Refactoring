@@ -5,6 +5,3 @@ interface I {
 		System.out.println("Hello");
 	}
 }
-
-abstract class A implements I {
-}

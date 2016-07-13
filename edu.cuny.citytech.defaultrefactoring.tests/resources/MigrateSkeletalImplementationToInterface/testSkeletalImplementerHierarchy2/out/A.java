@@ -5,10 +5,7 @@ interface I {
 	}
 }
 
-abstract class B implements I {
-}
-
-abstract class A extends B {
+abstract class A implements I {
 	public void m() {
 	}
 }

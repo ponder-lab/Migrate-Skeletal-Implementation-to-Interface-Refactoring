@@ -6,6 +6,3 @@ interface I {
 	default void m(@Generated("hello") int n) {
 	}
 }
-
-abstract class A implements I {
-}

@@ -7,6 +7,3 @@ interface I extends J {
 	default void m() {
 	}
 }
-
-abstract class A implements I {
-}

@@ -10,6 +10,3 @@ interface I {
 		C.n();
 	}
 }
-
-public abstract class A implements I {
-}

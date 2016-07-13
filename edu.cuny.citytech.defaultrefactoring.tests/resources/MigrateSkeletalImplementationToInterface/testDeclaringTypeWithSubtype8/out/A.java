@@ -12,14 +12,11 @@ interface I {
 	}
 }
 
-abstract class A implements I {
-}
-
 interface J {
 	T m();
 }
 
-abstract class C extends A implements J {
+abstract class C implements J, I {
 	@Override
 	public T m() {
 		return null;

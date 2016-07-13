@@ -10,10 +10,7 @@ interface J {
 	}
 }
 
-public abstract class A implements I {
-}
-
-class B extends A implements J {
+class B implements J, I {
 	@Override
 	public void m() {
 	}

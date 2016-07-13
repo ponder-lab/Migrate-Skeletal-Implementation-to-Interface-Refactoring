@@ -8,6 +8,3 @@ interface I<T> {
 		m(new C<T>());
 	}
 }
-
-abstract class A<E> implements I<E> {
-}

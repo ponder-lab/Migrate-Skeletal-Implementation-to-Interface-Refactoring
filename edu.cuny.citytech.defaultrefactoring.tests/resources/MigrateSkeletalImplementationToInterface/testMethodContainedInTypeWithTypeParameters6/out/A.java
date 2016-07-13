@@ -6,6 +6,3 @@ interface I<E> {
 		e.add("test");
 	}
 }
-
-abstract class A<E extends java.util.AbstractList<String>> implements I<E> {
-}

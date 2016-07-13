@@ -2,9 +2,6 @@ package p;
 
 interface I {
 	default void m() {
-		A a;
+		I a;
 	}
-}
-
-public abstract class A implements I {
 }

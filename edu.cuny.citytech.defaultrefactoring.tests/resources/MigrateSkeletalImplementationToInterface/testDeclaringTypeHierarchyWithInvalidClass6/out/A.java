@@ -13,6 +13,3 @@ abstract class B implements I {
 		System.out.println("B.n()");
 	}
 }
-
-abstract class A extends B implements I {
-}

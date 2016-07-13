@@ -5,6 +5,3 @@ interface I<T> {
 		T e = null;
 	}
 }
-
-abstract class A<E> implements I<E> {
-}

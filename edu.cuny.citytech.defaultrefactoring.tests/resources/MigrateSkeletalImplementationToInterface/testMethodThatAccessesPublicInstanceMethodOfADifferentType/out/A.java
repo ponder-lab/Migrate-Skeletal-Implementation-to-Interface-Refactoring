@@ -10,6 +10,3 @@ class B {
 	void m() {
 	}
 }
-
-abstract class A implements I {
-}

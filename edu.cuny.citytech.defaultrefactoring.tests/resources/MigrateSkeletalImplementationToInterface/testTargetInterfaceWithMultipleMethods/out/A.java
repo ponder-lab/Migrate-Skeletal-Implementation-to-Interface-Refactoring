@@ -5,6 +5,3 @@ interface I {
 	}
 	void n();
 }
-
-abstract class A implements I {
-}

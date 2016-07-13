@@ -10,6 +10,3 @@ interface I {
 class B {
 	int f;
 }
-
-abstract class A implements I {
-}

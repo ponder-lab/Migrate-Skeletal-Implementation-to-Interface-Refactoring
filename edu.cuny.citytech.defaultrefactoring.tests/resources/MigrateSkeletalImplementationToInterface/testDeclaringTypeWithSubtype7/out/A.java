@@ -12,10 +12,7 @@ interface J extends I {
 	}
 }
 
-public abstract class A implements I {
-}
-
-abstract class C extends A implements J {
+abstract class C implements J, I {
 	@Override
 	public void m() {
 		super.m();

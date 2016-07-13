@@ -7,6 +7,3 @@ interface I {
 
 	void n();
 }
-
-public abstract class A implements I {
-}
