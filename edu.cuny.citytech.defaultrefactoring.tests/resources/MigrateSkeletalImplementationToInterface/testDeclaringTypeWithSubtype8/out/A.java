@@ -16,7 +16,7 @@ interface J {
 	T m();
 }
 
-abstract class C implements J, I {
+abstract class C implements I, J {
 	@Override
 	public T m() {
 		return null;

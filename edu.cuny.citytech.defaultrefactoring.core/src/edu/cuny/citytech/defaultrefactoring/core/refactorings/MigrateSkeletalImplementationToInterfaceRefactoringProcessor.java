@@ -2767,7 +2767,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 										// of the implemented interfaces.
 										ListRewrite listRewrite = rewrite.getASTRewrite().getListRewrite(node,
 												TypeDeclaration.SUPER_INTERFACE_TYPES_PROPERTY);
-										listRewrite.insertLast(
+										listRewrite.insertFirst(
 												rewrite.getAST().newSimpleName(destinationInterface.getElementName()),
 												null);
 										rewrite.getImportRewrite()

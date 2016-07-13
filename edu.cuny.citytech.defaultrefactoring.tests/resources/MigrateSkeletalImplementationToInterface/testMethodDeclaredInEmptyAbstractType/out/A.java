@@ -22,6 +22,6 @@ class B<E> implements I {
 	}
 }
 
-class C implements Serializable, I {
+class C implements I, Serializable {
 	private static final long serialVersionUID = 1L;
 }
