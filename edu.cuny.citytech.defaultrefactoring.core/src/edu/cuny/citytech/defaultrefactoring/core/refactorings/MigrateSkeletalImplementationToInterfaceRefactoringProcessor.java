@@ -2855,14 +2855,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		try {
 			// TODO: Add code to also remove concrete types #25.
 			return JdtFlags.isAbstract(type) && willBeEmpty(type, methodsToMigrate)
-					&& !directSubclassesContainSuperReferences(sourceMethod, type,
+					&& !subclassesContainSuperReferences(sourceMethod, type,
 							monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
 	}
 
-	private boolean directSubclassesContainSuperReferences(IMethod sourceMethod, IType type,
+	private boolean subclassesContainSuperReferences(IMethod sourceMethod, IType type,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		monitor.ifPresent(m -> m.beginTask("Checking for super references ...", IProgressMonitor.UNKNOWN));
 		try {
