@@ -18,7 +18,7 @@ class B<E> implements I {
 	void n() {
 		I a = new I() {
 		};
-		I[] a = new I[0];
+		I[] a2 = new I[0];
 	}
 }
 

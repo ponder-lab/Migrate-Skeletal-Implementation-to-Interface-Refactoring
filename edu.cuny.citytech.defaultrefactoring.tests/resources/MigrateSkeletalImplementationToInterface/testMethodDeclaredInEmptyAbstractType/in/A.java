@@ -28,7 +28,7 @@ class B<E> extends A {
 	void n() {
 		A a = new A() {
 		};
-		A[] a = new A[0];
+		A[] a2 = new A[0];
 	}
 }
 
