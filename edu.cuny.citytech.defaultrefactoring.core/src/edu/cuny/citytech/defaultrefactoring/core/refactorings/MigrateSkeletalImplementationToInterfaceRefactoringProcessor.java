@@ -2659,16 +2659,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 						@Override
 						public void acceptSearchMatch(SearchMatch match) throws CoreException {
-							Object element = match.getElement();
-							ITypeRoot typeRoot = null;
+							IJavaElement element = (IJavaElement) match.getElement();
 
-							if (element instanceof IMember) {
-								IMember member = (IMember) element;
-								typeRoot = member.getTypeRoot();
-							} else if (element instanceof IJavaElement) {
-								IJavaElement javaElement = (IJavaElement) element;
-								typeRoot = (ITypeRoot) javaElement.getAncestor(IJavaElement.COMPILATION_UNIT);
-							}
+							ITypeRoot typeRoot = extractTypeRoot(element);
 
 							if (typeRoot != null) {
 								CompilationUnit compilationUnit = getCompilationUnit(typeRoot, new SubProgressMonitor(
@@ -2680,6 +2673,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 								ASTNode node = ASTNodeSearchUtil.getAstNode(match, compilationUnit);
 								processNode(node, compilationUnitRewrite);
 							}
+						}
+
+						private ITypeRoot extractTypeRoot(IJavaElement element) {
+							ITypeRoot typeRoot = null;
+
+							if (element instanceof IMember) {
+								IMember member = (IMember) element;
+								typeRoot = member.getTypeRoot();
+							} else if (element instanceof IJavaElement) {
+								IJavaElement javaElement = (IJavaElement) element;
+								typeRoot = (ITypeRoot) javaElement.getAncestor(IJavaElement.COMPILATION_UNIT);
+							}
+							return typeRoot;
 						}
 
 						@SuppressWarnings("unchecked")
