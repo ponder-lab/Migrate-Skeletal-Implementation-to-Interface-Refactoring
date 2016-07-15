@@ -3073,7 +3073,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		if (change != null)
 			change.setTextType("java");
-		
+
 		manager.manage(rewrite.getCu(), change);
 	}
 
