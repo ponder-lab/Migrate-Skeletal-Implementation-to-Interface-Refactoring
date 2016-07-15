@@ -2676,17 +2676,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							}
 						}
 
-						private ITypeRoot extractTypeRoot(IJavaElement element) {
-							ITypeRoot typeRoot = null;
 
+						private ITypeRoot extractTypeRoot(IJavaElement element) {
 							if (element instanceof IMember) {
 								IMember member = (IMember) element;
-								typeRoot = member.getTypeRoot();
-							} else if (element instanceof IJavaElement) {
-								IJavaElement javaElement = (IJavaElement) element;
-								typeRoot = (ITypeRoot) javaElement.getAncestor(IJavaElement.COMPILATION_UNIT);
-							}
-							return typeRoot;
+								return member.getTypeRoot();
+							} else
+								return (ITypeRoot) element.getAncestor(IJavaElement.COMPILATION_UNIT);
 						}
 
 						@SuppressWarnings("unchecked")
