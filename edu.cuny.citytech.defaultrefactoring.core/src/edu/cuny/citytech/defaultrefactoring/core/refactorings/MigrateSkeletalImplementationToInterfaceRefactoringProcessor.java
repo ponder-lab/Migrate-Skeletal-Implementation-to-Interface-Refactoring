@@ -2841,6 +2841,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							case ASTNode.SUPER_CONSTRUCTOR_INVOCATION: {
 								SuperConstructorInvocation constructorInvocation = (SuperConstructorInvocation) node;
 								replaceType(constructorInvocation.typeArguments(), declaringType, substitute, rewrite);
+								break;
 							}
 							case ASTNode.TAG_ELEMENT:
 							case ASTNode.IMPORT_DECLARATION: {
