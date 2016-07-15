@@ -2477,9 +2477,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// Types we've checked for removal.
 			Set<IType> checkedDeclaringTypes = new HashSet<>();
 
-			// declaring types that will be "empty" as a result of the
+			// declaring types that will be removed as a result of the
 			// refactoring.
-			Set<IType> emptyDeclaringTypes = new HashSet<>();
+			Set<IType> canBeRemovedDeclaringTypes = new HashSet<>();
 
 			for (IMethod sourceMethod : migratableMethods) {
 				// get the source method declaration.
@@ -2502,7 +2502,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					if (canRemove(sourceMethod, targetMethod.getDeclaringType(), sourceMethod.getDeclaringType(),
 							migratableMethods, Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)))) {
 						// add to set.
-						emptyDeclaringTypes.add(sourceMethod.getDeclaringType());
+						canBeRemovedDeclaringTypes.add(sourceMethod.getDeclaringType());
 
 						// remove the type.
 						TypeDeclaration typeDeclaration = ASTNodeSearchUtil
@@ -2549,7 +2549,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					pm.beginTask("Copying source method body ...", IProgressMonitor.UNKNOWN);
 					copyMethodBody(sourceRewrite, destinationCompilationUnitRewrite, sourceMethod, destinationInterface,
 							sourceMethodDeclaration, targetMethodDeclaration, mapping,
-							emptyDeclaringTypes.contains(sourceMethod.getDeclaringType()),
+							canBeRemovedDeclaringTypes.contains(sourceMethod.getDeclaringType()),
 							new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN));
 
 					// add any static imports needed to the target method's
@@ -2596,10 +2596,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				removeMethod(sourceMethodDeclaration, sourceRewrite.getASTRewrite());
 
 				// if we're not removing the declaring type.
-				if (!emptyDeclaringTypes.contains(sourceMethod.getDeclaringType()))
+				if (!canBeRemovedDeclaringTypes.contains(sourceMethod.getDeclaringType())) {
 					// remove any imports of the source methods in the declaring
 					// type.
 					sourceRewrite.getImportRemover().registerRemovedNode(sourceMethodDeclaration);
+				}
 			}
 
 			// save the source changes.
