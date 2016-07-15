@@ -3051,7 +3051,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			Optional<IProgressMonitor> monitor) throws CoreException {
 		monitor.ifPresent(m -> m.beginTask("Creating change ...", IProgressMonitor.UNKNOWN));
 		CompilationUnitChange change = rewrite.createChange(false, monitor.orElseGet(NullProgressMonitor::new));
-		change.setTextType("java");
+
+		if (change != null)
+			change.setTextType("java");
+		
 		manager.manage(rewrite.getCu(), change);
 	}
 
