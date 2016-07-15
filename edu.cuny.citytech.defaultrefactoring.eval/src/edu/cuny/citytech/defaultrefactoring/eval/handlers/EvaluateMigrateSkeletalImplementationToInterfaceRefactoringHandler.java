@@ -52,7 +52,7 @@ import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
  */
 public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler extends AbstractHandler {
 
-	private static final boolean ALLOW_CONCRETE_CLASSES = true;
+	private static final boolean ALLOW_CONCRETE_CLASSES = false;
 	private static final boolean BUILD_WORKSPACE = false;
 
 	/**
