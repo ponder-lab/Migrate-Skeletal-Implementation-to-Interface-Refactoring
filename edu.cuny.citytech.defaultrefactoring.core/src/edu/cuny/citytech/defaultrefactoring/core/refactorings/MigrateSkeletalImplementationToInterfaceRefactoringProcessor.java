@@ -2592,11 +2592,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					transformedTargetMethods.add(targetMethod);
 				}
 
-				// Remove the source method.
-				removeMethod(sourceMethodDeclaration, sourceRewrite.getASTRewrite());
-
 				// if we're not removing the declaring type.
 				if (!canBeRemovedDeclaringTypes.contains(sourceMethod.getDeclaringType())) {
+					// Remove the source method.
+					removeMethod(sourceMethodDeclaration, sourceRewrite.getASTRewrite());
+
 					// remove any imports of the source methods in the declaring
 					// type.
 					sourceRewrite.getImportRemover().registerRemovedNode(sourceMethodDeclaration);
@@ -2662,6 +2662,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						public void acceptSearchMatch(SearchMatch match) throws CoreException {
 							IJavaElement element = (IJavaElement) match.getElement();
 
+							if (isInType(element, declaringType))
+								return; // skip references in the declaring type
+										// since it will be removed.
+
 							ITypeRoot typeRoot = extractTypeRoot(element);
 
 							if (typeRoot != null) {
@@ -2676,6 +2680,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							}
 						}
 
+						private boolean isInType(IJavaElement element, IType type) {
+							IType ancestor = (IType) element.getAncestor(IJavaElement.TYPE);
+							if (ancestor == null)
+								return false;
+							else
+								return ancestor.equals(type);
+						}
 
 						private ITypeRoot extractTypeRoot(IJavaElement element) {
 							if (element instanceof IMember) {
@@ -2846,9 +2857,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 								replaceType(constructorInvocation.typeArguments(), declaringType, substitute, rewrite);
 								break;
 							}
-							case ASTNode.TAG_ELEMENT:
-							case ASTNode.IMPORT_DECLARATION: {
+							case ASTNode.TAG_ELEMENT: {
 								removeNode(node, rewrite);
+								break;
+							}
+							case ASTNode.IMPORT_DECLARATION: {
+								// skip.
 								break;
 							}
 							default: {
@@ -2870,6 +2884,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							rewrite.getASTRewrite().replace(oldType,
 									rewrite.getAST().newSimpleName(newType.getElementName()), null);
 							rewrite.getImportRewrite().addImport(substitute.getFullyQualifiedName());
+							rewrite.getImportRemover().registerRemovedNode(oldType);
 						}
 
 						private void replaceSimpleName(SimpleName oldSimpleName, IType newType,
