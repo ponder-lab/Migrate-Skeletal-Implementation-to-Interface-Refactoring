@@ -2508,6 +2508,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						TypeDeclaration typeDeclaration = ASTNodeSearchUtil
 								.getTypeDeclarationNode(sourceMethod.getDeclaringType(), sourceCompilationUnit);
 						removeType(typeDeclaration, sourceRewrite.getASTRewrite());
+						// TODO: Also register the removed typeDeclaration with
+						// the importRemover?
 
 						// TODO: Also remove the compilation unit if it's a
 						// top-level type? Or, we can keep it around so that any
