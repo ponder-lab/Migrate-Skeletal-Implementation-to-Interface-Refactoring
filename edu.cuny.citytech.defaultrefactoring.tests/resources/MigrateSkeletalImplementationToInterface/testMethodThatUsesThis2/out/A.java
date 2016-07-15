@@ -5,3 +5,6 @@ interface I {
 		this.getClass();
 	}
 }
+
+public abstract class A implements I {
+}

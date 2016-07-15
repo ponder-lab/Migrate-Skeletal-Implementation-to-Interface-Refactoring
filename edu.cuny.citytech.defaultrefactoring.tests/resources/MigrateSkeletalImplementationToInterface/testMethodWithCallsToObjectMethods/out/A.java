@@ -13,3 +13,6 @@ interface I {
 		wait(1, 1);
 	}
 }
+
+abstract class A implements I {
+}

@@ -6,8 +6,11 @@ interface I {
 	}
 }
 
+abstract class A implements I {
+}
+
 class Main {
 	public static void main(String[] args) {
-		new I() {}.m(); //should print Hello.
+		new A() {}.m(); //should print Hello.
 	}
 }

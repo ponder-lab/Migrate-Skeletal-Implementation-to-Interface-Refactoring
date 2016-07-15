@@ -7,3 +7,6 @@ interface I<T extends AbstractCollection<T>> {
 		T e = null;
 	}
 }
+
+abstract class A<E extends AbstractCollection<E>> implements I<E> {
+}

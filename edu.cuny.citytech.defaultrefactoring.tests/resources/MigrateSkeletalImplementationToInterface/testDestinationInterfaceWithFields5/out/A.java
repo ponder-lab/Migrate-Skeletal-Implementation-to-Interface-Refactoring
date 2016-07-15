@@ -9,9 +9,12 @@ interface I {
 	}
 }
 
+abstract class A implements I {
+}
+
 class Main {
 	public static void main(String[] args) {
-		new I() {
+		new A() {
 		}.m(); // prints 0.
 	}
 }

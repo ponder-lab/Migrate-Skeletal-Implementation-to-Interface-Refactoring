@@ -7,3 +7,6 @@ interface I {
 
 abstract class B implements I {
 }
+
+abstract class A extends B {
+}

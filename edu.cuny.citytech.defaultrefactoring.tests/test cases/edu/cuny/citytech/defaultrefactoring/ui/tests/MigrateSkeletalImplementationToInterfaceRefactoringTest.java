@@ -366,30 +366,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringTest extends Ref
 		helperPass(new String[] { "m" }, new String[][] { new String[0] });
 	}
 
-	public void testMethodDeclaredInNonEmptyAbstractType() throws Exception {
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
-	public void testMethodDeclaredInNonEmptyAbstractType2() throws Exception {
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
-	public void testMethodDeclaredInNonEmptyAbstractType3() throws Exception {
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
-	public void testMethodDeclaredInNonEmptyAbstractType4() throws Exception {
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
-	public void testMethodDeclaredInNonEmptyAbstractType5() throws Exception {
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
-	public void testMethodDeclaredInEmptyAbstractType() throws Exception {
-		helperPass(new String[] { "m" }, new String[][] { new String[0] });
-	}
-
 	public void testMethodDeclaredInStaticType() throws Exception {
 		helperPass("B", new String[] { "m" }, new String[][] { new String[0] });
 	}

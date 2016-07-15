@@ -6,4 +6,6 @@ interface I {
 }
 
 class A {
+	abstract class B implements I {
+	}
 }

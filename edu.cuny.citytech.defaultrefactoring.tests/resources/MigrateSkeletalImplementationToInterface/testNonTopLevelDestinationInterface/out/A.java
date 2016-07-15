@@ -6,3 +6,6 @@ class B {
 		}
 	}
 }
+
+abstract class A implements B.I {
+}

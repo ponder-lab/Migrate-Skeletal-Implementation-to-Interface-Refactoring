@@ -5,3 +5,6 @@ interface I {
 		this.m();
 	}
 }
+
+public abstract class A implements I {
+}

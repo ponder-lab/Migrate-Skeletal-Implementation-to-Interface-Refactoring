@@ -6,6 +6,9 @@ interface I {
 	}
 }
 
+abstract class A implements I {
+}
+
 abstract class B implements I {
 	@Override
 	public void m() {
@@ -22,7 +25,7 @@ abstract class C implements I {
 
 class Main {
 	public static void main(String[] args) {
-		new I() {}.m(); //prints 5.
+		new A() {}.m(); //prints 5.
 		new B() {}.m(); //prints 6.
 		new C() {}.m(); //prints 7.
 	}

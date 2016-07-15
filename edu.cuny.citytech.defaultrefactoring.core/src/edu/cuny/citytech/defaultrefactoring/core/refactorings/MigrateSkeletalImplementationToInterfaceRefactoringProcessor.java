@@ -50,12 +50,9 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.ASTMatcher;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.ArrayCreation;
-import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
@@ -68,17 +65,13 @@ import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.IntersectionType;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.NameQualifiedType;
-import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
@@ -86,15 +79,7 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.Type;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.jdt.core.dom.TypeLiteral;
-import org.eclipse.jdt.core.dom.TypeMethodReference;
-import org.eclipse.jdt.core.dom.TypeParameter;
-import org.eclipse.jdt.core.dom.UnionType;
-import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
-import org.eclipse.jdt.core.dom.WildcardType;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
@@ -165,42 +150,6 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
  */
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
-
-	private final class SuperReferenceFinder extends ASTVisitor {
-		private boolean encounteredSuper;
-
-		private SuperReferenceFinder(boolean visitDocTags) {
-			super(visitDocTags);
-		}
-
-		@Override
-		public boolean visit(SuperConstructorInvocation node) {
-			encounteredSuper = true;
-			return false;
-		}
-
-		@Override
-		public boolean visit(SuperFieldAccess node) {
-			encounteredSuper = true;
-			return false;
-		}
-
-		@Override
-		public boolean visit(SuperMethodInvocation node) {
-			encounteredSuper = true;
-			return false;
-		}
-
-		@Override
-		public boolean visit(SuperMethodReference node) {
-			encounteredSuper = true;
-			return false;
-		}
-
-		public boolean hasEncounteredSuper() {
-			return encounteredSuper;
-		}
-	}
 
 	private final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 		private boolean methodContainsSuperReference;
@@ -2474,13 +2423,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// the set of target methods that we transformed to default methods.
 			Set<IMethod> transformedTargetMethods = new HashSet<>(migratableMethods.size());
 
-			// Types we've checked for removal.
-			Set<IType> checkedDeclaringTypes = new HashSet<>();
-
-			// declaring types that will be removed as a result of the
-			// refactoring.
-			Set<IType> canBeRemovedDeclaringTypes = new HashSet<>();
-
 			for (IMethod sourceMethod : migratableMethods) {
 				// get the source method declaration.
 				CompilationUnit sourceCompilationUnit = getCompilationUnit(sourceMethod.getTypeRoot(), pm);
@@ -2494,37 +2436,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// Find the target method.
 				IMethod targetMethod = getTargetMethod(sourceMethod,
 						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
-
-				// if we have not checked the source method's declaring type for
-				// transformation.
-				if (!checkedDeclaringTypes.contains(sourceMethod.getDeclaringType())) {
-					// if we can remove the declaring type.
-					if (canRemove(sourceMethod, targetMethod.getDeclaringType(), sourceMethod.getDeclaringType(),
-							migratableMethods, Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)))) {
-						// add to set.
-						canBeRemovedDeclaringTypes.add(sourceMethod.getDeclaringType());
-
-						// remove the type.
-						TypeDeclaration typeDeclaration = ASTNodeSearchUtil
-								.getTypeDeclarationNode(sourceMethod.getDeclaringType(), sourceCompilationUnit);
-						removeType(typeDeclaration, sourceRewrite.getASTRewrite());
-						// TODO: Also register the removed typeDeclaration with
-						// the importRemover?
-
-						// TODO: Also remove the compilation unit if it's a
-						// top-level type? Or, we can keep it around so that any
-						// javadoc can be merged.
-
-						IType substitute = chooseSubstituteType(sourceMethod.getDeclaringType(),
-								targetMethod.getDeclaringType(),
-								Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
-
-						transformReferences(sourceMethod.getDeclaringType(), substitute,
-								Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
-					}
-
-					checkedDeclaringTypes.add(sourceMethod.getDeclaringType());
-				}
 
 				// if we have not already transformed this method
 				if (!transformedTargetMethods.contains(targetMethod)) {
@@ -2549,9 +2460,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 					// tack on the source method body to the target method.
 					pm.beginTask("Copying source method body ...", IProgressMonitor.UNKNOWN);
-					copyMethodBody(sourceRewrite, destinationCompilationUnitRewrite, sourceMethod, destinationInterface,
+					copyMethodBody(sourceRewrite, destinationCompilationUnitRewrite, sourceMethod,
 							sourceMethodDeclaration, targetMethodDeclaration, mapping,
-							canBeRemovedDeclaringTypes.contains(sourceMethod.getDeclaringType()),
 							new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN));
 
 					// add any static imports needed to the target method's
@@ -2594,15 +2504,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					transformedTargetMethods.add(targetMethod);
 				}
 
-				// if we're not removing the declaring type.
-				if (!canBeRemovedDeclaringTypes.contains(sourceMethod.getDeclaringType())) {
-					// Remove the source method.
-					removeMethod(sourceMethodDeclaration, sourceRewrite.getASTRewrite());
-
-					// remove any imports of the source methods in the declaring
-					// type.
-					sourceRewrite.getImportRemover().registerRemovedNode(sourceMethodDeclaration);
-				}
+				// Remove the source method.
+				removeMethod(sourceMethodDeclaration, sourceRewrite.getASTRewrite());
+				sourceRewrite.getImportRemover().registerRemovedNode(sourceMethodDeclaration);
 			}
 
 			// save the source changes.
@@ -2628,367 +2532,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			pm.done();
 			this.clearCaches();
 		}
-	}
-
-	private IType chooseSubstituteType(IType declaringType, IType destinationInterface,
-			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		monitor.ifPresent(m -> m.beginTask("Choosing substitute type ...", IProgressMonitor.UNKNOWN));
-		try {
-			if (declaringType.getSuperclassName() == null) // this is a
-															// top-level type.
-				return destinationInterface; // use the interface.
-			else {
-				// otherwise, choose the immediate superclass. We can't go
-				// further up the hierarchy because clients may be relying on
-				// the immediate superclass.
-				ITypeHierarchy superTypeHierarchy = getSuperTypeHierarchy(declaringType,
-						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
-				return superTypeHierarchy.getSuperclass(declaringType);
-			}
-		} finally {
-			monitor.ifPresent(IProgressMonitor::done);
-		}
-	}
-
-	private void transformReferences(IType declaringType, IType substitute, Optional<IProgressMonitor> monitor)
-			throws CoreException {
-		monitor.ifPresent(m -> m.beginTask("Transforming type references ...", IProgressMonitor.UNKNOWN));
-		try {
-			this.getSearchEngine()
-					.search(SearchPattern.createPattern(declaringType, IJavaSearchConstants.REFERENCES,
-							SearchPattern.R_EXACT_MATCH),
-					new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
-					SearchEngine.createWorkspaceScope(), new SearchRequestor() {
-
-						@Override
-						public void acceptSearchMatch(SearchMatch match) throws CoreException {
-							IJavaElement element = (IJavaElement) match.getElement();
-
-							if (isInType(element, declaringType))
-								return; // skip references in the declaring type
-										// since it will be removed.
-
-							ITypeRoot typeRoot = extractTypeRoot(element);
-
-							if (typeRoot != null) {
-								CompilationUnit compilationUnit = getCompilationUnit(typeRoot, new SubProgressMonitor(
-										monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
-
-								CompilationUnitRewrite compilationUnitRewrite = getCompilationUnitRewrite(
-										(ICompilationUnit) typeRoot, compilationUnit);
-
-								ASTNode node = ASTNodeSearchUtil.getAstNode(match, compilationUnit);
-								processNode(node, compilationUnitRewrite);
-							}
-						}
-
-						private boolean isInType(IJavaElement element, IType type) {
-							IType ancestor = (IType) element.getAncestor(IJavaElement.TYPE);
-							if (ancestor == null)
-								return false;
-							else
-								return ancestor.equals(type);
-						}
-
-						private ITypeRoot extractTypeRoot(IJavaElement element) {
-							if (element instanceof IMember) {
-								IMember member = (IMember) element;
-								return member.getTypeRoot();
-							} else
-								return (ITypeRoot) element.getAncestor(IJavaElement.COMPILATION_UNIT);
-						}
-
-						@SuppressWarnings("unchecked")
-						private void processNode(ASTNode node, CompilationUnitRewrite rewrite)
-								throws JavaModelException {
-							switch (node.getNodeType()) {
-							case ASTNode.SIMPLE_NAME:
-							case ASTNode.QUALIFIED_NAME:
-							case ASTNode.SIMPLE_TYPE:
-							case ASTNode.PARAMETERIZED_TYPE: {
-								processNode(node.getParent(), rewrite);
-								break;
-							}
-							case ASTNode.VARIABLE_DECLARATION_STATEMENT: {
-								VariableDeclarationStatement variableDeclarationStatement = (VariableDeclarationStatement) node;
-								if (variableDeclarationStatement.getType().resolveBinding().getJavaElement()
-										.equals(declaringType))
-									replaceType(variableDeclarationStatement.getType(), substitute, rewrite);
-								break;
-							}
-							case ASTNode.VARIABLE_DECLARATION_EXPRESSION: {
-								VariableDeclarationExpression variableDeclarationExpression = (VariableDeclarationExpression) node;
-								if (variableDeclarationExpression.getType().resolveBinding().getJavaElement()
-										.equals(declaringType))
-									replaceType(variableDeclarationExpression.getType(), substitute, rewrite);
-								break;
-							}
-							case ASTNode.ARRAY_CREATION: {
-								ArrayCreation arrayCreation = (ArrayCreation) node;
-								if (arrayCreation.getType().resolveBinding().getJavaElement().equals(declaringType))
-									replaceType(arrayCreation.getType(), substitute, rewrite);
-								break;
-							}
-							case ASTNode.ARRAY_TYPE: {
-								ArrayType arrayType = (ArrayType) node;
-								if (arrayType.getElementType().resolveBinding().getJavaElement().equals(declaringType))
-									replaceType(arrayType.getElementType(), substitute, rewrite);
-								break;
-							}
-							case ASTNode.NAME_QUALIFIED_TYPE: {
-								NameQualifiedType nameQualifiedType = (NameQualifiedType) node;
-								if (nameQualifiedType.getName().resolveBinding().getJavaElement().equals(declaringType))
-									replaceSimpleName(nameQualifiedType.getName(), substitute, rewrite);
-								break;
-							}
-							case ASTNode.UNION_TYPE: {
-								UnionType type = (UnionType) node;
-								Stream<Type> types = type.types().stream().filter(Type.class::isInstance)
-										.map(Type.class::cast);
-								types.filter(t -> t.resolveBinding().getJavaElement().equals(declaringType))
-										.forEach(t -> replaceType(t, substitute, rewrite));
-								break;
-							}
-							case ASTNode.INTERSECTION_TYPE: {
-								IntersectionType intersectionType = (IntersectionType) node;
-								Stream<Type> types = intersectionType.types().stream().filter(Type.class::isInstance)
-										.map(Type.class::cast);
-								types.filter(t -> t.resolveBinding().getJavaElement().equals(declaringType))
-										.forEach(t -> replaceType(t, substitute, rewrite));
-								break;
-							}
-							case ASTNode.WILDCARD_TYPE: {
-								WildcardType type = (WildcardType) node;
-								if (type.getBound().resolveBinding().getJavaElement().equals(declaringType))
-									replaceType(type.getBound(), substitute, rewrite);
-								break;
-							}
-							case ASTNode.TYPE_LITERAL: {
-								TypeLiteral literal = (TypeLiteral) node;
-								if (literal.getType().resolveBinding().getJavaElement().equals(declaringType))
-									replaceType(literal.getType(), substitute, rewrite);
-								break;
-							}
-							case ASTNode.TYPE_METHOD_REFERENCE: {
-								TypeMethodReference methodReference = (TypeMethodReference) node;
-
-								if (methodReference.getType().resolveBinding().getJavaElement().equals(declaringType))
-									replaceType(methodReference.getType(), substitute, rewrite);
-
-								Stream<Type> arguments = methodReference.typeArguments().stream()
-										.filter(Type.class::isInstance).map(Type.class::cast);
-								arguments.filter(t -> t.resolveBinding().getJavaElement().equals(declaringType))
-										.forEach(t -> replaceType(t, substitute, rewrite));
-								break;
-							}
-							case ASTNode.TYPE_PARAMETER: {
-								TypeParameter parameter = (TypeParameter) node;
-
-								if (parameter.getName().resolveBinding().getJavaElement().equals(declaringType))
-									replaceSimpleName(parameter.getName(), substitute, rewrite);
-
-								Stream<Type> bounds = parameter.typeBounds().stream().filter(Type.class::isInstance)
-										.map(Type.class::cast);
-								bounds.filter(t -> t.resolveBinding().getJavaElement().equals(declaringType))
-										.forEach(t -> replaceType(t, substitute, rewrite));
-								break;
-							}
-							case ASTNode.TYPE_DECLARATION: {
-								TypeDeclaration typeDeclaration = (TypeDeclaration) node;
-								if (typeDeclaration.getSuperclassType().resolveBinding().getJavaElement()
-										.equals(declaringType)) {
-
-									if (substitute.isInterface()) {
-										// remove the super type.
-										rewrite.getASTRewrite().set(typeDeclaration,
-												TypeDeclaration.SUPERCLASS_TYPE_PROPERTY, null, null);
-
-										// if the type doesn't already implement
-										// the
-										// destination interface.
-										if (!typeDeclaration.superInterfaceTypes().stream().anyMatch(
-												t -> ((Type) t).resolveBinding().getJavaElement().equals(substitute))) {
-											// add the destination interface as
-											// one
-											// of the implemented interfaces.
-											ListRewrite listRewrite = rewrite.getASTRewrite().getListRewrite(node,
-													TypeDeclaration.SUPER_INTERFACE_TYPES_PROPERTY);
-											listRewrite.insertFirst(
-													rewrite.getAST().newSimpleName(substitute.getElementName()), null);
-											rewrite.getImportRewrite().addImport(substitute.getFullyQualifiedName());
-										}
-									} else if (substitute.isClass()) {
-										SimpleType type = rewrite.getAST()
-												.newSimpleType(rewrite.getAST().newName(substitute.getElementName()));
-										rewrite.getASTRewrite().replace(typeDeclaration.getSuperclassType(), type,
-												null);
-									} else
-										throw new IllegalArgumentException("Expecting substitute type: " + substitute
-												+ " to be either an interface or a class.");
-
-									rewrite.getImportRemover().registerRemovedNode(typeDeclaration.getSuperclassType());
-								}
-								break;
-							}
-							case ASTNode.CLASS_INSTANCE_CREATION: {
-								ClassInstanceCreation classInstanceCreation = (ClassInstanceCreation) node;
-								if (classInstanceCreation.getType().resolveBinding().getJavaElement()
-										.equals(declaringType))
-									replaceType(classInstanceCreation.getType(), substitute, rewrite);
-								break;
-							}
-							case ASTNode.CREATION_REFERENCE: {
-								CreationReference creationReference = (CreationReference) node;
-								if (creationReference.getType().resolveBinding().getJavaElement().equals(declaringType))
-									replaceType(creationReference.getType(), substitute, rewrite);
-
-								Stream<Type> arguments = creationReference.typeArguments().stream()
-										.filter(Type.class::isInstance).map(Type.class::cast);
-								arguments.filter(t -> t.resolveBinding().getJavaElement().equals(declaringType))
-										.forEach(t -> replaceType(t, substitute, rewrite));
-								break;
-							}
-							case ASTNode.CONSTRUCTOR_INVOCATION: {
-								ConstructorInvocation constructorInvocation = (ConstructorInvocation) node;
-								List<Type> typeArguments = constructorInvocation.typeArguments();
-								replaceType(typeArguments, declaringType, substitute, rewrite);
-								break;
-							}
-							case ASTNode.SUPER_CONSTRUCTOR_INVOCATION: {
-								SuperConstructorInvocation constructorInvocation = (SuperConstructorInvocation) node;
-								replaceType(constructorInvocation.typeArguments(), declaringType, substitute, rewrite);
-								break;
-							}
-							case ASTNode.TAG_ELEMENT: {
-								removeNode(node, rewrite);
-								break;
-							}
-							case ASTNode.IMPORT_DECLARATION: {
-								// skip.
-								break;
-							}
-							default: {
-								throw new IllegalArgumentException(
-										"Unknown node type: " + node.getNodeType() + " for node: " + node);
-							}
-							}
-						}
-
-						private void replaceType(List<Type> fromTypes, IType declaringType, IType toType,
-								CompilationUnitRewrite rewrite) {
-							Stream<Type> arguments = fromTypes.stream().filter(Type.class::isInstance)
-									.map(Type.class::cast);
-							arguments.filter(t -> t.resolveBinding().getJavaElement().equals(declaringType))
-									.forEach(t -> replaceType(t, toType, rewrite));
-						}
-
-						private void replaceType(Type oldType, IType newType, CompilationUnitRewrite rewrite) {
-							rewrite.getASTRewrite().replace(oldType,
-									rewrite.getAST().newSimpleName(newType.getElementName()), null);
-							rewrite.getImportRewrite().addImport(substitute.getFullyQualifiedName());
-							rewrite.getImportRemover().registerRemovedNode(oldType);
-						}
-
-						private void replaceSimpleName(SimpleName oldSimpleName, IType newType,
-								CompilationUnitRewrite rewrite) {
-							rewrite.getASTRewrite().replace(oldSimpleName,
-									rewrite.getAST().newSimpleName(newType.getElementName()), null);
-							rewrite.getImportRewrite().addImport(substitute.getFullyQualifiedName());
-						}
-
-						private void removeNode(ASTNode node, CompilationUnitRewrite rewrite) {
-							rewrite.getASTRewrite().remove(node, null);
-							rewrite.getImportRemover().registerRemovedNode(node);
-						}
-
-					}, new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN));
-		} finally {
-			monitor.ifPresent(IProgressMonitor::done);
-		}
-	}
-
-	private boolean canRemove(IMethod sourceMethod, IType destinationInterface, IType type,
-			Set<IMethod> methodsToMigrate, Optional<IProgressMonitor> monitor) throws JavaModelException {
-		monitor.ifPresent(m -> m.beginTask("Checking if type can be removed ...", IProgressMonitor.UNKNOWN));
-		try {
-			// TODO: Add code to also remove concrete types #25.
-			return JdtFlags.isAbstract(type) && willBeEmpty(type, methodsToMigrate)
-					&& superClassImplementsDestinationInterface(type, destinationInterface,
-							monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)))
-					&& !subclassesContainSuperReferences(sourceMethod, type,
-							monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
-		} finally {
-			monitor.ifPresent(IProgressMonitor::done);
-		}
-	}
-
-	private boolean superClassImplementsDestinationInterface(IType type, IType destinationInterface,
-			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		monitor.ifPresent(m -> m.beginTask("Checking superclass ...", IProgressMonitor.UNKNOWN));
-		try {
-			if (type.getSuperclassName() != null) { // there's a superclass.
-				ITypeHierarchy superTypeHierarchy = getSuperTypeHierarchy(type,
-						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
-				IType superclass = superTypeHierarchy.getSuperclass(type);
-				return Arrays.stream(superTypeHierarchy.getAllSuperInterfaces(superclass))
-						.anyMatch(i -> i.equals(destinationInterface));
-			}
-		} finally {
-			monitor.ifPresent(IProgressMonitor::done);
-		}
-
-		return true; // vacuously true since there's no superclass.
-	}
-
-	private boolean subclassesContainSuperReferences(IMethod sourceMethod, IType type,
-			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		monitor.ifPresent(m -> m.beginTask("Checking for super references ...", IProgressMonitor.UNKNOWN));
-		try {
-			IType[] subclasses = getTypeHierarchy(type,
-					monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))).getSubclasses(type);
-
-			for (IType subclass : subclasses) {
-				IMethod[] methods = subclass.findMethods(sourceMethod);
-				if (methods != null) {
-					for (IMethod method : methods) {
-						CompilationUnit unit = getCompilationUnit(method.getTypeRoot(),
-								monitor.map(m -> (IProgressMonitor) new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))
-										.orElseGet(NullProgressMonitor::new));
-
-						SuperReferenceFinder finder = new SuperReferenceFinder(false);
-						unit.accept(finder);
-
-						if (finder.hasEncounteredSuper())
-							return true;
-					}
-				}
-			}
-		} finally {
-			monitor.ifPresent(IProgressMonitor::done);
-		}
-		return false;
-	}
-
-	/**
-	 * Returns true if the given type will be empty given a set of methods to
-	 * remove from the type and false otherwise.
-	 * 
-	 * @param type
-	 *            The type to check for emptiness.
-	 * @param methodsToRemove
-	 *            The methods that will be removed from the given type.
-	 * @return True if the given type will be empty as a result of removing the
-	 *         given methods from the type.
-	 * @throws JavaModelException
-	 *             On a java model problem.
-	 */
-	private boolean willBeEmpty(IType type, Set<IMethod> methodsToRemove) throws JavaModelException {
-		IMethod[] methods = type.getMethods();
-		Set<IMethod> methodsRemaining = new LinkedHashSet<>(Arrays.asList(methods));
-		methodsRemaining.removeAll(methodsToRemove);
-
-		return methodsRemaining.isEmpty() && type.getFields().length == 0 && type.getInitializers().length == 0
-				&& type.getTypes().length == 0;
 	}
 
 	/**
@@ -3075,7 +2618,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		if (change != null)
 			change.setTextType("java");
-
+		
 		manager.manage(rewrite.getCu(), change);
 	}
 
@@ -3104,65 +2647,23 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private void copyMethodBody(final CompilationUnitRewrite sourceRewrite, final CompilationUnitRewrite targetRewrite,
-			final IMethod sourceMethod, IType destinationInterface, final MethodDeclaration oldMethod,
-			final MethodDeclaration newMethod, final TypeVariableMaplet[] mapping,
-			boolean transformDeclaringTypeReferences, final IProgressMonitor monitor) throws JavaModelException {
+			final IMethod method, final MethodDeclaration oldMethod, final MethodDeclaration newMethod,
+			final TypeVariableMaplet[] mapping, final IProgressMonitor monitor) throws JavaModelException {
 		final Block body = oldMethod.getBody();
 		if (body == null) {
 			newMethod.setBody(null);
 			return;
 		}
 		try {
-			final IDocument document = new Document(sourceMethod.getCompilationUnit().getBuffer().getContents());
+			final IDocument document = new Document(method.getCompilationUnit().getBuffer().getContents());
 			final ASTRewrite rewrite = ASTRewrite.create(body.getAST());
 			final ITrackedNodePosition position = rewrite.track(body);
 			body.accept(new TypeVariableMapper(rewrite, mapping));
-
-			if (transformDeclaringTypeReferences)
-				// replace occurrences of the declaring type with the
-				// destination interface.
-				body.accept(new ASTVisitor(true) {
-
-					@Override
-					public boolean visit(SimpleName node) {
-						// we only want references to non-qualified names.
-						if (node.getParent().getNodeType() != ASTNode.QUALIFIED_NAME && !node.isDeclaration()) {
-							ITypeBinding binding = node.resolveTypeBinding();
-							if (binding != null) {
-								IJavaElement javaElement = binding.getJavaElement();
-								// if the binding corresponds to the declaring
-								// type.
-								if (javaElement != null && javaElement.equals(sourceMethod.getDeclaringType()))
-									rewrite.set(node, SimpleName.IDENTIFIER_PROPERTY,
-											destinationInterface.getElementName(), null);
-							}
-						}
-						return super.visit(node);
-					}
-
-					@Override
-					public boolean visit(QualifiedName node) {
-						ITypeBinding binding = node.resolveTypeBinding();
-						if (binding != null) {
-							IJavaElement javaElement = binding.getJavaElement();
-							if (javaElement != null && javaElement.equals(sourceMethod.getDeclaringType())) {
-								SimpleName name = rewrite.getAST().newSimpleName(destinationInterface.getElementName());
-								Name qualifier = rewrite.getAST()
-										.newName(Signature.getQualifier(destinationInterface.getFullyQualifiedName()));
-								QualifiedName newQualifiedName = rewrite.getAST().newQualifiedName(qualifier, name);
-								rewrite.replace(node, newQualifiedName, null);
-							}
-						}
-						return super.visit(node);
-					}
-
-				});
-
-			rewrite.rewriteAST(document, sourceMethod.getJavaProject().getOptions(true)).apply(document, TextEdit.NONE);
+			rewrite.rewriteAST(document, method.getJavaProject().getOptions(true)).apply(document, TextEdit.NONE);
 			String content = document.get(position.getStartPosition(), position.getLength());
 			final String[] lines = Strings.convertIntoLines(content);
-			Strings.trimIndentation(lines, sourceMethod.getJavaProject(), false);
-			content = Strings.concatenate(lines, StubUtility.getLineDelimiterUsed(sourceMethod));
+			Strings.trimIndentation(lines, method.getJavaProject(), false);
+			content = Strings.concatenate(lines, StubUtility.getLineDelimiterUsed(method));
 			ASTNode stringPlaceholder = targetRewrite.getASTRewrite().createStringPlaceholder(content, ASTNode.BLOCK);
 			targetRewrite.getASTRewrite().set(newMethod, MethodDeclaration.BODY_PROPERTY, stringPlaceholder, null);
 		} catch (MalformedTreeException exception) {
@@ -3175,10 +2676,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private void removeMethod(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
 		// TODO: Do we need an edit group??
 		rewrite.remove(methodDeclaration, null);
-	}
-
-	private void removeType(TypeDeclaration typeDeclaration, ASTRewrite rewrite) {
-		rewrite.remove(typeDeclaration, null);
 	}
 
 	private void convertToDefault(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {

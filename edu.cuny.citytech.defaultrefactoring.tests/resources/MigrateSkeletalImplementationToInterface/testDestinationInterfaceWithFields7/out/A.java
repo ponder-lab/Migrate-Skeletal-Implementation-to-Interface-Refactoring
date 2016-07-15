@@ -6,3 +6,6 @@ interface I {
 		System.out.println(f);
 	}
 }
+
+abstract class A implements I {
+}

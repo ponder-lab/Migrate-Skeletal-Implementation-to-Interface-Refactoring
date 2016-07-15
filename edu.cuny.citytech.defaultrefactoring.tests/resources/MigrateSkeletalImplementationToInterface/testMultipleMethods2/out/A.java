@@ -6,3 +6,6 @@ interface I {
 	default void n() {
 	}
 }
+
+abstract class A implements I {
+}
