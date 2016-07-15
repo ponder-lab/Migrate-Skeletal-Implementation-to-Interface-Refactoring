@@ -2,8 +2,6 @@ package p;
 
 import java.io.Serializable;
 
-import p.A;
-
 interface I {
 	void m();
 }
