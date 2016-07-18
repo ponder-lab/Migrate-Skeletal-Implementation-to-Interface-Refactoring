@@ -52,7 +52,8 @@ import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
  */
 public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler extends AbstractHandler {
 
-	private static final boolean ALLOW_CONCRETE_CLASSES = false;
+	private static final String ALLOW_CONCRETE_CLASSES_PROPERTY_KEY = "edu.cuny.citytech.defaultrefactoring.eval.allowConcreteClasses";
+	private static final boolean ALLOW_CONCRETE_CLASSES_DEFAULT = false;
 	private static final boolean BUILD_WORKSPACE = false;
 
 	/**
@@ -113,10 +114,12 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					// TODO: Remove this and just clear caches after this call?
 					resultsTimeCollector.start();
-					for (IMethod method : allMethods)
-						if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, ALLOW_CONCRETE_CLASSES,
+					for (IMethod method : allMethods) {
+						boolean allowConcreteClasses = shouldAllowConcreteClasses();
+						if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, allowConcreteClasses,
 								Optional.of(monitor)))
 							interfaceMigrationAvailableMethods.add(method);
+					}
 					resultsTimeCollector.stop();
 
 					resultsPrinter.print(interfaceMigrationAvailableMethods.size());
@@ -274,6 +277,15 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 		}).schedule();
 
 		return null;
+	}
+
+	private boolean shouldAllowConcreteClasses() {
+		String allowConcreateClassesPropertyValue = System.getenv(ALLOW_CONCRETE_CLASSES_PROPERTY_KEY);
+
+		if (allowConcreateClassesPropertyValue == null)
+			return ALLOW_CONCRETE_CLASSES_DEFAULT;
+		else
+			return Boolean.valueOf(allowConcreateClassesPropertyValue);
 	}
 
 	private static String getDestinationTypeFullyQualifiedName(IMethod method, IProgressMonitor monitor)
