@@ -216,7 +216,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// methods #144.
 			IMethodBinding methodBinding = node.resolveMethodBinding();
 
-			if (methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
+			if (methodBinding != null
+					&& methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
 				IMethod calledObjectMethod = (IMethod) methodBinding.getJavaElement();
 
 				try {
@@ -487,21 +488,26 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		@Override
 		public boolean visit(MethodInvocation methodInvocation) {
 			IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
-			IJavaElement javaElement = methodBinding.getJavaElement();
 
-			if (javaElement == null)
-				logWarning("Could not get Java element from binding: " + methodBinding + " while processing: "
-						+ methodInvocation);
-			else if (javaElement.equals(accessedMethod)) {
-				Expression expression = methodInvocation.getExpression();
-				expression = (Expression) Util.stripParenthesizedExpressions(expression);
+			if (methodBinding != null) {
+				IJavaElement javaElement = methodBinding.getJavaElement();
 
-				// FIXME: It's not really that the expression is a `this`
-				// expression but that the type of the expression comes from a
-				// `this` expression. In other words, we may need to climb the
-				// AST.
-				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION) {
-					this.encounteredThisReceiver = true;
+				if (javaElement == null)
+					logWarning("Could not get Java element from binding: " + methodBinding + " while processing: "
+							+ methodInvocation);
+				else if (javaElement.equals(accessedMethod)) {
+					Expression expression = methodInvocation.getExpression();
+					expression = (Expression) Util.stripParenthesizedExpressions(expression);
+
+					// FIXME: It's not really that the expression is a `this`
+					// expression but that the type of the expression comes from
+					// a
+					// `this` expression. In other words, we may need to climb
+					// the
+					// AST.
+					if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION) {
+						this.encounteredThisReceiver = true;
+					}
 				}
 			}
 			return super.visit(methodInvocation);
@@ -1023,17 +1029,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					case ASTNode.CLASS_INSTANCE_CREATION: {
 						ClassInstanceCreation creation = (ClassInstanceCreation) node;
 						IMethodBinding binding = creation.resolveConstructorBinding();
-						return (IMethod) binding.getJavaElement();
+						return binding == null ? null : (IMethod) binding.getJavaElement();
 					}
 					case ASTNode.CONSTRUCTOR_INVOCATION: {
 						ConstructorInvocation invocation = (ConstructorInvocation) node;
 						IMethodBinding binding = invocation.resolveConstructorBinding();
-						return (IMethod) binding.getJavaElement();
+						return binding == null ? null : (IMethod) binding.getJavaElement();
 					}
 					case ASTNode.SUPER_CONSTRUCTOR_INVOCATION: {
 						SuperConstructorInvocation invocation = (SuperConstructorInvocation) node;
 						IMethodBinding binding = invocation.resolveConstructorBinding();
-						return (IMethod) binding.getJavaElement();
+						return binding == null ? null : (IMethod) binding.getJavaElement();
 					}
 					case ASTNode.CREATION_REFERENCE: {
 						CreationReference reference = (CreationReference) node;
@@ -2618,7 +2624,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		if (change != null)
 			change.setTextType("java");
-		
+
 		manager.manage(rewrite.getCu(), change);
 	}
 
