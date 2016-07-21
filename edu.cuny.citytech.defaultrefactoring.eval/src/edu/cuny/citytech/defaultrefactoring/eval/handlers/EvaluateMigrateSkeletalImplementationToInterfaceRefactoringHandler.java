@@ -43,6 +43,10 @@ import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImp
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
 import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
 import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
+import net.sourceforge.metrics.core.Metric;
+import net.sourceforge.metrics.core.MetricsPlugin;
+import net.sourceforge.metrics.core.sources.AbstractMetricSource;
+import net.sourceforge.metrics.core.sources.Dispatcher;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -81,11 +85,12 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 				resultsPrinter = createCSVPrinter("results.csv",
 						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
-								"#failed preconditions", "#methods after refactoring", "time (s)" });
+								"migratable methods LOC", "#failed preconditions", "#methods after refactoring",
+								"time (s)" });
 				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv",
 						new String[] { "method", "type FQN" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
-						new String[] { "subject", "method", "type FQN", "destination interface FQN" });
+						new String[] { "subject", "method", "type FQN", "destination interface FQN", "MLOC" });
 
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
 						new String[] { "subject", "method", "type FQN", "destination interface FQN" });
@@ -186,12 +191,18 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					// passed methods.
 					resultsPrinter.print(processor.getMigratableMethods().size()); // number.
 
+					int totalMethodLinesOfCode = 0;
+
 					for (IMethod method : processor.getMigratableMethods()) {
+						int methodLinesOfCode = getMethodLinesOfCode(method);
+						totalMethodLinesOfCode += methodLinesOfCode;
+
 						migratableMethodPrinter.printRecord(javaProject.getElementName(),
 								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
-								getDestinationTypeFullyQualifiedName(method, monitor));
-
+								getDestinationTypeFullyQualifiedName(method, monitor), methodLinesOfCode);
 					}
+
+					resultsPrinter.print(totalMethodLinesOfCode); // MLOC.
 
 					// failed methods.
 					for (IMethod method : processor.getUnmigratableMethods()) {
@@ -277,6 +288,13 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 		}).schedule();
 
 		return null;
+	}
+
+	private static int getMethodLinesOfCode(IMethod method) {
+		AbstractMetricSource metricSource = Dispatcher.getAbstractMetricSource(method);
+		Metric value = metricSource.getValue("MLOC");
+		int mLOC = value.intValue();
+		return mLOC;
 	}
 
 	private boolean shouldAllowConcreteClasses() {
