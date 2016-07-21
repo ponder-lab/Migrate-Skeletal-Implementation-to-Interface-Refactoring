@@ -46,7 +46,6 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTe
 import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
 import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
 import net.sourceforge.metrics.core.Metric;
-import net.sourceforge.metrics.core.MetricsPlugin;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
 
