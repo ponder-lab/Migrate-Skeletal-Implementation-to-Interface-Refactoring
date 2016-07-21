@@ -10,7 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,6 +45,7 @@ import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImplementationToInterfaceRefactoringProcessor;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
+import edu.cuny.citytech.defaultrefactoring.core.utils.SkeletalImplementatonClassRemovalUtils;
 import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
 import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
 import net.sourceforge.metrics.core.Metric;
@@ -73,6 +76,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 			CSVPrinter migratableMethodPrinter = null;
 			CSVPrinter unmigratableMethodPrinter = null;
 			CSVPrinter errorPrinter = null;
+			CSVPrinter skeletalRemovalErrorPrinter = null;
 
 			try {
 				if (BUILD_WORKSPACE) {
@@ -87,7 +91,9 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 				resultsPrinter = createCSVPrinter("results.csv",
 						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
 								"migratable methods LOC", "#unique destination interface subtypes",
-								"#failed preconditions", "#methods after refactoring", "time (s)" });
+								"#skeletal implementation classes", "#removable skeletal implementation classes",
+								"#failed skeletal removal conditions", "#failed preconditions",
+								"#methods after refactoring", "time (s)" });
 				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv",
 						new String[] { "method", "type FQN" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv", new String[] { "subject", "method",
@@ -97,6 +103,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						new String[] { "subject", "method", "type FQN", "destination interface FQN" });
 				errorPrinter = createCSVPrinter("failed_preconditions.csv",
 						new String[] { "method", "type FQN", "destination interface FQN", "code", "message" });
+				skeletalRemovalErrorPrinter = createCSVPrinter("failed_skeletal_removals.csv",
+						new String[] { "type FQN", "message" });
 
 				for (IJavaProject javaProject : javaProjects) {
 					if (!javaProject.isStructureKnown())
@@ -193,7 +201,10 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					resultsPrinter.print(processor.getMigratableMethods().size()); // number.
 
 					int totalMethodLinesOfCode = 0;
-					Set<IType> subtypes = new HashSet<>();
+					Set<IType> destinationInterfaceSubtypes = new HashSet<>();
+					Set<IType> declaringTypesWithMigratableMethods = new HashSet<>();
+					Set<IType> removableDeclaringTypesWithMigratableMethods = new HashSet<>();
+					Map<IType, Set<String>> unremovableDeclaringTypeToReasons = new HashMap<>();
 
 					for (IMethod method : processor.getMigratableMethods()) {
 						int methodLinesOfCode = getMethodLinesOfCode(method);
@@ -203,7 +214,29 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 								.getTargetMethod(method, Optional.empty());
 
 						IType[] allSubtypes = getAllDeclaringTypeSubtypes(targetMethod);
-						subtypes.addAll(Arrays.asList(allSubtypes));
+						destinationInterfaceSubtypes.addAll(Arrays.asList(allSubtypes));
+
+						declaringTypesWithMigratableMethods.add(method.getDeclaringType());
+
+						RefactoringStatus removalStatus = SkeletalImplementatonClassRemovalUtils.checkRemoval(method,
+								targetMethod.getDeclaringType(), method.getDeclaringType(),
+								processor.getMigratableMethods(), Optional.empty());
+
+						if (removalStatus.isOK())
+							removableDeclaringTypesWithMigratableMethods.add(method.getDeclaringType());
+						else {
+							for (RefactoringStatusEntry entry : removalStatus.getEntries()) {
+								Set<String> set = unremovableDeclaringTypeToReasons.get(method.getDeclaringType());
+								if (set == null) {
+									set = new HashSet<>();
+									unremovableDeclaringTypeToReasons.put(method.getDeclaringType(), set);
+								}
+								set.add(entry.getMessage());
+
+								skeletalRemovalErrorPrinter.printRecord(
+										method.getDeclaringType().getFullyQualifiedName(), entry.getMessage());
+							}
+						}
 
 						migratableMethodPrinter.printRecord(javaProject.getElementName(),
 								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
@@ -211,11 +244,18 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 								allSubtypes.length);
 					}
 
-					resultsPrinter.print(totalMethodLinesOfCode); // MLOC.
-					resultsPrinter.print(subtypes.size()); // #unique
-															// destination
-															// interface
-															// subtypes.
+					// MLOC.
+					resultsPrinter.print(totalMethodLinesOfCode);
+					// #unique destination interface subtypes.
+					resultsPrinter.print(destinationInterfaceSubtypes.size());
+					// declaring types with migratable methods.
+					resultsPrinter.print(declaringTypesWithMigratableMethods.size());
+					// removable declaring types with migratable methods.
+					resultsPrinter.print(removableDeclaringTypesWithMigratableMethods.size());
+					// unremovable declaring types with migratable methods
+					// failures.
+					resultsPrinter.print(unremovableDeclaringTypeToReasons.values().stream().flatMap(s -> s.stream())
+							.collect(Collectors.toList()).size());
 
 					// failed methods.
 					for (IMethod method : processor.getUnmigratableMethods()) {
@@ -290,6 +330,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 						unmigratableMethodPrinter.close();
 					if (errorPrinter != null)
 						errorPrinter.close();
+					if (skeletalRemovalErrorPrinter != null)
+						skeletalRemovalErrorPrinter.close();
 				} catch (IOException e) {
 					return new Status(IStatus.ERROR, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
 							"Encountered exception during file closing", e);

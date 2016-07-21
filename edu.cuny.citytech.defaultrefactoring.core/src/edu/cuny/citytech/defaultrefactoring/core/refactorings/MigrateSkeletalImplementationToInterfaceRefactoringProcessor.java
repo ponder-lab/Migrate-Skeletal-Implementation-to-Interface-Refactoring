@@ -1462,7 +1462,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return typeToSuperTypeHierarchyMap;
 	}
 
-	private static ITypeHierarchy getSuperTypeHierarchy(IType type, final Optional<IProgressMonitor> monitor)
+	public static ITypeHierarchy getSuperTypeHierarchy(IType type, final Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		try {
 			monitor.ifPresent(m -> m.subTask("Retrieving declaring super type hierarchy..."));
