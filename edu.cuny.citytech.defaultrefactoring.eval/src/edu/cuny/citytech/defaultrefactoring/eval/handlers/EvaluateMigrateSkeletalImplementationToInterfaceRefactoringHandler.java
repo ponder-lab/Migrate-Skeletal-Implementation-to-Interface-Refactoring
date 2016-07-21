@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -32,6 +33,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -85,12 +87,12 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 				resultsPrinter = createCSVPrinter("results.csv",
 						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
-								"migratable methods LOC", "#failed preconditions", "#methods after refactoring",
-								"time (s)" });
+								"migratable methods LOC", "#unique destination interface subtypes",
+								"#failed preconditions", "#methods after refactoring", "time (s)" });
 				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv",
 						new String[] { "method", "type FQN" });
-				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv",
-						new String[] { "subject", "method", "type FQN", "destination interface FQN", "MLOC" });
+				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv", new String[] { "subject", "method",
+						"type FQN", "destination interface FQN", "MLOC", "#destination interface subtypes" });
 
 				unmigratableMethodPrinter = createCSVPrinter("unmigratable_methods.csv",
 						new String[] { "subject", "method", "type FQN", "destination interface FQN" });
@@ -192,17 +194,29 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					resultsPrinter.print(processor.getMigratableMethods().size()); // number.
 
 					int totalMethodLinesOfCode = 0;
+					Set<IType> subtypes = new HashSet<>();
 
 					for (IMethod method : processor.getMigratableMethods()) {
 						int methodLinesOfCode = getMethodLinesOfCode(method);
 						totalMethodLinesOfCode += methodLinesOfCode;
 
+						IMethod targetMethod = MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+								.getTargetMethod(method, Optional.empty());
+
+						IType[] allSubtypes = getAllDeclaringTypeSubtypes(targetMethod);
+						subtypes.addAll(Arrays.asList(allSubtypes));
+
 						migratableMethodPrinter.printRecord(javaProject.getElementName(),
 								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
-								getDestinationTypeFullyQualifiedName(method, monitor), methodLinesOfCode);
+								getDestinationTypeFullyQualifiedName(method, monitor), methodLinesOfCode,
+								allSubtypes.length);
 					}
 
 					resultsPrinter.print(totalMethodLinesOfCode); // MLOC.
+					resultsPrinter.print(subtypes.size()); // #unique
+															// destination
+															// interface
+															// subtypes.
 
 					// failed methods.
 					for (IMethod method : processor.getUnmigratableMethods()) {
@@ -288,6 +302,13 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 		}).schedule();
 
 		return null;
+	}
+
+	private static IType[] getAllDeclaringTypeSubtypes(IMethod method) throws JavaModelException {
+		IType declaringType = method.getDeclaringType();
+		ITypeHierarchy typeHierarchy = declaringType.newTypeHierarchy(new NullProgressMonitor());
+		IType[] allSubtypes = typeHierarchy.getAllSubtypes(declaringType);
+		return allSubtypes;
 	}
 
 	private static int getMethodLinesOfCode(IMethod method) {
