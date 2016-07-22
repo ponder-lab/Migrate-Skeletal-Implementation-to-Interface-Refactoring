@@ -359,9 +359,15 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 	private static int getMethodLinesOfCode(IMethod method) {
 		AbstractMetricSource metricSource = Dispatcher.getAbstractMetricSource(method);
-		Metric value = metricSource.getValue("MLOC");
-		int mLOC = value.intValue();
-		return mLOC;
+
+		if (metricSource != null) {
+			Metric value = metricSource.getValue("MLOC");
+			int mLOC = value.intValue();
+			return mLOC;
+		} else {
+			System.err.println("WARNING: Could not retrieve metric source for method: " + method);
+			return 0;
+		}
 	}
 
 	private boolean shouldAllowConcreteClasses() {
