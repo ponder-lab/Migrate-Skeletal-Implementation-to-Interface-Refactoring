@@ -63,6 +63,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 	private static final String ALLOW_CONCRETE_CLASSES_PROPERTY_KEY = "edu.cuny.citytech.defaultrefactoring.eval.allowConcreteClasses";
 	private static final boolean ALLOW_CONCRETE_CLASSES_DEFAULT = false;
 	private static final boolean BUILD_WORKSPACE = false;
+	private static final boolean PERFORM_TRANSFORMATION = false;
 
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -286,12 +287,14 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					// actually perform the refactoring if there are no fatal
 					// errors.
-					if (!status.hasFatalError()) {
-						resultsTimeCollector.start();
-						Change change = processorBasedRefactoring
-								.createChange(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
-						change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
-						resultsTimeCollector.stop();
+					if (PERFORM_TRANSFORMATION) {
+						if (!status.hasFatalError()) {
+							resultsTimeCollector.start();
+							Change change = processorBasedRefactoring
+									.createChange(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+							change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
+							resultsTimeCollector.stop();
+						}
 					}
 
 					// ensure that we can build the project.
