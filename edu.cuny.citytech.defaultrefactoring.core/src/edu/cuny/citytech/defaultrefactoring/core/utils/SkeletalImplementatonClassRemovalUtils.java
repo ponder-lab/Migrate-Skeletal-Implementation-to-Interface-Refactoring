@@ -172,8 +172,8 @@ public final class SkeletalImplementatonClassRemovalUtils {
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		monitor.ifPresent(m -> m.beginTask("Checking for super references ...", IProgressMonitor.UNKNOWN));
 		try {
-			IType[] subclasses = type
-					.newTypeHierarchy(monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)).get())
+			IType[] subclasses = type.newTypeHierarchy(
+					new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN))
 					.getSubclasses(type);
 
 			for (IType subclass : subclasses) {
