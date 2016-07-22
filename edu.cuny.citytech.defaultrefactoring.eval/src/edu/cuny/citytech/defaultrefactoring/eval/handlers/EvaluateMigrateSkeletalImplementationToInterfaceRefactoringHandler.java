@@ -219,9 +219,11 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 						declaringTypesWithMigratableMethods.add(method.getDeclaringType());
 
+						resultsTimeCollector.start();
 						RefactoringStatus removalStatus = SkeletalImplementatonClassRemovalUtils.checkRemoval(method,
 								targetMethod.getDeclaringType(), method.getDeclaringType(),
 								processor.getMigratableMethods(), Optional.empty());
+						resultsTimeCollector.stop();
 
 						if (removalStatus.isOK())
 							removableDeclaringTypesWithMigratableMethods.add(method.getDeclaringType());
