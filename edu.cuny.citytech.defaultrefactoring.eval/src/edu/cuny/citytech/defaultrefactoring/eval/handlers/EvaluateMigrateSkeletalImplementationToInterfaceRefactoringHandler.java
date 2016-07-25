@@ -91,13 +91,14 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 				IJavaProject[] javaProjects = Util.getSelectedJavaProjectsFromEvent(event);
 
 				resultsPrinter = createCSVPrinter("results.csv",
-						new String[] { "subject", "#methods", "#migration available methods", "#migratable methods",
-								"migratable methods LOC", "#unique destination interface subtypes",
-								"#skeletal implementation classes", "#removable skeletal implementation classes",
-								"#failed skeletal removal conditions", "#failed preconditions",
-								"#methods after refactoring", "time (s)" });
-				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv",
-						new String[] { "method", "type FQN" });
+						new String[] { "subject", "#methods", "#migration available methods",
+								"declaring type class hierarchy size", "declaring type super interfaces",
+								"#migratable methods", "migratable methods LOC",
+								"#unique destination interface subtypes", "#skeletal implementation classes",
+								"#removable skeletal implementation classes", "#failed skeletal removal conditions",
+								"#failed preconditions", "#methods after refactoring", "time (s)" });
+				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv", new String[] { "method", "type FQN",
+						"declaring type class hierarchy size", "declaring type super interfaces" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv", new String[] { "subject", "method",
 						"type FQN", "destination interface FQN", "MLOC", "#destination interface subtypes" });
 
@@ -141,10 +142,26 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					resultsPrinter.print(interfaceMigrationAvailableMethods.size());
 
 					// candidate methods.
+					int declaringTypeClassHierarchyLengthTotal = 0;
+					int declaringTypeSuperInterfacesTotal = 0;
+
 					for (IMethod method : interfaceMigrationAvailableMethods) {
+						ITypeHierarchy declaringTypeTypeHierarchy = method.getDeclaringType()
+								.newTypeHierarchy(new NullProgressMonitor());
+						int declaringTypeClassHierarchyLength = declaringTypeTypeHierarchy.getAllClasses().length;
+						declaringTypeClassHierarchyLengthTotal += declaringTypeClassHierarchyLength;
+
+						int declaringTypeSuperInterfaces = declaringTypeTypeHierarchy
+								.getAllSuperInterfaces(method.getDeclaringType()).length;
+						declaringTypeSuperInterfacesTotal += declaringTypeSuperInterfaces;
+
 						candidateMethodPrinter.printRecord(Util.getMethodIdentifier(method),
-								method.getDeclaringType().getFullyQualifiedName());
+								method.getDeclaringType().getFullyQualifiedName(), declaringTypeClassHierarchyLength,
+								declaringTypeSuperInterfaces);
 					}
+
+					resultsPrinter.print(declaringTypeClassHierarchyLengthTotal);
+					resultsPrinter.print(declaringTypeSuperInterfacesTotal);
 
 					resultsTimeCollector.start();
 					MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = createMigrateSkeletalImplementationToInterfaceRefactoringProcessor(
