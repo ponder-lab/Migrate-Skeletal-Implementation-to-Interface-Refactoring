@@ -63,7 +63,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 	private static final String ALLOW_CONCRETE_CLASSES_PROPERTY_KEY = "edu.cuny.citytech.defaultrefactoring.eval.allowConcreteClasses";
 	private static final boolean ALLOW_CONCRETE_CLASSES_DEFAULT = false;
 	private static final boolean BUILD_WORKSPACE = false;
-	private static final boolean PERFORM_TRANSFORMATION = false;
+	private static final String PERFORM_CHANGE_PROPERTY_KEY = "edu.cuny.citytech.defaultrefactoring.eval.performChange";
+	private static final boolean PERFORM_CHANGE_DEFAULT = false;
 
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -289,7 +290,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 					// actually perform the refactoring if there are no fatal
 					// errors.
-					if (PERFORM_TRANSFORMATION) {
+					if (shouldPerformChange()) {
 						if (!status.hasFatalError()) {
 							resultsTimeCollector.start();
 							Change change = processorBasedRefactoring
@@ -377,6 +378,15 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 			return ALLOW_CONCRETE_CLASSES_DEFAULT;
 		else
 			return Boolean.valueOf(allowConcreateClassesPropertyValue);
+	}
+
+	private boolean shouldPerformChange() {
+		String performChangePropertyValue = System.getenv(PERFORM_CHANGE_PROPERTY_KEY);
+
+		if (performChangePropertyValue == null)
+			return PERFORM_CHANGE_DEFAULT;
+		else
+			return Boolean.valueOf(performChangePropertyValue);
 	}
 
 	private static String getDestinationTypeFullyQualifiedName(IMethod method, IProgressMonitor monitor)
