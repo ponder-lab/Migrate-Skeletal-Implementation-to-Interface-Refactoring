@@ -24,6 +24,7 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -31,12 +32,19 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.core.search.SearchMatch;
+import org.eclipse.jdt.core.search.SearchParticipant;
+import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
@@ -90,13 +98,13 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 				IJavaProject[] javaProjects = Util.getSelectedJavaProjectsFromEvent(event);
 
-				resultsPrinter = createCSVPrinter("results.csv",
-						new String[] { "subject", "#methods", "#migration available methods",
-								"declaring type class hierarchy size", "declaring type super interfaces",
-								"#migratable methods", "migratable methods LOC",
-								"#unique destination interface subtypes", "#skeletal implementation classes",
-								"#removable skeletal implementation classes", "#failed skeletal removal conditions",
-								"#failed preconditions", "#methods after refactoring", "time (s)" });
+				resultsPrinter = createCSVPrinter("results.csv", new String[] { "subject", "#methods",
+						"#migration available methods", "declaring type class hierarchy size",
+						"declaring type super interfaces", "#migratable methods", "migratable methods LOC",
+						"#unique destination interface subtypes", "#skeletal implementation classes",
+						"#removable skeletal implementation classes",
+						"removable skeletal implementation class references", "#failed skeletal removal conditions",
+						"#failed preconditions", "#methods after refactoring", "time (s)" });
 				candidateMethodPrinter = createCSVPrinter("candidate_methods.csv", new String[] { "method", "type FQN",
 						"declaring type class hierarchy size", "declaring type super interfaces" });
 				migratableMethodPrinter = createCSVPrinter("migratable_methods.csv", new String[] { "subject", "method",
@@ -273,6 +281,9 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 					resultsPrinter.print(declaringTypesWithMigratableMethods.size());
 					// removable declaring types with migratable methods.
 					resultsPrinter.print(removableDeclaringTypesWithMigratableMethods.size());
+					// removable declaring types with migratable methods
+					// references.
+					resultsPrinter.print(findReferences(removableDeclaringTypesWithMigratableMethods).size());
 					// unremovable declaring types with migratable methods
 					// failures.
 					resultsPrinter.print(unremovableDeclaringTypeToReasons.values().stream().flatMap(s -> s.stream())
@@ -366,6 +377,23 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 		}).schedule();
 
 		return null;
+	}
+
+	private Set<SearchMatch> findReferences(Set<? extends IJavaElement> elements) throws CoreException {
+		Set<SearchMatch> ret = new HashSet<>();
+		for (IJavaElement elem : elements) {
+			new SearchEngine().search(
+					SearchPattern.createPattern(elem, IJavaSearchConstants.REFERENCES, SearchPattern.R_EXACT_MATCH),
+					new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
+					SearchEngine.createWorkspaceScope(), new SearchRequestor() {
+
+						@Override
+						public void acceptSearchMatch(SearchMatch match) throws CoreException {
+							ret.add(match);
+						}
+					}, new NullProgressMonitor());
+		}
+		return ret;
 	}
 
 	private static IType[] getAllDeclaringTypeSubtypes(IMethod method) throws JavaModelException {
