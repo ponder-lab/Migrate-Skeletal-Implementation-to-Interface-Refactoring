@@ -1486,6 +1486,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			pm.ifPresent(m -> m.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size()));
 
 			for (IMethod sourceMethod : this.getSourceMethods()) {
+				// Does the source method exist?
 				RefactoringStatus existenceStatus = checkExistence(sourceMethod,
 						PreconditionFailure.MethodDoesNotExist);
 				if (!existenceStatus.isOK()) {
