@@ -2216,7 +2216,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (monitor.isCanceled())
 				throw new OperationCanceledException();
 
-			// TODO: Should this be a separate method?
 			status.merge(checkDestinationInterfaces(Optional.of(new SubProgressMonitor(monitor, 1))));
 			if (status.hasFatalError())
 				return status;
