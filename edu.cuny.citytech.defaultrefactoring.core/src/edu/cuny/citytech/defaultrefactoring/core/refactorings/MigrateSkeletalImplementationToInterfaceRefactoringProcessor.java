@@ -2775,23 +2775,23 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * 
 	 * @param sourceMethod
 	 *            The method that will be migrated to the target interface.
-	 * @param targetInterface
+	 * @param destinationInterface
 	 *            The interface for which sourceMethod will be migrated.
 	 * @return The target method that will be manipulated or null if not found.
 	 * @throws JavaModelException
 	 */
-	private static IMethod findTargetMethod(IMethod sourceMethod, IType targetInterface) throws JavaModelException {
-		if (targetInterface == null)
+	private static IMethod findTargetMethod(IMethod sourceMethod, IType destinationInterface) throws JavaModelException {
+		if (destinationInterface == null)
 			return null; // not found.
 
 		Assert.isNotNull(sourceMethod);
 		Assert.isLegal(sourceMethod.exists(), "Source method does not exist.");
-		Assert.isLegal(targetInterface.exists(), "Target interface does not exist.");
-		Assert.isLegal(targetInterface.isInterface(), "Target interface must be an interface.");
+		Assert.isLegal(destinationInterface.exists(), "Target interface does not exist.");
+		Assert.isLegal(destinationInterface.isInterface(), "Target interface must be an interface.");
 
 		IMethod ret = null;
 
-		for (IMethod method : targetInterface.getMethods()) {
+		for (IMethod method : destinationInterface.getMethods()) {
 			if (method.exists() && method.getElementName().equals(sourceMethod.getElementName())) {
 				ILocalVariable[] parameters = method.getParameters();
 				ILocalVariable[] sourceParameters = sourceMethod.getParameters();
@@ -2799,7 +2799,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				if (parameterListMatches(parameters, method, sourceParameters, sourceMethod)) {
 					if (ret != null)
 						throw new IllegalStateException("Found multiple matches of method: "
-								+ sourceMethod.getElementName() + " in interface: " + targetInterface.getElementName());
+								+ sourceMethod.getElementName() + " in interface: " + destinationInterface.getElementName());
 					else
 						ret = method;
 				}
