@@ -318,11 +318,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 					MethodDeclaration targetMethodDeclaration = null;
 					try {
-						targetMethodDeclaration = ASTNodeSearchUtil
-								.getMethodDeclarationNode(targetMethod,
-										getCompilationUnit(targetMethod.getTypeRoot(),
-												new SubProgressMonitor(this.monitor.orElseGet(NullProgressMonitor::new),
-														IProgressMonitor.UNKNOWN)));
+						targetMethodDeclaration = ASTNodeSearchUtil.getMethodDeclarationNode(targetMethod,
+								getCompilationUnit(targetMethod.getTypeRoot(), new SubProgressMonitor(
+										this.monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
 					} catch (JavaModelException e) {
 						throw new RuntimeException(e);
 					}
@@ -845,10 +843,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				continue;
 
 			if (!canBeAccessedFrom(sourceMethod, type, destination, hierarchy) && !pulledUpList.contains(type)) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(PreconditionFailure.TypeNotAccessible.getMessage(),
-								new String[] { JavaElementLabels.getTextLabel(type,
-										JavaElementLabels.ALL_FULLY_QUALIFIED),
+				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+						PreconditionFailure.TypeNotAccessible.getMessage(),
+						new String[] { JavaElementLabels.getTextLabel(type, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(type),
 						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
@@ -884,11 +881,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					|| Flags.isEnum(accessedField.getFlags());
 
 			if (!isAccessible) {
-				final String message = org.eclipse.jdt.internal.corext.util.Messages
-						.format(PreconditionFailure.FieldNotAccessible.getMessage(),
+				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
+						PreconditionFailure.FieldNotAccessible.getMessage(),
 								new String[] {
-										JavaElementLabels.getTextLabel(accessedField,
-												JavaElementLabels.ALL_FULLY_QUALIFIED),
+								JavaElementLabels.getTextLabel(accessedField, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedField),
 						MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID,
@@ -901,8 +897,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// First, find all references of the accessed field in the
 				// source method.
 				FieldAccessAnalysisSearchRequestor requestor = new FieldAccessAnalysisSearchRequestor(monitor);
-				this.getSearchEngine()
-						.search(SearchPattern.createPattern(accessedField, IJavaSearchConstants.REFERENCES,
+				this.getSearchEngine().search(
+						SearchPattern.createPattern(accessedField, IJavaSearchConstants.REFERENCES,
 								SearchPattern.R_EXACT_MATCH),
 						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
 						SearchEngine.createJavaSearchScope(new IJavaElement[] { sourceMethod }), requestor,
@@ -2783,7 +2779,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * @return The target method that will be manipulated or null if not found.
 	 * @throws JavaModelException
 	 */
-	private static IMethod findTargetMethod(IMethod sourceMethod, IType destinationInterface) throws JavaModelException {
+	private static IMethod findTargetMethod(IMethod sourceMethod, IType destinationInterface)
+			throws JavaModelException {
 		if (destinationInterface == null)
 			return null; // not found.
 
@@ -2801,8 +2798,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 				if (parameterListMatches(parameters, method, sourceParameters, sourceMethod)) {
 					if (ret != null)
-						throw new IllegalStateException("Found multiple matches of method: "
-								+ sourceMethod.getElementName() + " in interface: " + destinationInterface.getElementName());
+						throw new IllegalStateException(
+								"Found multiple matches of method: " + sourceMethod.getElementName() + " in interface: "
+										+ destinationInterface.getElementName());
 					else
 						ret = method;
 				}
