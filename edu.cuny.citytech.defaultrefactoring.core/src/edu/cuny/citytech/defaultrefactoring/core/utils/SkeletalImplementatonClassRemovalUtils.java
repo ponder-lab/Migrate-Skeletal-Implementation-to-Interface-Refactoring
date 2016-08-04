@@ -109,7 +109,7 @@ public final class SkeletalImplementatonClassRemovalUtils {
 						});
 
 			// if the type to remove doesn't have a superclass and its subtypes
-			// contain super refernces.
+			// contain super references.
 			if (typeToRemove.getSuperclassName() == null && subclassesContainSuperReferences(sourceMethod, typeToRemove,
 					monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))))
 				status.addError(
