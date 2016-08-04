@@ -515,8 +515,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		@Override
 		public boolean visit(SuperMethodInvocation node) {
-			if (node.resolveMethodBinding().getJavaElement().equals(accessedMethod))
+			IMethodBinding methodBinding = node.resolveMethodBinding();
+			if (methodBinding != null) {
+				if (methodBinding.getJavaElement().equals(accessedMethod))
 				this.encounteredThisReceiver = true;
+			}
 			return super.visit(node);
 		}
 	}
