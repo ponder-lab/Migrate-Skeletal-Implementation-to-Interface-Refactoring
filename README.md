@@ -22,7 +22,7 @@ A beta version of our tool is available via an Eclipse update site at: https://r
 
 ### Limitations
 
-The research prototype refactoring is currently very conservative. In this case, while tool should not produce any type-incorrect or semantic-inequivalent code, it may not refactor code that is "safe" to safe to refactor. We plan to relax such constraints in the future.
+The research prototype refactoring is conservative. While tool should not produce any type-incorrect or semantic-inequivalent code, it may not refactor *all* code that may be safe to refactor.
 
 ## Contributing
 
