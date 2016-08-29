@@ -1176,9 +1176,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		IMethod[] classMethodMatchingSourceMethod = clazz.findMethods(sourceMethod);
 		if (classMethodMatchingSourceMethod != null && classMethodMatchingSourceMethod.length > 0)
 			// in this case, the class has an implementation. No need to check
-			// any interfaces or subclasses.
-			// because any interfaces would be satisfied and any unsatisfied
-			// interfaces will inherit the method from this class.
+			// any interfaces or subclasses because any interfaces would be
+			// satisfied and any unsatisfied interfaces will inherit the method
+			// from this class.
 			return status;
 		// otherwise, no matching methods were found in the given class.
 		else {
@@ -1202,11 +1202,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						if (interfaceMethodMatchingSourceMethod != null
 								&& interfaceMethodMatchingSourceMethod.length > 0)
 							// there are multiple method definitions stemming
-							// from
-							// interfaces.
-							// this class doesn't have an implementation of the
-							// source
-							// method nor does it inherit it.
+							// from interfaces. this class doesn't have an
+							// implementation of the source method nor does it
+							// inherit it.
 							addErrorAndMark(status,
 									PreconditionFailure.SourceMethodProvidesImplementationsForMultipleMethods,
 									sourceMethod, superInterface);
