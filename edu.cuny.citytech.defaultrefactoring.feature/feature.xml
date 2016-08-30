@@ -2,7 +2,7 @@
 <feature
       id="edu.cuny.citytech.migrate.skeletal.implementation.to.interface.refactoring"
       label="Migrate Skeletal Implementation to Interface Refactoring"
-      version="0.4.0.qualifier"
+      version="0.5.0.qualifier"
       provider-name="New York City College of Technology, City University of New York">
 
    <description url="http://openlab.citytech.cuny.edu/interfacerefactoring">
