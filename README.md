@@ -14,7 +14,7 @@ This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents 
 
 ## Usage
 
-Currently, the prototype refactoring seems to work only via the package explorer (see [#66](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/66), [#2](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/2), and [#65](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
+Currently, the prototype refactoring works only via the package explorer and the outline views (see [#2](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/2) and [#65](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
 
 ### Installation for Usage
 
@@ -22,7 +22,7 @@ A beta version of our tool is available via an Eclipse update site at: https://r
 
 ### Limitations
 
-The research prototype refactoring is currently very conservative. In this case, while tool should not produce any type-incorrect or semantic-inequivalent code, it may not refactor code that is "safe" to safe to refactor. We plan to relax such constraints in the future.
+The research prototype refactoring is conservative. While tool should not produce any type-incorrect or semantic-inequivalent code, it may not refactor *all* code that may be safe to refactor.
 
 ## Contributing
 
@@ -34,8 +34,11 @@ The project includes a maven configuration file using the tycho plug-in, which i
 
 ### Running the Evaluator
 
-#### Finding Candidate Skeletal Implementers
+The plug-in edu.cuny.citytech.defaultrefactoring.eval is the evaluation plug-in. Note that it is not included in the standard update site as that it user focused. To run the evaluator, clone the repository and build and run the plug-in from within Eclipse. This will load the plug-in edu.cuny.citytech.defaultrefactoring.eval (verify in "installation details.").
+
+There is no UI menu options for the evaluator, however, there is an Eclipse command, which is available from the quick execution dialog in Eclipse. Please follow these steps:
+
 1. Select a group of projects.
 2. Press CMD-3 or CTRL-3 (command dialog).
-3. Search for "candidate." You'll see an option to "find candidate skeletal implementers". Choose that option.
-4. A set of `.csv` files will appear in the working directory.
+3. Search for "evaluate." You'll see an option to run the migration evaluator. Choose it.
+4. Once the evaluator completes, a set of `.csv` files will appear in the working directory.
