@@ -14,7 +14,7 @@ This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents 
 
 ## Usage
 
-Currently, the prototype refactoring seems to work only via the package explorer (see [#66](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/66), [#2](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/2), and [#65](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
+Currently, the prototype refactoring seems to work only via the package explorer and the outline views (see [#2](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/2) and [#65](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
 
 ### Installation for Usage
 
