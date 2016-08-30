@@ -2872,6 +2872,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
+	private boolean setDeprecateEmptyDeclaringTypes;
+
+	private boolean setConsiderNonstandardAnnotationDifferences;
+
 	private Map<IType, ITypeHierarchy> getTypeToTypeHierarchyMap() {
 		return typeToTypeHierarchyMap;
 	}
@@ -2923,5 +2927,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
 		return this.compilationUnitToCompilationUnitRewriteMap;
+	}
+
+	public void setDeprecateEmptyDeclaringTypes(boolean deprecateDeclaringTypesValue) {
+		this.setDeprecateEmptyDeclaringTypes = deprecateDeclaringTypesValue;
+	}
+
+	public void setConsiderNonstandardAnnotationDifferences(boolean noAnnotationsValue) {
+		this.setConsiderNonstandardAnnotationDifferences = noAnnotationsValue;
 	}
 }
