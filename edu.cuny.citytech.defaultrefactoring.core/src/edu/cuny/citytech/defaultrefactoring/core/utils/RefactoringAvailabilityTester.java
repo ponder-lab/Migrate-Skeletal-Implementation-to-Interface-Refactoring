@@ -46,8 +46,10 @@ public final class RefactoringAvailabilityTester {
 			return false;
 		if (JdtFlags.isAbstract(method))
 			return false;
+		// TODO: Should this be here?
 		if (JdtFlags.isSynchronized(method))
 			return false;
+		// TODO: Should this be here?
 		if (JdtFlags.isFinal(method))
 			return false;
 		if (method.getResource().isDerived(IResource.CHECK_ANCESTORS))
