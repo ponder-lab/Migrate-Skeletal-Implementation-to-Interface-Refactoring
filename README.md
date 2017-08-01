@@ -9,7 +9,6 @@
 ## Demonstration
 
 [![Video demo of refactoring tool](http://img.youtube.com/vi/YZHIy0yePh8/0.jpg)](http://www.youtube.com/watch?v=YZHIy0yePh8 "Migrate Skeletal Implementation to Interface Refactoring Tool Demonstration")
-<iframe width="560" height="315" src="https://www.youtube.com/embed/" frameborder="0" allowfullscreen></iframe>
 
 ## Introduction
 
