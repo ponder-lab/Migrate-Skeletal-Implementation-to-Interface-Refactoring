@@ -2936,4 +2936,12 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private boolean typeArgumentsAreTypeVariables(ITypeBinding typeArgument, ITypeBinding otherTypeArgument) {
 		return typeArgument.isTypeVariable() && otherTypeArgument.isTypeVariable();
 	}
+
+	public boolean shouldConsiderNonstandardAnnotationDifferences() {
+		return considerNonstandardAnnotationDifferences;
+	}
+
+	public boolean shouldDeprecateEmptyDeclaringTypes() {
+		return deprecateEmptyDeclaringTypes;
+	}
 }
