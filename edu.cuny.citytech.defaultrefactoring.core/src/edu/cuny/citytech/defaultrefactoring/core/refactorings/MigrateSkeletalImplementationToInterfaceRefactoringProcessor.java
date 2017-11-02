@@ -960,9 +960,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private SearchEngine searchEngine = new SearchEngine();
 
-	private boolean setConsiderNonstandardAnnotationDifferences;
+	private boolean considerNonstandardAnnotationDifferences;
 
-	private boolean setDeprecateEmptyDeclaringTypes;
+	private boolean deprecateEmptyDeclaringTypes;
 
 	/** The code generation settings, or <code>null</code> */
 	private CodeGenerationSettings settings;
@@ -2926,11 +2926,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	public void setConsiderNonstandardAnnotationDifferences(boolean noAnnotationsValue) {
-		this.setConsiderNonstandardAnnotationDifferences = noAnnotationsValue;
+		this.considerNonstandardAnnotationDifferences = noAnnotationsValue;
 	}
 
 	public void setDeprecateEmptyDeclaringTypes(boolean deprecateDeclaringTypesValue) {
-		this.setDeprecateEmptyDeclaringTypes = deprecateDeclaringTypesValue;
+		this.deprecateEmptyDeclaringTypes = deprecateDeclaringTypesValue;
 	}
 
 	private boolean typeArgumentsAreTypeVariables(ITypeBinding typeArgument, ITypeBinding otherTypeArgument) {
