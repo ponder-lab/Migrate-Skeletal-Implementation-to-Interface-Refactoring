@@ -1393,21 +1393,22 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return result;
 	}
 
-	private RefactoringStatus checkAnnotations(IAnnotatable source, IAnnotatable target) throws JavaModelException {
+	private RefactoringStatus checkAnnotations(IAnnotatable source, IType sourceType, IAnnotatable target,
+			IType targetType) throws JavaModelException {
 		// a set of annotations from the source method.
 		Set<IAnnotation> sourceAnnotationSet = new HashSet<>(Arrays.asList(source.getAnnotations()));
 
 		// remove any annotations to not consider.
-		removeSpecialAnnotations(sourceAnnotationSet);
+		removeSpecialAnnotations(sourceAnnotationSet, sourceType);
 
 		// a set of source method annotation names.
 		Set<String> sourceMethodAnnotationElementNames = getAnnotationElementNames(sourceAnnotationSet);
 
 		// a set of annotations from the target method.
-		Set<IAnnotation> targetAnnotationSet = new HashSet<>(Arrays.asList(source.getAnnotations()));
+		Set<IAnnotation> targetAnnotationSet = new HashSet<>(Arrays.asList(target.getAnnotations()));
 
 		// remove any annotations to not consider.
-		removeSpecialAnnotations(targetAnnotationSet);
+		removeSpecialAnnotations(targetAnnotationSet, targetType);
 
 		// a set of target method annotation names.
 		Set<String> targetAnnotationElementNames = getAnnotationElementNames(targetAnnotationSet);
@@ -1469,8 +1470,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		RefactoringStatus status = new RefactoringStatus();
 		IMethod targetMethod = getTargetMethod(sourceMethod, Optional.empty());
 
-		if (targetMethod != null && (!checkAnnotations(sourceMethod, targetMethod).isOK()
-				|| !checkAnnotations(sourceMethod.getDeclaringType(), targetMethod.getDeclaringType()).isOK()))
+		if (targetMethod != null && (!checkAnnotations(sourceMethod, sourceMethod.getDeclaringType(), targetMethod,
+				targetMethod.getDeclaringType()).isOK()
+				|| !checkAnnotations(sourceMethod.getDeclaringType(), sourceMethod.getDeclaringType(),
+						targetMethod.getDeclaringType(), targetMethod.getDeclaringType()).isOK()))
 			addErrorAndMark(status, PreconditionFailure.AnnotationMismatch, sourceMethod, targetMethod);
 
 		return status;
@@ -1948,7 +1951,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// get the corresponding target parameter.
 				ILocalVariable targetParameter = targetMethod.getParameters()[i];
 
-				if (!checkAnnotations(sourceParameter, targetParameter).isOK())
+				if (!checkAnnotations(sourceParameter, sourceParameter.getTypeRoot().findPrimaryType(), targetParameter,
+						targetParameter.getTypeRoot().findPrimaryType()).isOK())
 					addErrorAndMark(status, PreconditionFailure.MethodContainsInconsistentParameterAnnotations,
 							sourceMethod, targetMethod);
 
@@ -2896,8 +2900,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * 
 	 * @param annotationSet
 	 *            The set of annotations to work with.
+	 * @param type The type declaring the annotations.
+	 * @throws JavaModelException When resolving the annotation FQN fails.
 	 */
-	private void removeSpecialAnnotations(Set<IAnnotation> annotationSet) {
+	private void removeSpecialAnnotations(Set<IAnnotation> annotationSet, IType type) throws JavaModelException {
 		// Special case: don't consider the @Override annotation in the source
 		// (the target will never have this) #67.
 		annotationSet.removeIf(a -> a.getElementName().equals(Override.class.getName()));
@@ -2905,7 +2911,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		// also remove nonstandard annotations if necessary.
 		if (!this.shouldConsiderNonstandardAnnotationDifferences())
-			annotationSet.removeIf(a -> !a.getElementName().startsWith("java.lang"));
+			for (Iterator<IAnnotation> iterator = annotationSet.iterator(); iterator.hasNext();) {
+				IAnnotation annotation = iterator.next();
+
+				String annotationName = annotation.getElementName();
+				String[][] resolveTyped = type.resolveType(annotationName);
+
+				for (int i = 0; i < resolveTyped.length; i++) {
+					String[] strings = resolveTyped[i];
+
+					// first element is the package name.
+					if (!strings[0].startsWith("java.lang"))
+						iterator.remove();
+				}
+			}
 	}
 
 	private IMethodBinding resolveMethodBinding(IMethod method, Optional<IProgressMonitor> monitor)
