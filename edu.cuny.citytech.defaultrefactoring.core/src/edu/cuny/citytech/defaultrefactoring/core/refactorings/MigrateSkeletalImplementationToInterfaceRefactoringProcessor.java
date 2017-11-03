@@ -60,7 +60,6 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.CreationReference;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -150,62 +149,6 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
  */
 @SuppressWarnings({ "restriction" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
-
-	private final class FieldAccessAnalysisSearchRequestor extends SearchRequestor {
-		private boolean accessesFieldsFromImplicitParameter;
-		private final Optional<IProgressMonitor> monitor;
-
-		private FieldAccessAnalysisSearchRequestor(Optional<IProgressMonitor> monitor) {
-			this.monitor = monitor;
-		}
-
-		@Override
-		public void acceptSearchMatch(SearchMatch match) throws CoreException {
-			if (match.isInsideDocComment())
-				return;
-
-			// get the AST node corresponding to the field
-			// access. It should be some kind of name
-			// (simple of qualified).
-			ASTNode node = ASTNodeSearchUtil.getAstNode(match, getCompilationUnit(
-					((IMember) match.getElement()).getTypeRoot(),
-					new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
-
-			// examine the node's parent.
-			ASTNode parent = node.getParent();
-
-			switch (parent.getNodeType()) {
-			case ASTNode.FIELD_ACCESS: {
-				FieldAccess fieldAccess = (FieldAccess) parent;
-
-				// the expression is the LHS of the
-				// selection operator.
-				Expression expression = fieldAccess.getExpression();
-
-				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION)
-					// either there is nothing on the LHS
-					// or it's this, in which case we fail.
-					this.accessesFieldsFromImplicitParameter = true;
-				break;
-			}
-			case ASTNode.SUPER_FIELD_ACCESS: {
-				// super will also tell us that it's an
-				// instance field access of this.
-				this.accessesFieldsFromImplicitParameter = true;
-				break;
-			}
-			default: {
-				// it must be an unqualified field access,
-				// meaning that it's an instance field access of this.
-				this.accessesFieldsFromImplicitParameter = true;
-			}
-			}
-		}
-
-		public boolean hasAccessesToFieldsFromImplicitParameter() {
-			return accessesFieldsFromImplicitParameter;
-		}
-	}
 
 	private final class MethodReceiverAnalysisVisitor extends ASTVisitor {
 		private IMethod accessedMethod;
@@ -1242,7 +1185,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				// object or another. If it's from this object, we fail.
 				// First, find all references of the accessed field in the
 				// source method.
-				FieldAccessAnalysisSearchRequestor requestor = new FieldAccessAnalysisSearchRequestor(monitor);
+				FieldAccessAnalysisSearchRequestor requestor = new FieldAccessAnalysisSearchRequestor(this, monitor);
 				this.getSearchEngine().search(
 						SearchPattern.createPattern(accessedField, IJavaSearchConstants.REFERENCES,
 								SearchPattern.R_EXACT_MATCH),
@@ -2582,7 +2525,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return set.parallelStream().map(IAnnotation::getElementName).collect(Collectors.toSet());
 	}
 
-	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
+	CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
 		CompilationUnit compilationUnit = this.typeRootToCompilationUnitMap.get(root);
 		if (compilationUnit == null) {
 			this.getExcludedTimeCollector().start();
