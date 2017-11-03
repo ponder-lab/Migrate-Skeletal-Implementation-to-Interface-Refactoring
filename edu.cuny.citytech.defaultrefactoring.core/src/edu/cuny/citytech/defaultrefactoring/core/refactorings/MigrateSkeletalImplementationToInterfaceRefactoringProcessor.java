@@ -252,7 +252,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			IMethodBinding methodBinding = node.resolveMethodBinding();
 			if (methodBinding != null) {
 				if (methodBinding.getJavaElement().equals(accessedMethod))
-				this.encounteredThisReceiver = true;
+					this.encounteredThisReceiver = true;
 			}
 			return super.visit(node);
 		}
@@ -988,7 +988,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 */
 	public MigrateSkeletalImplementationToInterfaceRefactoringProcessor(final IMethod[] methods,
 			final CodeGenerationSettings settings, boolean layer, Optional<IProgressMonitor> monitor)
-					throws JavaModelException {
+			throws JavaModelException {
 		try {
 			this.settings = settings;
 			this.layer = layer;
@@ -1229,7 +1229,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			if (!isAccessible) {
 				final String message = org.eclipse.jdt.internal.corext.util.Messages.format(
 						PreconditionFailure.FieldNotAccessible.getMessage(),
-								new String[] {
+						new String[] {
 								JavaElementLabels.getTextLabel(accessedField, JavaElementLabels.ALL_FULLY_QUALIFIED),
 								JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_FULLY_QUALIFIED) });
 				result.addEntry(RefactoringStatus.ERROR, message, JavaStatusContext.create(accessedField),
@@ -1401,11 +1401,16 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		removeSpecialAnnotations(sourceAnnotationSet);
 
 		// a set of source method annotation names.
-		Set<String> sourceMethodAnnotationElementNames = sourceAnnotationSet.parallelStream()
-				.map(IAnnotation::getElementName).collect(Collectors.toSet());
+		Set<String> sourceMethodAnnotationElementNames = getAnnotationElementNames(sourceAnnotationSet);
+
+		// a set of annotations from the target method.
+		Set<IAnnotation> targetAnnotationSet = new HashSet<>(Arrays.asList(source.getAnnotations()));
+
+		// remove any annotations to not consider.
+		removeSpecialAnnotations(targetAnnotationSet);
 
 		// a set of target method annotation names.
-		Set<String> targetAnnotationElementNames = getAnnotationElementNames(target);
+		Set<String> targetAnnotationElementNames = getAnnotationElementNames(targetAnnotationSet);
 
 		// if the source method annotation names don't match the target method
 		// annotation names.
@@ -2569,9 +2574,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private Set<String> getAnnotationElementNames(IAnnotatable annotatable) throws JavaModelException {
-		return Arrays.stream(annotatable.getAnnotations()).parallel().map(IAnnotation::getElementName)
-				.collect(Collectors.toSet());
+	private Set<String> getAnnotationElementNames(Set<IAnnotation> set) throws JavaModelException {
+		return set.parallelStream().map(IAnnotation::getElementName).collect(Collectors.toSet());
 	}
 
 	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
@@ -2898,6 +2902,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		// (the target will never have this) #67.
 		annotationSet.removeIf(a -> a.getElementName().equals(Override.class.getName()));
 		annotationSet.removeIf(a -> a.getElementName().equals(Override.class.getSimpleName()));
+
+		// also remove nonstandard annotations if necessary.
+		if (!this.shouldConsiderNonstandardAnnotationDifferences())
+			annotationSet.removeIf(a -> !a.getElementName().startsWith("java.lang"));
 	}
 
 	private IMethodBinding resolveMethodBinding(IMethod method, Optional<IProgressMonitor> monitor)
