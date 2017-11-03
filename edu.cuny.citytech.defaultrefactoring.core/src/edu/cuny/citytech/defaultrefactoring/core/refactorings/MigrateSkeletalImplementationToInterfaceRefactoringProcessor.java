@@ -960,7 +960,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private SearchEngine searchEngine = new SearchEngine();
 
-	private boolean considerNonstandardAnnotationDifferences;
+	private boolean considerNonstandardAnnotationDifferences = true;
 
 	private boolean deprecateEmptyDeclaringTypes;
 
