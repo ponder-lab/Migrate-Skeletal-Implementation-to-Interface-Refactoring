@@ -950,6 +950,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private Map<ICompilationUnit, CompilationUnitRewrite> compilationUnitToCompilationUnitRewriteMap = new HashMap<>();
 
+	private boolean considerNonstandardAnnotationDifferences = true;
+
+	private boolean deprecateEmptyDeclaringTypes;
+
 	/**
 	 * For excluding AST parse time.
 	 */
@@ -959,10 +963,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	private final boolean layer;
 
 	private SearchEngine searchEngine = new SearchEngine();
-
-	private boolean considerNonstandardAnnotationDifferences = true;
-
-	private boolean deprecateEmptyDeclaringTypes;
 
 	/** The code generation settings, or <code>null</code> */
 	private CodeGenerationSettings settings;
@@ -2960,15 +2960,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		this.deprecateEmptyDeclaringTypes = deprecateDeclaringTypesValue;
 	}
 
-	private boolean typeArgumentsAreTypeVariables(ITypeBinding typeArgument, ITypeBinding otherTypeArgument) {
-		return typeArgument.isTypeVariable() && otherTypeArgument.isTypeVariable();
-	}
-
 	public boolean shouldConsiderNonstandardAnnotationDifferences() {
 		return considerNonstandardAnnotationDifferences;
 	}
 
 	public boolean shouldDeprecateEmptyDeclaringTypes() {
 		return deprecateEmptyDeclaringTypes;
+	}
+
+	private boolean typeArgumentsAreTypeVariables(ITypeBinding typeArgument, ITypeBinding otherTypeArgument) {
+		return typeArgument.isTypeVariable() && otherTypeArgument.isTypeVariable();
 	}
 }
