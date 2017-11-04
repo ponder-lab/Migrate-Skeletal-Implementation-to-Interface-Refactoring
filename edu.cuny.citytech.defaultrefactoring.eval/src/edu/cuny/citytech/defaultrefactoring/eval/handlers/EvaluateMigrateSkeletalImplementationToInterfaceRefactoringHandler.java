@@ -62,7 +62,7 @@ import net.sourceforge.metrics.core.sources.Dispatcher;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
- * 
+ *
  * @see org.eclipse.core.commands.IHandler
  * @see org.eclipse.core.commands.AbstractHandler
  */
@@ -253,7 +253,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 						if (removalStatus.isOK())
 							removableDeclaringTypesWithMigratableMethods.add(method.getDeclaringType());
-						else {
+						else
 							for (RefactoringStatusEntry entry : removalStatus.getEntries()) {
 								Set<String> set = unremovableDeclaringTypeToReasons.get(method.getDeclaringType());
 								if (set == null) {
@@ -265,7 +265,6 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 								skeletalRemovalErrorPrinter.printRecord(
 										method.getDeclaringType().getFullyQualifiedName(), entry.getMessage());
 							}
-						}
 
 						migratableMethodPrinter.printRecord(javaProject.getElementName(),
 								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
@@ -290,16 +289,15 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							.collect(Collectors.toList()).size());
 
 					// failed methods.
-					for (IMethod method : processor.getUnmigratableMethods()) {
+					for (IMethod method : processor.getUnmigratableMethods())
 						unmigratableMethodPrinter.printRecord(javaProject.getElementName(),
 								Util.getMethodIdentifier(method), method.getDeclaringType().getFullyQualifiedName(),
 								getDestinationTypeFullyQualifiedName(method, monitor));
-					}
 
 					// failed preconditions.
 					resultsPrinter.print(status.getEntries().length); // number.
 
-					for (RefactoringStatusEntry entry : status.getEntries()) {
+					for (RefactoringStatusEntry entry : status.getEntries())
 						if (!entry.isFatalError()) {
 							Object correspondingElement = entry.getData();
 
@@ -314,11 +312,10 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 									getDestinationTypeFullyQualifiedName(failedMethod, monitor), entry.getCode(),
 									entry.getMessage());
 						}
-					}
 
 					// actually perform the refactoring if there are no fatal
 					// errors.
-					if (shouldPerformChange()) {
+					if (shouldPerformChange())
 						if (!status.hasFatalError()) {
 							resultsTimeCollector.start();
 							Change change = processorBasedRefactoring
@@ -326,7 +323,6 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							change.perform(new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN));
 							resultsTimeCollector.stop();
 						}
-					}
 
 					// ensure that we can build the project.
 					if (!javaProject.isConsistent())
@@ -381,7 +377,7 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 
 	private Set<SearchMatch> findReferences(Set<? extends IJavaElement> elements) throws CoreException {
 		Set<SearchMatch> ret = new HashSet<>();
-		for (IJavaElement elem : elements) {
+		for (IJavaElement elem : elements)
 			new SearchEngine().search(
 					SearchPattern.createPattern(elem, IJavaSearchConstants.REFERENCES, SearchPattern.R_EXACT_MATCH),
 					new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
@@ -392,7 +388,6 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 							ret.add(match);
 						}
 					}, new NullProgressMonitor());
-		}
 		return ret;
 	}
 
@@ -449,9 +444,8 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 			ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
 			for (ICompilationUnit iCompilationUnit : compilationUnits) {
 				IType[] allTypes = iCompilationUnit.getAllTypes();
-				for (IType type : allTypes) {
+				for (IType type : allTypes)
 					Collections.addAll(methods, type.getMethods());
-				}
 			}
 		}
 		return methods;

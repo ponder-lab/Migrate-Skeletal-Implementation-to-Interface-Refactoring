@@ -32,9 +32,8 @@ public class Util {
 		for (int i = 0; i < parameters.length; i++) {
 			sb.append(edu.cuny.citytech.defaultrefactoring.core.utils.Util
 					.getQualifiedNameFromTypeSignature(parameters[i].getTypeSignature(), method.getDeclaringType()));
-			if (i != (parameters.length - 1)) {
+			if (i != (parameters.length - 1))
 				sb.append(",");
-			}
 		}
 		sb.append(")");
 		return sb.toString();

@@ -65,17 +65,17 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
-import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
+import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
-import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -91,10 +91,10 @@ import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor.TypeVariableMapper;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ImportRewriteUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ReferenceFinderUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
-import org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor.TypeVariableMapper;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
@@ -135,7 +135,7 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 
 /**
  * The activator class controls the plug-in life cycle
- * 
+ *
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
  *         Khatchadourian</a>
  */
@@ -243,7 +243,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * Finds the target (interface) method declaration in the given type for the
 	 * given source method.
-	 * 
+	 *
 	 * @param sourceMethod
 	 *            The method that will be migrated to the target interface.
 	 * @param destinationInterface
@@ -263,21 +263,19 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		IMethod ret = null;
 
-		for (IMethod method : destinationInterface.getMethods()) {
+		for (IMethod method : destinationInterface.getMethods())
 			if (method.exists() && method.getElementName().equals(sourceMethod.getElementName())) {
 				ILocalVariable[] parameters = method.getParameters();
 				ILocalVariable[] sourceParameters = sourceMethod.getParameters();
 
-				if (parameterListMatches(parameters, method, sourceParameters, sourceMethod)) {
+				if (parameterListMatches(parameters, method, sourceParameters, sourceMethod))
 					if (ret != null)
 						throw new IllegalStateException(
 								"Found multiple matches of method: " + sourceMethod.getElementName() + " in interface: "
 										+ destinationInterface.getElementName());
 					else
 						ret = method;
-				}
 			}
-		}
 		return ret;
 	}
 
@@ -299,7 +297,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * example, there may be a skeletal implementation class that implements all
 	 * the target interface's methods without explicitly declaring so.
 	 * Effectively skeletal?
-	 * 
+	 *
 	 * @param monitor
 	 *            A progress monitor.
 	 * @return The possible target interfaces for the migration.
@@ -373,7 +371,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * org.eclipse.jdt.core.ITypeHierarchy.getAllSuperInterfaces(IType) does not
 	 * seem to consider interface hierarchy
 	 * {@linkplain https://bugs.eclipse.org/bugs/show_bug.cgi?id=496503}.
-	 * 
+	 *
 	 * Returns the direct resolved interfaces that the given type implements or
 	 * extends, in no particular order, limited to the interfaces in this type
 	 * hierarchy's graph. For classes, this gives the interfaces that the class
@@ -402,10 +400,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 		monitor.ifPresent(m -> m.beginTask("Retreiving super interfaces ...", superInterfaces.length));
 		try {
-			for (IType superInterface : superInterfaces) {
+			for (IType superInterface : superInterfaces)
 				ret.addAll(Arrays
 						.asList(getSuperInterfaces(superInterface, monitor.map(m -> new SubProgressMonitor(m, 1)))));
-			}
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
@@ -445,14 +442,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * Finds the target (interface) method declaration in the destination
 	 * interface for the given source method.
-	 * 
+	 *
 	 * TODO: Something is very wrong here. There can be multiple targets for a
 	 * given source method because it can be declared in multiple interfaces up
 	 * and down the hierarchy. What this method right now is really doing is
 	 * finding the target method for the given source method in the destination
 	 * interface. As such, we should be sure what the destination is prior to
 	 * this call.
-	 * 
+	 *
 	 * @param sourceMethod
 	 *            The method that will be migrated to the target interface.
 	 * @return The target method that will be manipulated or null if not found.
@@ -516,7 +513,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * Returns true if the given type is a pure interface, i.e., it is an
 	 * interface but not an annotation.
-	 * 
+	 *
 	 * @param type
 	 *            The type to check.
 	 * @return True if the given type is a pure interface and false otherwise.
@@ -559,7 +556,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * Minimum logging level. One of the constants in
 	 * org.eclipse.core.runtime.IStatus.
-	 * 
+	 *
 	 * @param level
 	 *            The minimum logging level to set.
 	 * @see org.eclipse.core.runtime.IStatus.
@@ -601,7 +598,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	/**
 	 * Creates a new refactoring with the given methods to refactor.
-	 * 
+	 *
 	 * @param methods
 	 *            The methods to refactor.
 	 * @throws JavaModelException
@@ -653,7 +650,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * Add any static imports needed to the target method's compilation unit for
 	 * static fields referenced in the source method.
-	 * 
+	 *
 	 * @param sourceMethodDeclaration
 	 *            The method being migrated.
 	 * @param targetMethodDeclaration
@@ -718,11 +715,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private boolean allMethodsToMoveInTypeAreStrictFP(IType type) throws JavaModelException {
-		for (Iterator<IMethod> iterator = this.getSourceMethods().iterator(); iterator.hasNext();) {
-			IMethod method = iterator.next();
+		for (IMethod method : this.getSourceMethods())
 			if (method.getDeclaringType().equals(type) && !Flags.isStrictfp(method.getFlags()))
 				return false;
-		}
 		return true;
 	}
 
@@ -836,9 +831,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		final IType destination = getDestinationInterface(sourceMethod).orElseThrow(() -> new IllegalArgumentException(
 				"Source method: " + sourceMethod + " has no destiantion interface."));
 
-		for (int index = 0; index < accessedFields.length; index++) {
-			final IField accessedField = accessedFields[index];
-
+		for (IField accessedField : accessedFields) {
 			if (!accessedField.exists())
 				continue;
 
@@ -965,8 +958,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		final IType[] accessedTypes = getTypesReferencedInMovedMembers(sourceMethod, monitor);
 		final IType destination = getDestinationInterface(sourceMethod).get();
 		final List<IMember> pulledUpList = Arrays.asList(sourceMethod);
-		for (int index = 0; index < accessedTypes.length; index++) {
-			final IType type = accessedTypes[index];
+		for (IType type : accessedTypes) {
 			if (!type.exists())
 				continue;
 
@@ -1044,8 +1036,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 							return source;
 						}
 					});
-		else { // otherwise, we have the same annotations names. Check the
-				// values.
+		else
+			// otherwise, we have the same annotations names. Check the values.
 			for (IAnnotation sourceAnnotation : sourceAnnotationSet) {
 				IMemberValuePair[] sourcePairs = sourceAnnotation.getMemberValuePairs();
 
@@ -1072,14 +1064,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 										sourceAnnotation, targetAnnotation),
 								JavaStatusContext.create(findEnclosingMember(sourceAnnotation)));
 			}
-		}
 		return new RefactoringStatus(); // OK.
 	}
 
 	/**
 	 * Annotations between source and target methods must be consistent. Related
 	 * to #45.
-	 * 
+	 *
 	 * @param sourceMethod
 	 *            The method to check annotations.
 	 * @return The resulting {@link RefactoringStatus}.
@@ -1122,7 +1113,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 * Checks the given class and its subclasses for any required
 	 * implementations of the source method. The required implementations are
 	 * deemed by the interfaces the given class implements.
-	 * 
+	 *
 	 * @param sourceMethod
 	 *            The source method being migrated to an interface.
 	 * @param clazz
@@ -1345,7 +1336,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * #44: Ensure that exception types between the source and target methods
 	 * match.
-	 * 
+	 *
 	 * @param sourceMethod
 	 *            The source method.
 	 * @return The corresponding {@link RefactoringStatus}.
@@ -1373,9 +1364,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkExistence(IMember member, PreconditionFailure failure) {
-		if (member == null || !member.exists()) {
+		if (member == null || !member.exists())
 			return createError(failure, member);
-		}
 		return new RefactoringStatus();
 	}
 
@@ -1451,8 +1441,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						targetMethod.getDeclaringType());
 				IMember member = null;
 				int length = 0;
-				for (int index = 0; index < pullables.length; index++) {
-					member = pullables[index];
+				for (IMember pullable : pullables) {
+					member = pullable;
 					final String[] unmapped = TypeVariableUtil.getUnmappedVariables(mapping, declaring, member);
 					length = unmapped.length;
 
@@ -1544,9 +1534,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * Check that the annotations in the parameters are consistent between the
 	 * source and target, as well as type arguments.
-	 * 
+	 *
 	 * FIXME: What if the annotation type is not available in the target?
-	 * 
+	 *
 	 * @param sourceMethod
 	 *            The method to check.
 	 * @param monitor
@@ -1602,10 +1592,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 								sourceMethod, targetMethod);
 						break; // no more parameter types.
 					} else
-						for (int j = 0; j < sourceMethodParameterTypeParameters.length; j++) {
+						for (int j = 0; j < sourceMethodParameterTypeParameters.length; j++)
 							// if both aren't type variables.
 							if (!typeArgumentsAreTypeVariables(sourceMethodParameterTypeParameters[j],
-									targetMethodParamaterTypeParameters[j])) {
+									targetMethodParamaterTypeParameters[j]))
 								// then check if they are assignment compatible.
 								if (!isAssignmentCompatible(sourceMethodParameterTypeParameters[j],
 										targetMethodParamaterTypeParameters[j])) {
@@ -1615,8 +1605,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 									hasAssignmentIncompatibleTypeParameter = true;
 									break; // no more type parameters.
 								}
-							}
-						}
 
 					if (hasAssignmentIncompatibleTypeParameter)
 						break; // no more parameter types.
@@ -1642,7 +1630,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	/**
 	 * Check that return types are compatible between the source and target
 	 * methods.
-	 * 
+	 *
 	 * @param sourceMethod
 	 *            The method to check.
 	 * @param monitor
@@ -1692,7 +1680,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						// are the type arguments compatible?
 						for (int i = 0; i < sourceMethodReturnTypeTypeArguments.length; i++) {
 							if (!typeArgumentsAreTypeVariables(sourceMethodReturnTypeTypeArguments[i],
-									targetMethodReturnTypeTypeArguments[i])) {
+									targetMethodReturnTypeTypeArguments[i]))
 								// then, we should check their assignment
 								// compatibility.
 								if (!isAssignmentCompatible(sourceMethodReturnTypeTypeArguments[i],
@@ -1701,7 +1689,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 											sourceMethod, targetMethod);
 									break;
 								}
-							}
 							monitor.ifPresent(m -> m.worked(1));
 						}
 					}
@@ -1728,7 +1715,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 					Block body = declaration.getBody();
 
 					if (body != null) {
-						SourceMethodBodyAnalysisVisitor visitor = new SourceMethodBodyAnalysisVisitor(this, sourceMethod, pm);
+						SourceMethodBodyAnalysisVisitor visitor = new SourceMethodBodyAnalysisVisitor(this,
+								sourceMethod, pm);
 						body.accept(visitor);
 
 						if (visitor.doesMethodContainsSuperReference())
@@ -1740,20 +1728,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 									visitor.getCalledProtectedObjectMethodSet().stream().findAny().orElseThrow(
 											() -> new IllegalStateException("No associated object method")));
 
-						if (visitor.doesMethodContainsTypeIncompatibleThisReference()) {
+						if (visitor.doesMethodContainsTypeIncompatibleThisReference())
 							// FIXME: The error context should be the this
 							// reference that caused the error.
 							addErrorAndMark(status, PreconditionFailure.MethodContainsTypeIncompatibleThisReference,
 									sourceMethod);
-						}
 
 						if (sourceMethod.getDeclaringType().isMember()
-								&& visitor.doesMethodContainQualifiedThisExpression()) {
+								&& visitor.doesMethodContainQualifiedThisExpression())
 							// FIXME: The error context should be the this
 							// reference that caused the error.
 							addErrorAndMark(status, PreconditionFailure.MethodContainsQualifiedThisExpression,
 									sourceMethod);
-						}
 					}
 				}
 				pm.ifPresent(m -> m.worked(1));
@@ -1864,12 +1850,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkStructure(IMember member) throws JavaModelException {
-		if (!member.isStructureKnown()) {
+		if (!member.isStructureKnown())
 			return RefactoringStatus.createErrorStatus(
 					MessageFormat.format(Messages.CUContainsCompileErrors, getElementLabel(member, ALL_FULLY_QUALIFIED),
 							getElementLabel(member.getCompilationUnit(), ALL_FULLY_QUALIFIED)),
 					JavaStatusContext.create(member.getCompilationUnit()));
-		}
 		return new RefactoringStatus();
 	}
 
@@ -1960,10 +1945,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				addErrorAndMark(status, PreconditionFailure.SourceMethodImplementsMultipleMethods, sourceMethod);
 
 			// for each subclass of the declaring type.
-			for (IType subclass : hierarchy.getSubclasses(sourceMethod.getDeclaringType())) {
+			for (IType subclass : hierarchy.getSubclasses(sourceMethod.getDeclaringType()))
 				status.merge(checkClassForMissingSourceMethodImplementation(sourceMethod, subclass, hierarchy,
 						monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))));
-			}
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
@@ -1971,9 +1955,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	private RefactoringStatus checkWritabilitiy(IMember member, PreconditionFailure failure) {
-		if (member.isBinary() || member.isReadOnly()) {
+		if (member.isBinary() || member.isReadOnly())
 			return createError(failure, member);
-		}
 		return new RefactoringStatus();
 	}
 
@@ -2256,7 +2239,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			private IMethod extractConstructor(ASTNode node) {
 				if (node == null)
 					throw new IllegalArgumentException("Node is null");
-				else {
+				else
 					switch (node.getNodeType()) {
 					case ASTNode.CLASS_INSTANCE_CREATION: {
 						ClassInstanceCreation creation = (ClassInstanceCreation) node;
@@ -2295,7 +2278,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						return extractConstructor(node.getParent());
 					}
 					}
-				}
 			}
 		}, monitor.orElseGet(NullProgressMonitor::new));
 
@@ -2396,10 +2378,9 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				monitor.orElseGet(NullProgressMonitor::new));
 		final List<IType> result = new ArrayList<IType>(types.length);
 		final List<IMember> members = Arrays.asList(new IMember[] { sourceMethod });
-		for (int index = 0; index < types.length; index++) {
+		for (int index = 0; index < types.length; index++)
 			if (!members.contains(types[index]) && !types[index].equals(sourceMethod.getDeclaringType()))
 				result.add(types[index]);
-		}
 		return result.toArray(new IType[result.size()]);
 	}
 
@@ -2461,17 +2442,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			throws JavaModelException {
 		// A map of methods to their equivalence set.
 		Map<IMethod, Set<IMethod>> methodToEquivalenceSetMap = new LinkedHashMap<>();
-		for (Set<IMethod> set : equivalenceSets) {
-			for (IMethod method : set) {
+		for (Set<IMethod> set : equivalenceSets)
+			for (IMethod method : set)
 				methodToEquivalenceSetMap.put(method, set);
-			}
-		}
 
 		monitor.ifPresent(
 				m -> m.beginTask("Merging method equivalence sets ...", methodToEquivalenceSetMap.keySet().size()));
 
 		for (IMethod method : methodToEquivalenceSetMap.keySet()) {
-			for (IMethod otherMethod : methodToEquivalenceSetMap.keySet()) {
+			for (IMethod otherMethod : methodToEquivalenceSetMap.keySet())
 				if (method != otherMethod) {
 					Set<IMethod> methodSet = methodToEquivalenceSetMap.get(method); // Find(method)
 					Set<IMethod> otherMethodSet = methodToEquivalenceSetMap.get(otherMethod); // Find(otherMethod)
@@ -2485,12 +2464,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 						equivalenceSets.remove(otherMethodSet);
 
 						// update the map.
-						for (IMethod methodInOtherMethodSet : otherMethodSet) {
+						for (IMethod methodInOtherMethodSet : otherMethodSet)
 							methodToEquivalenceSetMap.put(methodInOtherMethodSet, methodSet);
-						}
 					}
 				}
-			}
 			monitor.ifPresent(m -> m.worked(1));
 		}
 
@@ -2517,11 +2494,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	/**
 	 * Remove any annotations that we don't want considered.
-	 * 
+	 *
 	 * @param annotationSet
 	 *            The set of annotations to work with.
-	 * @param type The type declaring the annotations.
-	 * @throws JavaModelException When resolving the annotation FQN fails.
+	 * @param type
+	 *            The type declaring the annotations.
+	 * @throws JavaModelException
+	 *             When resolving the annotation FQN fails.
 	 */
 	private void removeSpecialAnnotations(Set<IAnnotation> annotationSet, IType type) throws JavaModelException {
 		// Special case: don't consider the @Override annotation in the source
@@ -2537,8 +2516,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 				String annotationName = annotation.getElementName();
 				String[][] resolveTyped = type.resolveType(annotationName);
 
-				for (int i = 0; i < resolveTyped.length; i++) {
-					String[] strings = resolveTyped[i];
+				for (String[] element : resolveTyped) {
+					String[] strings = element;
 
 					// first element is the package name.
 					if (!strings[0].startsWith("java.lang"))

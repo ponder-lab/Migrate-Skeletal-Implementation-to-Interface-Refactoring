@@ -31,8 +31,9 @@ final class MethodReceiverAnalysisVisitor extends ASTVisitor {
 			IJavaElement javaElement = methodBinding.getJavaElement();
 
 			if (javaElement == null)
-				MigrateSkeletalImplementationToInterfaceRefactoringProcessor.logWarning("Could not get Java element from binding: " + methodBinding + " while processing: "
-						+ methodInvocation);
+				MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+						.logWarning("Could not get Java element from binding: " + methodBinding + " while processing: "
+								+ methodInvocation);
 			else if (javaElement.equals(accessedMethod)) {
 				Expression expression = methodInvocation.getExpression();
 				expression = (Expression) Util.stripParenthesizedExpressions(expression);
@@ -43,9 +44,8 @@ final class MethodReceiverAnalysisVisitor extends ASTVisitor {
 				// `this` expression. In other words, we may need to climb
 				// the
 				// AST.
-				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION) {
+				if (expression == null || expression.getNodeType() == ASTNode.THIS_EXPRESSION)
 					this.encounteredThisReceiver = true;
-				}
 			}
 		}
 		return super.visit(methodInvocation);
@@ -54,10 +54,9 @@ final class MethodReceiverAnalysisVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(SuperMethodInvocation node) {
 		IMethodBinding methodBinding = node.resolveMethodBinding();
-		if (methodBinding != null) {
+		if (methodBinding != null)
 			if (methodBinding.getJavaElement().equals(accessedMethod))
 				this.encounteredThisReceiver = true;
-		}
 		return super.visit(node);
 	}
 }

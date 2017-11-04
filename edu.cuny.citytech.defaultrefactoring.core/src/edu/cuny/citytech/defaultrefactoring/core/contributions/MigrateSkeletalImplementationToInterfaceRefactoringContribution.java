@@ -12,24 +12,21 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImplementationToInterfaceRefactoringDescriptor;
 
 @SuppressWarnings("restriction")
-public class MigrateSkeletalImplementationToInterfaceRefactoringContribution
-		extends JavaUIRefactoringContribution {
+public class MigrateSkeletalImplementationToInterfaceRefactoringContribution extends JavaUIRefactoringContribution {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * org.eclipse.ltk.core.refactoring.RefactoringContribution#createDescriptor
 	 * (java.lang.String, java.lang.String, java.lang.String, java.lang.String,
 	 * java.util.Map, int)
 	 */
 	@Override
-	public RefactoringDescriptor createDescriptor(String id, String project,
-			String description, String comment,
-			@SuppressWarnings("rawtypes") Map arguments, int flags)
-			throws IllegalArgumentException {
-		return new MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(
-				id, project, description, comment, arguments, flags);
+	public RefactoringDescriptor createDescriptor(String id, String project, String description, String comment,
+			@SuppressWarnings("rawtypes") Map arguments, int flags) throws IllegalArgumentException {
+		return new MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(id, project, description, comment,
+				arguments, flags);
 	}
 
 	@Override

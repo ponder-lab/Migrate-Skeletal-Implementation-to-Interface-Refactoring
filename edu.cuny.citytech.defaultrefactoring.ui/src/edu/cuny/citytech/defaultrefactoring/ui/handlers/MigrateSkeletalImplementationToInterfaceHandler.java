@@ -42,11 +42,11 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		ISelection currentSelection = HandlerUtil.getCurrentSelectionChecked(event);
 		List<?> list = SelectionUtil.toList(currentSelection);
 
-		if (list != null) {
+		if (list != null)
 			try {
 				Set<IMethod> methodSet = new HashSet<>();
 
-				for (Object obj : list) {
+				for (Object obj : list)
 					if (obj instanceof IJavaElement) {
 						IJavaElement jElem = (IJavaElement) obj;
 						switch (jElem.getElementType()) {
@@ -76,7 +76,6 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 							break;
 						}
 					}
-				}
 
 				Shell shell = HandlerUtil.getActiveShellChecked(event);
 				MigrateSkeletalImplementationToInterfaceRefactoringWizard
@@ -85,7 +84,6 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 				JavaPlugin.log(e);
 				throw new ExecutionException("Failed to start refactoring", e);
 			}
-		}
 		// TODO: What do we do if there was no input? Do we display some
 		// message?
 		return null;
@@ -140,15 +138,13 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 			throws JavaModelException {
 		Set<IMethod> methodSet = new HashSet<>();
 
-		if (type.isClass()) {
+		if (type.isClass())
 			for (IMethod method : type.getMethods())
 				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor)) {
 					logPossiblyMigratableMethod(method);
 					methodSet.add(method);
 				} else
 					logNonMigratableMethod(method);
-
-		}
 
 		return methodSet;
 	}

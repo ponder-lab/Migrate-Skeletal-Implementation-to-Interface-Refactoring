@@ -130,7 +130,7 @@ public final class SkeletalImplementatonClassRemovalUtils {
 	/**
 	 * Returns true if the given type will be empty given a set of methods to
 	 * remove from the type and false otherwise.
-	 * 
+	 *
 	 * @param type
 	 *            The type to check for emptiness.
 	 * @param methodsToRemove
@@ -178,7 +178,7 @@ public final class SkeletalImplementatonClassRemovalUtils {
 
 			for (IType subclass : subclasses) {
 				IMethod[] methods = subclass.findMethods(sourceMethod);
-				if (methods != null) {
+				if (methods != null)
 					for (IMethod method : methods) {
 						CompilationUnit unit = getCompilationUnit(method.getTypeRoot(),
 								monitor.map(m -> (IProgressMonitor) new SubProgressMonitor(m, IProgressMonitor.UNKNOWN))
@@ -190,7 +190,6 @@ public final class SkeletalImplementatonClassRemovalUtils {
 						if (finder.hasEncounteredSuper())
 							return true;
 					}
-				}
 			}
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);

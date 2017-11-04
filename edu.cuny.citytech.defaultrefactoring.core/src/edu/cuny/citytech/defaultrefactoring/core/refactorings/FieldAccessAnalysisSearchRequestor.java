@@ -16,13 +16,15 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 
 final class FieldAccessAnalysisSearchRequestor extends SearchRequestor {
 	/**
-	 * 
+	 *
 	 */
 	private final MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor;
 	private boolean accessesFieldsFromImplicitParameter;
 	private final Optional<IProgressMonitor> monitor;
 
-	FieldAccessAnalysisSearchRequestor(MigrateSkeletalImplementationToInterfaceRefactoringProcessor migrateSkeletalImplementationToInterfaceRefactoringProcessor, Optional<IProgressMonitor> monitor) {
+	FieldAccessAnalysisSearchRequestor(
+			MigrateSkeletalImplementationToInterfaceRefactoringProcessor migrateSkeletalImplementationToInterfaceRefactoringProcessor,
+			Optional<IProgressMonitor> monitor) {
 		processor = migrateSkeletalImplementationToInterfaceRefactoringProcessor;
 		this.monitor = monitor;
 	}
@@ -35,9 +37,9 @@ final class FieldAccessAnalysisSearchRequestor extends SearchRequestor {
 		// get the AST node corresponding to the field
 		// access. It should be some kind of name
 		// (simple of qualified).
-		ASTNode node = ASTNodeSearchUtil.getAstNode(match, processor.getCompilationUnit(
-				((IMember) match.getElement()).getTypeRoot(),
-				new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
+		ASTNode node = ASTNodeSearchUtil.getAstNode(match,
+				processor.getCompilationUnit(((IMember) match.getElement()).getTypeRoot(),
+						new SubProgressMonitor(monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)));
 
 		// examine the node's parent.
 		ASTNode parent = node.getParent();

@@ -1,13 +1,13 @@
 package edu.cuny.citytech.defaultrefactoring.ui.tests;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 import edu.cuny.citytech.defaultrefactoring.core.utils.TypeVariableUtil;
 
 public class TypeVariableUtilTest extends TypeVariableUtil {
-	
+
 	public TypeVariableUtilTest() {
 		super();
 	}
@@ -26,7 +26,7 @@ public class TypeVariableUtilTest extends TypeVariableUtil {
 		assertEquals("A<E>", stripBoundsFromFullyQualifiedParameterizedName("A<E super F<G extends H>>"));
 		assertEquals("A<E>", stripBoundsFromFullyQualifiedParameterizedName("A<E extends F<G super H>>"));
 		assertEquals("A<E>", stripBoundsFromFullyQualifiedParameterizedName("A<E super F<G super H>>"));
-		
+
 		assertEquals("A<E,T>", stripBoundsFromFullyQualifiedParameterizedName("A<E,T>"));
 		assertEquals("A<E,T>", stripBoundsFromFullyQualifiedParameterizedName("A<E super F,T>"));
 		assertEquals("A<E,T>", stripBoundsFromFullyQualifiedParameterizedName("A<E super F<G super H>,T>"));

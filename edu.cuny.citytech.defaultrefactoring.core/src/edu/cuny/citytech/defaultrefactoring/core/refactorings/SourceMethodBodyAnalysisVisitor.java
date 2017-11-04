@@ -37,7 +37,7 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 
 final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 	/**
-	 * 
+	 *
 	 */
 	private final MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor;
 	private Set<IMethod> calledProtectedObjectMethodSet = new HashSet<>();
@@ -48,7 +48,9 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 	private Optional<IProgressMonitor> monitor;
 	private IMethod sourceMethod;
 
-	public SourceMethodBodyAnalysisVisitor(MigrateSkeletalImplementationToInterfaceRefactoringProcessor migrateSkeletalImplementationToInterfaceRefactoringProcessor, IMethod sourceMethod, Optional<IProgressMonitor> monitor) {
+	public SourceMethodBodyAnalysisVisitor(
+			MigrateSkeletalImplementationToInterfaceRefactoringProcessor migrateSkeletalImplementationToInterfaceRefactoringProcessor,
+			IMethod sourceMethod, Optional<IProgressMonitor> monitor) {
 		super(false);
 		processor = migrateSkeletalImplementationToInterfaceRefactoringProcessor;
 		this.sourceMethod = sourceMethod;
@@ -87,8 +89,8 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 			// get the target method.
 			IMethod targetMethod = null;
 			try {
-				targetMethod = MigrateSkeletalImplementationToInterfaceRefactoringProcessor.getTargetMethod(this.sourceMethod,
-						this.monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+				targetMethod = MigrateSkeletalImplementationToInterfaceRefactoringProcessor.getTargetMethod(
+						this.sourceMethod, this.monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
 			} catch (JavaModelException e) {
 				throw new RuntimeException(e);
 			}
@@ -97,9 +99,10 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 			// get the destination interface.
 			ITypeBinding destinationInterfaceTypeBinding = null;
 			try {
-				destinationInterfaceTypeBinding = ASTNodeSearchUtil.getTypeDeclarationNode(destinationInterface,
-						processor.getCompilationUnit(destinationInterface.getTypeRoot(), new SubProgressMonitor(
-								this.monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)))
+				destinationInterfaceTypeBinding = ASTNodeSearchUtil
+						.getTypeDeclarationNode(destinationInterface,
+								processor.getCompilationUnit(destinationInterface.getTypeRoot(), new SubProgressMonitor(
+										this.monitor.orElseGet(NullProgressMonitor::new), IProgressMonitor.UNKNOWN)))
 						.resolveBinding();
 			} catch (JavaModelException e) {
 				throw new RuntimeException(e);
@@ -150,7 +153,8 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 
 				// ensure that the destination type is assignment compatible
 				// with the return type.
-				if (!MigrateSkeletalImplementationToInterfaceRefactoringProcessor.isAssignmentCompatible(destinationInterfaceTypeBinding, returnType))
+				if (!MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+						.isAssignmentCompatible(destinationInterfaceTypeBinding, returnType))
 					this.methodContainsTypeIncompatibleThisReference = true;
 			} else
 				throw new IllegalStateException("Unexpected node type: " + node.getNodeType());
@@ -164,7 +168,7 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 
 	/**
 	 * Process a list of arguments stemming from a method-like call.
-	 * 
+	 *
 	 * @param arguments
 	 *            The list of arguments to process.
 	 * @param methodBinding
@@ -193,10 +197,9 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 				if (i >= methodBinding.getParameterTypes().length - 1 && methodBinding.isVarargs()) {
 					// assign the parameter type binding to be the scalar
 					// type of the last parameter type.
-					parameterTypeBinding = methodBinding
-							.getParameterTypes()[methodBinding.getParameterTypes().length - 1].getElementType();
-					Assert.isNotNull(parameterTypeBinding,
-							"The last parameter of a vararg method should be an array.");
+					parameterTypeBinding = methodBinding.getParameterTypes()[methodBinding.getParameterTypes().length
+							- 1].getElementType();
+					Assert.isNotNull(parameterTypeBinding, "The last parameter of a vararg method should be an array.");
 				} else
 					parameterTypeBinding = methodBinding.getParameterTypes()[i];
 
@@ -208,7 +211,8 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 				// TODO: Does `isAssignmentCompatible()` also work
 				// with
 				// comparison?
-				if (!MigrateSkeletalImplementationToInterfaceRefactoringProcessor.isAssignmentCompatible(destinationInterfaceTypeBinding, parameterTypeBinding)) {
+				if (!MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+						.isAssignmentCompatible(destinationInterfaceTypeBinding, parameterTypeBinding)) {
 					this.methodContainsTypeIncompatibleThisReference = true;
 					break;
 				}
@@ -222,18 +226,19 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 		if (leftHandSide == thisExpression) {
 			// in this case, we need to check that the RHS can be
 			// assigned to a variable of the destination type.
-			if (!MigrateSkeletalImplementationToInterfaceRefactoringProcessor.isAssignmentCompatible(rightHandSide.resolveTypeBinding(), destinationInterfaceTypeBinding))
+			if (!MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+					.isAssignmentCompatible(rightHandSide.resolveTypeBinding(), destinationInterfaceTypeBinding))
 				this.methodContainsTypeIncompatibleThisReference = true;
 		} else if (rightHandSide == thisExpression) {
 			// otherwise, if `this` appears on the RHS. Then, we
 			// need to check that the LHS can receive a variable of
 			// the destination type.
-			if (!MigrateSkeletalImplementationToInterfaceRefactoringProcessor.isAssignmentCompatible(destinationInterfaceTypeBinding, leftHandSide.resolveTypeBinding()))
+			if (!MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+					.isAssignmentCompatible(destinationInterfaceTypeBinding, leftHandSide.resolveTypeBinding()))
 				this.methodContainsTypeIncompatibleThisReference = true;
-		} else {
+		} else
 			throw new IllegalStateException(
 					"this: " + thisExpression + " must appear either on the LHS or RHS of the assignment: " + node);
-		}
 	}
 
 	@Override
@@ -242,8 +247,7 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 		// methods #144.
 		IMethodBinding methodBinding = node.resolveMethodBinding();
 
-		if (methodBinding != null
-				&& methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
+		if (methodBinding != null && methodBinding.getDeclaringClass().getQualifiedName().equals("java.lang.Object")) {
 			IMethod calledObjectMethod = (IMethod) methodBinding.getJavaElement();
 
 			try {
@@ -288,12 +292,12 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 		// TODO: #153 There is actually a lot more checks we should add
 		// here.
 		/*
-		 * TODO: Actually need to examine every kind of expression where
-		 * `this` may appear. #149. Really, type constraints can (or should)
-		 * be used for this. Actually, similar to enum problem, especially
-		 * with finding the parameter from where the `this` expression came.
-		 * Assignment is only one kind of expression, we need to also look
-		 * at comparison and switches.
+		 * TODO: Actually need to examine every kind of expression where `this`
+		 * may appear. #149. Really, type constraints can (or should) be used
+		 * for this. Actually, similar to enum problem, especially with finding
+		 * the parameter from where the `this` expression came. Assignment is
+		 * only one kind of expression, we need to also look at comparison and
+		 * switches.
 		 */
 		if (node.getQualifier() != null)
 			this.methodContainsQualifiedThisExpression = true;

@@ -17,7 +17,7 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
 
 /**
  * TypeVariableUtils customized for use with default method refactoring.
- * 
+ *
  * @see {@link org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableUtil}
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
  *         Khatchadourian</a>
@@ -163,12 +163,11 @@ public class TypeVariableUtil {
 				endingIndexOfBoundClause);
 
 		// also remove any leading whitespace from where the clause was.
-		for (int i = startingIndexOfBoundClause - 1; i >= 0; i--) {
+		for (int i = startingIndexOfBoundClause - 1; i >= 0; i--)
 			if (Character.isWhitespace(ret.charAt(i)))
 				ret.deleteCharAt(i);
 			else
 				break;
-		}
 
 		return stripBoundsFromFullyQualifiedParameterizedName(ret.toString());
 	}
@@ -245,10 +244,8 @@ public class TypeVariableUtil {
 				if (indexes) {
 					if (offset == index)
 						set.add(new TypeVariableMaplet(element, index, signature, offset));
-				} else {
-					if (element.equals(signature))
-						set.add(new TypeVariableMaplet(element, index, signature, offset));
-				}
+				} else if (element.equals(signature))
+					set.add(new TypeVariableMaplet(element, index, signature, offset));
 			}
 		}
 		final TypeVariableMaplet[] result = new TypeVariableMaplet[set.size()];

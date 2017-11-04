@@ -6,9 +6,9 @@ import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImpl
 import edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin;
 
 public class MigrateSkeletalImplementationToInterfaceRefactoringPlugin extends RefactoringPlugin {
-	
+
 	private static MigrateSkeletalImplementationToInterfaceRefactoringPlugin plugin;
-	
+
 	public static RefactoringPlugin getDefault() {
 		return plugin;
 	}
@@ -25,8 +25,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringPlugin extends R
 		super.stop(context);
 	}
 
-	/* (non-Javadoc)
-	 * @see edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#getRefactoringId()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#
+	 * getRefactoringId()
 	 */
 	@Override
 	protected String getRefactoringId() {

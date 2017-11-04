@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package edu.cuny.citytech.defaultrefactoring.core.utils;
 
@@ -118,14 +118,11 @@ public final class Util {
 			String[] nameParts = allResults[0];
 			if (nameParts != null) {
 				StringBuilder fullNameBuilder = new StringBuilder();
-				for (int i = 0; i < nameParts.length; i++) {
-					if (fullNameBuilder.length() > 0) {
+				for (String part : nameParts) {
+					if (fullNameBuilder.length() > 0)
 						fullNameBuilder.append('.');
-					}
-					String part = nameParts[i];
-					if (part != null) {
+					if (part != null)
 						fullNameBuilder.append(part);
-					}
 				}
 				fullName = fullNameBuilder.toString();
 			}

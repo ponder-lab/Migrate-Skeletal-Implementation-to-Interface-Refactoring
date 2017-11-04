@@ -56,12 +56,11 @@ public final class RefactoringAvailabilityTester {
 			return false;
 
 		final IType declaring = method.getDeclaringType();
-		if (declaring != null) {
+		if (declaring != null)
 			if (declaring.isInterface())
 				return false; // Method is already in an interface
 			else if (!allowConcreteClasses && !Flags.isAbstract(declaring.getFlags()))
 				return false; // no concrete types allowed.
-		}
 
 		// ensure that there is a target method.
 		IMethod targetMethod = MigrateSkeletalImplementationToInterfaceRefactoringProcessor.getTargetMethod(method,
@@ -97,8 +96,7 @@ public final class RefactoringAvailabilityTester {
 
 		if (type.exists()) {
 			IMethod[] methodsOfType = type.getMethods();
-			for (int i = 0; i < methodsOfType.length; i++) {
-				IMethod method = methodsOfType[i];
+			for (IMethod method : methodsOfType) {
 				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor))
 					ret.add(method);
 			}

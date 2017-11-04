@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package edu.cuny.citytech.defaultrefactoring.ui.wizards;
 
@@ -48,7 +48,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends R
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.eclipse.ltk.ui.refactoring.RefactoringWizard#addUserInputPages()
 	 */
 	@Override

@@ -24,7 +24,7 @@ class UnmigratableMethodSet extends LinkedHashSet<IMethod> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.HashSet#add(java.lang.Object)
 	 */
 	@Override
@@ -38,7 +38,7 @@ class UnmigratableMethodSet extends LinkedHashSet<IMethod> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.AbstractCollection#addAll(java.util.Collection)
 	 */
 	@Override
@@ -62,7 +62,7 @@ class UnmigratableMethodSet extends LinkedHashSet<IMethod> {
 
 	/**
 	 * Creates a new Unmigratable method set with the given source methods.
-	 * 
+	 *
 	 * @param sourceMethods
 	 *            The source methods, some of which may be unmigratable.
 	 */
