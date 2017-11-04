@@ -74,6 +74,52 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 	private static final String PERFORM_CHANGE_PROPERTY_KEY = "edu.cuny.citytech.defaultrefactoring.eval.performChange";
 	private static final boolean PERFORM_CHANGE_DEFAULT = false;
 
+	private static CSVPrinter createCSVPrinter(String fileName, String[] header) throws IOException {
+		return new CSVPrinter(new FileWriter(fileName, true), CSVFormat.EXCEL.withHeader(header));
+	}
+
+	private static IType[] getAllDeclaringTypeSubtypes(IMethod method) throws JavaModelException {
+		IType declaringType = method.getDeclaringType();
+		ITypeHierarchy typeHierarchy = declaringType.newTypeHierarchy(new NullProgressMonitor());
+		IType[] allSubtypes = typeHierarchy.getAllSubtypes(declaringType);
+		return allSubtypes;
+	}
+
+	private static Set<IMethod> getAllMethods(IJavaProject javaProject) throws JavaModelException {
+		Set<IMethod> methods = new HashSet<>();
+
+		// collect all methods from this project.
+		IPackageFragment[] packageFragments = javaProject.getPackageFragments();
+		for (IPackageFragment iPackageFragment : packageFragments) {
+			ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
+			for (ICompilationUnit iCompilationUnit : compilationUnits) {
+				IType[] allTypes = iCompilationUnit.getAllTypes();
+				for (IType type : allTypes)
+					Collections.addAll(methods, type.getMethods());
+			}
+		}
+		return methods;
+	}
+
+	private static String getDestinationTypeFullyQualifiedName(IMethod method, IProgressMonitor monitor)
+			throws JavaModelException {
+		return MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+				.getTargetMethod(method, Optional.of(monitor)).getDeclaringType().getFullyQualifiedName();
+	}
+
+	private static int getMethodLinesOfCode(IMethod method) {
+		AbstractMetricSource metricSource = Dispatcher.getAbstractMetricSource(method);
+
+		if (metricSource != null) {
+			Metric value = metricSource.getValue("MLOC");
+			int mLOC = value.intValue();
+			return mLOC;
+		} else {
+			System.err.println("WARNING: Could not retrieve metric source for method: " + method);
+			return 0;
+		}
+	}
+
 	/**
 	 * the command has been executed, so extract extract the needed information
 	 * from the application context.
@@ -391,26 +437,6 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 		return ret;
 	}
 
-	private static IType[] getAllDeclaringTypeSubtypes(IMethod method) throws JavaModelException {
-		IType declaringType = method.getDeclaringType();
-		ITypeHierarchy typeHierarchy = declaringType.newTypeHierarchy(new NullProgressMonitor());
-		IType[] allSubtypes = typeHierarchy.getAllSubtypes(declaringType);
-		return allSubtypes;
-	}
-
-	private static int getMethodLinesOfCode(IMethod method) {
-		AbstractMetricSource metricSource = Dispatcher.getAbstractMetricSource(method);
-
-		if (metricSource != null) {
-			Metric value = metricSource.getValue("MLOC");
-			int mLOC = value.intValue();
-			return mLOC;
-		} else {
-			System.err.println("WARNING: Could not retrieve metric source for method: " + method);
-			return 0;
-		}
-	}
-
 	private boolean shouldAllowConcreteClasses() {
 		String allowConcreateClassesPropertyValue = System.getenv(ALLOW_CONCRETE_CLASSES_PROPERTY_KEY);
 
@@ -427,31 +453,5 @@ public class EvaluateMigrateSkeletalImplementationToInterfaceRefactoringHandler 
 			return PERFORM_CHANGE_DEFAULT;
 		else
 			return Boolean.valueOf(performChangePropertyValue);
-	}
-
-	private static String getDestinationTypeFullyQualifiedName(IMethod method, IProgressMonitor monitor)
-			throws JavaModelException {
-		return MigrateSkeletalImplementationToInterfaceRefactoringProcessor
-				.getTargetMethod(method, Optional.of(monitor)).getDeclaringType().getFullyQualifiedName();
-	}
-
-	private static Set<IMethod> getAllMethods(IJavaProject javaProject) throws JavaModelException {
-		Set<IMethod> methods = new HashSet<>();
-
-		// collect all methods from this project.
-		IPackageFragment[] packageFragments = javaProject.getPackageFragments();
-		for (IPackageFragment iPackageFragment : packageFragments) {
-			ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
-			for (ICompilationUnit iCompilationUnit : compilationUnits) {
-				IType[] allTypes = iCompilationUnit.getAllTypes();
-				for (IType type : allTypes)
-					Collections.addAll(methods, type.getMethods());
-			}
-		}
-		return methods;
-	}
-
-	private static CSVPrinter createCSVPrinter(String fileName, String[] header) throws IOException {
-		return new CSVPrinter(new FileWriter(fileName, true), CSVFormat.EXCEL.withHeader(header));
 	}
 }

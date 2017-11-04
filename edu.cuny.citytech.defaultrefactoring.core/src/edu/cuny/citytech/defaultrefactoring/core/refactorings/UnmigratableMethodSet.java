@@ -12,13 +12,23 @@ class UnmigratableMethodSet extends LinkedHashSet<IMethod> {
 
 	protected Set<IMethod> sourceMethods;
 
-	public UnmigratableMethodSet(Set<IMethod> sourceMethods) {
-		super();
+	public UnmigratableMethodSet(Collection<? extends IMethod> c, Set<IMethod> sourceMethods) {
+		super(c);
 		this.sourceMethods = sourceMethods;
 	}
 
-	public UnmigratableMethodSet(Collection<? extends IMethod> c, Set<IMethod> sourceMethods) {
-		super(c);
+	public UnmigratableMethodSet(int initialCapacity, float loadFactor, Set<IMethod> sourceMethods) {
+		super(initialCapacity, loadFactor);
+		this.sourceMethods = sourceMethods;
+	}
+
+	public UnmigratableMethodSet(int initialCapacity, Set<IMethod> sourceMethods) {
+		super(initialCapacity);
+		this.sourceMethods = sourceMethods;
+	}
+
+	public UnmigratableMethodSet(Set<IMethod> sourceMethods) {
+		super();
 		this.sourceMethods = sourceMethods;
 	}
 
@@ -50,14 +60,11 @@ class UnmigratableMethodSet extends LinkedHashSet<IMethod> {
 					"Collection: " + c + " has methods not contained in the source method set.");
 	}
 
-	public UnmigratableMethodSet(int initialCapacity, float loadFactor, Set<IMethod> sourceMethods) {
-		super(initialCapacity, loadFactor);
-		this.sourceMethods = sourceMethods;
-	}
-
-	public UnmigratableMethodSet(int initialCapacity, Set<IMethod> sourceMethods) {
-		super(initialCapacity);
-		this.sourceMethods = sourceMethods;
+	/**
+	 * @return the sourceMethods
+	 */
+	protected Set<IMethod> getSourceMethods() {
+		return sourceMethods;
 	}
 
 	/**
@@ -68,12 +75,5 @@ class UnmigratableMethodSet extends LinkedHashSet<IMethod> {
 	 */
 	public void setSourceMethods(Set<IMethod> sourceMethods) {
 		this.sourceMethods = sourceMethods;
-	}
-
-	/**
-	 * @return the sourceMethods
-	 */
-	protected Set<IMethod> getSourceMethods() {
-		return sourceMethods;
 	}
 }

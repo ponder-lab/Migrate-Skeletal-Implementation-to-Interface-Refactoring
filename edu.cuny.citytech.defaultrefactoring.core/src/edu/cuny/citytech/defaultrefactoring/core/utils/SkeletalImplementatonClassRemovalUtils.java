@@ -36,6 +36,10 @@ public final class SkeletalImplementatonClassRemovalUtils {
 			super(visitDocTags);
 		}
 
+		public boolean hasEncounteredSuper() {
+			return encounteredSuper;
+		}
+
 		@Override
 		public boolean visit(SuperConstructorInvocation node) {
 			encounteredSuper = true;
@@ -58,10 +62,6 @@ public final class SkeletalImplementatonClassRemovalUtils {
 		public boolean visit(SuperMethodReference node) {
 			encounteredSuper = true;
 			return false;
-		}
-
-		public boolean hasEncounteredSuper() {
-			return encounteredSuper;
 		}
 	}
 
@@ -127,45 +127,8 @@ public final class SkeletalImplementatonClassRemovalUtils {
 		return status;
 	}
 
-	/**
-	 * Returns true if the given type will be empty given a set of methods to
-	 * remove from the type and false otherwise.
-	 *
-	 * @param type
-	 *            The type to check for emptiness.
-	 * @param methodsToRemove
-	 *            The methods that will be removed from the given type.
-	 * @return True if the given type will be empty as a result of removing the
-	 *         given methods from the type.
-	 * @throws JavaModelException
-	 *             On a java model problem.
-	 */
-	private static boolean willBeEmpty(IType type, Set<IMethod> methodsToRemove) throws JavaModelException {
-		IMethod[] methods = type.getMethods();
-		Set<IMethod> methodsRemaining = new LinkedHashSet<>(Arrays.asList(methods));
-		methodsRemaining.removeAll(methodsToRemove);
-
-		return methodsRemaining.isEmpty() && type.getFields().length == 0 && type.getInitializers().length == 0
-				&& type.getTypes().length == 0;
-	}
-
-	private static boolean superClassImplementsDestinationInterface(IType type, IType destinationInterface,
-			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		monitor.ifPresent(m -> m.beginTask("Checking superclass ...", IProgressMonitor.UNKNOWN));
-		try {
-			if (type.getSuperclassName() != null) { // there's a superclass.
-				ITypeHierarchy superTypeHierarchy = MigrateSkeletalImplementationToInterfaceRefactoringProcessor
-						.getSuperTypeHierarchy(type,
-								monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
-				IType superclass = superTypeHierarchy.getSuperclass(type);
-				return Arrays.stream(superTypeHierarchy.getAllSuperInterfaces(superclass))
-						.anyMatch(i -> i.equals(destinationInterface));
-			}
-		} finally {
-			monitor.ifPresent(IProgressMonitor::done);
-		}
-
-		return true; // vacuously true since there's no superclass.
+	private static CompilationUnit getCompilationUnit(ITypeRoot typeRoot, IProgressMonitor monitor) {
+		return RefactoringASTParser.parseWithASTProvider(typeRoot, true, monitor);
 	}
 
 	private static boolean subclassesContainSuperReferences(IMethod sourceMethod, IType type,
@@ -197,8 +160,45 @@ public final class SkeletalImplementatonClassRemovalUtils {
 		return false;
 	}
 
-	private static CompilationUnit getCompilationUnit(ITypeRoot typeRoot, IProgressMonitor monitor) {
-		return RefactoringASTParser.parseWithASTProvider(typeRoot, true, monitor);
+	private static boolean superClassImplementsDestinationInterface(IType type, IType destinationInterface,
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
+		monitor.ifPresent(m -> m.beginTask("Checking superclass ...", IProgressMonitor.UNKNOWN));
+		try {
+			if (type.getSuperclassName() != null) { // there's a superclass.
+				ITypeHierarchy superTypeHierarchy = MigrateSkeletalImplementationToInterfaceRefactoringProcessor
+						.getSuperTypeHierarchy(type,
+								monitor.map(m -> new SubProgressMonitor(m, IProgressMonitor.UNKNOWN)));
+				IType superclass = superTypeHierarchy.getSuperclass(type);
+				return Arrays.stream(superTypeHierarchy.getAllSuperInterfaces(superclass))
+						.anyMatch(i -> i.equals(destinationInterface));
+			}
+		} finally {
+			monitor.ifPresent(IProgressMonitor::done);
+		}
+
+		return true; // vacuously true since there's no superclass.
+	}
+
+	/**
+	 * Returns true if the given type will be empty given a set of methods to
+	 * remove from the type and false otherwise.
+	 *
+	 * @param type
+	 *            The type to check for emptiness.
+	 * @param methodsToRemove
+	 *            The methods that will be removed from the given type.
+	 * @return True if the given type will be empty as a result of removing the
+	 *         given methods from the type.
+	 * @throws JavaModelException
+	 *             On a java model problem.
+	 */
+	private static boolean willBeEmpty(IType type, Set<IMethod> methodsToRemove) throws JavaModelException {
+		IMethod[] methods = type.getMethods();
+		Set<IMethod> methodsRemaining = new LinkedHashSet<>(Arrays.asList(methods));
+		methodsRemaining.removeAll(methodsToRemove);
+
+		return methodsRemaining.isEmpty() && type.getFields().length == 0 && type.getInitializers().length == 0
+				&& type.getTypes().length == 0;
 	}
 
 	private SkeletalImplementatonClassRemovalUtils() {

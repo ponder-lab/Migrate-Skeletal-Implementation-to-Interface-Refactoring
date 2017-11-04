@@ -37,6 +37,13 @@ import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
  */
 public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler {
 
+	private static void writeType(CSVPrinter typesPrinter, IType type) throws IOException {
+		typesPrinter.printRecord(
+				Optional.ofNullable(type.getJavaProject()).map(IJavaElement::getElementName).orElse("NULL"),
+				Optional.ofNullable(type.getCompilationUnit()).map(IJavaElement::getElementName).orElse("NULL"),
+				type.getFullyQualifiedName());
+	}
+
 	/**
 	 * the command has been executed, so extract extract the needed information
 	 * from the application context.
@@ -159,12 +166,5 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			return new Status(IStatus.OK, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(), "Success.");
 		}).schedule();
 		return null;
-	}
-
-	private static void writeType(CSVPrinter typesPrinter, IType type) throws IOException {
-		typesPrinter.printRecord(
-				Optional.ofNullable(type.getJavaProject()).map(IJavaElement::getElementName).orElse("NULL"),
-				Optional.ofNullable(type.getCompilationUnit()).map(IJavaElement::getElementName).orElse("NULL"),
-				type.getFullyQualifiedName());
 	}
 }

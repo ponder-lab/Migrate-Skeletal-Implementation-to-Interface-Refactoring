@@ -13,6 +13,16 @@ public class TypeVariableUtilTest extends TypeVariableUtil {
 	}
 
 	@Test
+	public void testFindEndingIndexOfBoundClause() {
+		assertEquals(-1, findEndingIndexOfBoundClause("A", 0));
+		assertEquals(-1, findEndingIndexOfBoundClause("A <E>", 2));
+		assertEquals(-1, findEndingIndexOfBoundClause("A <E <F>>", 2));
+		assertEquals(29, findEndingIndexOfBoundClause("A <E extends java.lang.String>", 5));
+		assertEquals(31, findEndingIndexOfBoundClause("A <E   extends java.lang.String>", 7));
+		assertEquals(30, findEndingIndexOfBoundClause("A <E <F super java.lang.String>>", 8));
+	}
+
+	@Test
 	public void testStripBoundsFromFullyQualifiedParameterizedName() {
 		assertEquals("A", stripBoundsFromFullyQualifiedParameterizedName("A"));
 		assertEquals("A <E>", stripBoundsFromFullyQualifiedParameterizedName("A <E>"));
@@ -31,16 +41,6 @@ public class TypeVariableUtilTest extends TypeVariableUtil {
 		assertEquals("A<E,T>", stripBoundsFromFullyQualifiedParameterizedName("A<E super F,T>"));
 		assertEquals("A<E,T>", stripBoundsFromFullyQualifiedParameterizedName("A<E super F<G super H>,T>"));
 		assertEquals("A<E,T>", stripBoundsFromFullyQualifiedParameterizedName("A<E super F<G super H>,T extends U>"));
-	}
-
-	@Test
-	public void testFindEndingIndexOfBoundClause() {
-		assertEquals(-1, findEndingIndexOfBoundClause("A", 0));
-		assertEquals(-1, findEndingIndexOfBoundClause("A <E>", 2));
-		assertEquals(-1, findEndingIndexOfBoundClause("A <E <F>>", 2));
-		assertEquals(29, findEndingIndexOfBoundClause("A <E extends java.lang.String>", 5));
-		assertEquals(31, findEndingIndexOfBoundClause("A <E   extends java.lang.String>", 7));
-		assertEquals(30, findEndingIndexOfBoundClause("A <E <F super java.lang.String>>", 8));
 	}
 
 }

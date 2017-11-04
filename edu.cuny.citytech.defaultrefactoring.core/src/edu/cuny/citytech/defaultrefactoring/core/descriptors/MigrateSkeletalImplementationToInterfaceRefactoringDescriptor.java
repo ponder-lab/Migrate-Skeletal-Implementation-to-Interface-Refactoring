@@ -19,14 +19,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringDescriptor exten
 		super(REFACTORING_ID);
 	}
 
-	public MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(String id, String project, String description,
-			String comment, @SuppressWarnings("rawtypes") Map arguments, int flags) {
-		super(id, project, description, comment, arguments, flags);
-	}
-
 	public MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(String project, String description,
 			String comment, @SuppressWarnings("rawtypes") Map arguments, int flags) {
 		this(REFACTORING_ID, project, description, comment, arguments, flags);
+	}
+
+	public MigrateSkeletalImplementationToInterfaceRefactoringDescriptor(String id, String project, String description,
+			String comment, @SuppressWarnings("rawtypes") Map arguments, int flags) {
+		super(id, project, description, comment, arguments, flags);
 	}
 
 }

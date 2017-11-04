@@ -32,7 +32,17 @@ import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImp
  */
 @SuppressWarnings("restriction")
 public final class Util {
-	private Util() {
+	public static MigrateSkeletalImplementationToInterfaceRefactoringProcessor createMigrateSkeletalImplementationToInterfaceRefactoringProcessor(
+			IJavaProject project, IMethod[] methods, Optional<IProgressMonitor> monitor) throws JavaModelException {
+		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(project);
+		MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor(
+				methods, settings, monitor);
+		return processor;
+	}
+
+	public static ProcessorBasedRefactoring createRefactoring() throws JavaModelException {
+		RefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor();
+		return new ProcessorBasedRefactoring(processor);
 	}
 
 	public static ProcessorBasedRefactoring createRefactoring(IJavaProject project, IMethod[] methods,
@@ -42,12 +52,8 @@ public final class Util {
 		return new ProcessorBasedRefactoring(processor);
 	}
 
-	public static MigrateSkeletalImplementationToInterfaceRefactoringProcessor createMigrateSkeletalImplementationToInterfaceRefactoringProcessor(
-			IJavaProject project, IMethod[] methods, Optional<IProgressMonitor> monitor) throws JavaModelException {
-		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(project);
-		MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor(
-				methods, settings, monitor);
-		return processor;
+	public static ProcessorBasedRefactoring createRefactoring(IMethod[] methods) throws JavaModelException {
+		return createRefactoring(methods, Optional.empty());
 	}
 
 	public static ProcessorBasedRefactoring createRefactoring(IMethod[] methods, Optional<IProgressMonitor> monitor)
@@ -60,27 +66,14 @@ public final class Util {
 		return createRefactoring(project, methods, monitor);
 	}
 
-	public static ProcessorBasedRefactoring createRefactoring(IMethod[] methods) throws JavaModelException {
-		return createRefactoring(methods, Optional.empty());
-	}
-
-	public static ProcessorBasedRefactoring createRefactoring() throws JavaModelException {
-		RefactoringProcessor processor = new MigrateSkeletalImplementationToInterfaceRefactoringProcessor();
-		return new ProcessorBasedRefactoring(processor);
-	}
-
 	public static edu.cuny.citytech.refactoring.common.core.Refactoring createRefactoring(
 			final Refactoring refactoring) {
 		return new edu.cuny.citytech.refactoring.common.core.Refactoring() {
 
 			@Override
-			public String getName() {
-				return refactoring.getName();
-			}
-
-			@Override
-			public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-				return refactoring.createChange(pm);
+			public RefactoringStatus checkFinalConditions(IProgressMonitor pm)
+					throws CoreException, OperationCanceledException {
+				return refactoring.checkFinalConditions(pm);
 			}
 
 			@Override
@@ -90,9 +83,13 @@ public final class Util {
 			}
 
 			@Override
-			public RefactoringStatus checkFinalConditions(IProgressMonitor pm)
-					throws CoreException, OperationCanceledException {
-				return refactoring.checkFinalConditions(pm);
+			public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+				return refactoring.createChange(pm);
+			}
+
+			@Override
+			public String getName() {
+				return refactoring.getName();
 			}
 		};
 	}
@@ -142,5 +139,8 @@ public final class Util {
 			return stripParenthesizedExpressions(parenthesizedExpression.getExpression());
 		} else
 			return node;
+	}
+
+	private Util() {
 	}
 }

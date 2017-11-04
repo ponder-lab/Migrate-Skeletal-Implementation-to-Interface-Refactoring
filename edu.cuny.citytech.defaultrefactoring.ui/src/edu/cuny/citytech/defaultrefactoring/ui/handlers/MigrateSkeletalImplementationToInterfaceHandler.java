@@ -89,6 +89,32 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		return null;
 	}
 
+	private Set<IMethod> extractMethodsFromClass(IType type, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		Set<IMethod> methodSet = new HashSet<>();
+
+		if (type.isClass())
+			for (IMethod method : type.getMethods())
+				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor)) {
+					logPossiblyMigratableMethod(method);
+					methodSet.add(method);
+				} else
+					logNonMigratableMethod(method);
+
+		return methodSet;
+	}
+
+	private Set<IMethod> extractMethodsFromCompilationUnit(ICompilationUnit cu, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		Set<IMethod> methodSet = new HashSet<>();
+		IType[] types = cu.getTypes();
+
+		for (IType iType : types)
+			methodSet.addAll(extractMethodsFromClass(iType, monitor));
+
+		return methodSet;
+	}
+
 	private Set<IMethod> extractMethodsFromJavaProject(IJavaProject jProj, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		Set<IMethod> methodSet = new HashSet<>();
@@ -96,6 +122,17 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		IPackageFragmentRoot[] roots = jProj.getPackageFragmentRoots();
 		for (IPackageFragmentRoot iPackageFragmentRoot : roots)
 			methodSet.addAll(extractMethodsFromPackageFragmentRoot(iPackageFragmentRoot, monitor));
+
+		return methodSet;
+	}
+
+	private Set<IMethod> extractMethodsFromPackageFragment(IPackageFragment frag, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		Set<IMethod> methodSet = new HashSet<>();
+		ICompilationUnit[] units = frag.getCompilationUnits();
+
+		for (ICompilationUnit iCompilationUnit : units)
+			methodSet.addAll(extractMethodsFromCompilationUnit(iCompilationUnit, monitor));
 
 		return methodSet;
 	}
@@ -112,51 +149,6 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 		return methodSet;
 	}
 
-	private Set<IMethod> extractMethodsFromPackageFragment(IPackageFragment frag, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		Set<IMethod> methodSet = new HashSet<>();
-		ICompilationUnit[] units = frag.getCompilationUnits();
-
-		for (ICompilationUnit iCompilationUnit : units)
-			methodSet.addAll(extractMethodsFromCompilationUnit(iCompilationUnit, monitor));
-
-		return methodSet;
-	}
-
-	private Set<IMethod> extractMethodsFromCompilationUnit(ICompilationUnit cu, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		Set<IMethod> methodSet = new HashSet<>();
-		IType[] types = cu.getTypes();
-
-		for (IType iType : types)
-			methodSet.addAll(extractMethodsFromClass(iType, monitor));
-
-		return methodSet;
-	}
-
-	private Set<IMethod> extractMethodsFromClass(IType type, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		Set<IMethod> methodSet = new HashSet<>();
-
-		if (type.isClass())
-			for (IMethod method : type.getMethods())
-				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor)) {
-					logPossiblyMigratableMethod(method);
-					methodSet.add(method);
-				} else
-					logNonMigratableMethod(method);
-
-		return methodSet;
-	}
-
-	private void logPossiblyMigratableMethod(IMethod method) {
-		logMethod(method, "Method: %s is possibly migratable.");
-	}
-
-	private void logNonMigratableMethod(IMethod method) {
-		logMethod(method, "Method: %s is not migratable.");
-	}
-
 	private void logMethod(IMethod method, String format) {
 		Formatter formatter = new Formatter();
 
@@ -166,5 +158,13 @@ public class MigrateSkeletalImplementationToInterfaceHandler extends AbstractHan
 				formatter.toString()));
 
 		formatter.close();
+	}
+
+	private void logNonMigratableMethod(IMethod method) {
+		logMethod(method, "Method: %s is not migratable.");
+	}
+
+	private void logPossiblyMigratableMethod(IMethod method) {
+		logMethod(method, "Method: %s is possibly migratable.");
 	}
 }

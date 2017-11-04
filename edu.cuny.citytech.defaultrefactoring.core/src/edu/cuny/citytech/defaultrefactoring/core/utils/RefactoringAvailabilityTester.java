@@ -26,12 +26,18 @@ import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImp
 @SuppressWarnings("restriction")
 public final class RefactoringAvailabilityTester {
 
-	private RefactoringAvailabilityTester() {
-	}
-
-	public static boolean isInterfaceMigrationAvailable(IMethod method, Optional<IProgressMonitor> monitor)
+	public static IMethod[] getMigratableSkeletalImplementations(final IType type, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
-		return isInterfaceMigrationAvailable(method, true, monitor);
+		List<IMethod> ret = new ArrayList<>();
+
+		if (type.exists()) {
+			IMethod[] methodsOfType = type.getMethods();
+			for (IMethod method : methodsOfType)
+				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor))
+					ret.add(method);
+		}
+
+		return ret.toArray(new IMethod[ret.size()]);
 	}
 
 	public static boolean isInterfaceMigrationAvailable(IMethod method, boolean allowConcreteClasses,
@@ -71,6 +77,11 @@ public final class RefactoringAvailabilityTester {
 		return true;
 	}
 
+	public static boolean isInterfaceMigrationAvailable(IMethod method, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		return isInterfaceMigrationAvailable(method, true, monitor);
+	}
+
 	public static boolean isInterfaceMigrationAvailable(IMethod[] methods, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		if (methods != null && methods.length != 0) {
@@ -90,19 +101,7 @@ public final class RefactoringAvailabilityTester {
 		return false;
 	}
 
-	public static IMethod[] getMigratableSkeletalImplementations(final IType type, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		List<IMethod> ret = new ArrayList<>();
-
-		if (type.exists()) {
-			IMethod[] methodsOfType = type.getMethods();
-			for (IMethod method : methodsOfType) {
-				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor))
-					ret.add(method);
-			}
-		}
-
-		return ret.toArray(new IMethod[ret.size()]);
+	private RefactoringAvailabilityTester() {
 	}
 
 }

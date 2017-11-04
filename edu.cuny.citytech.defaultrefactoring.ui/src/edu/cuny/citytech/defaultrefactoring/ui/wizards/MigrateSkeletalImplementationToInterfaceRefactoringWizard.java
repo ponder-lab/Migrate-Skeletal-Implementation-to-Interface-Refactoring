@@ -40,22 +40,6 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
  */
 public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends RefactoringWizard {
 
-	public MigrateSkeletalImplementationToInterfaceRefactoringWizard(Refactoring refactoring) {
-		super(refactoring,
-				RefactoringWizard.DIALOG_BASED_USER_INTERFACE & RefactoringWizard.CHECK_INITIAL_CONDITIONS_ON_OPEN);
-		this.setWindowTitle(Messages.Name);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.ltk.ui.refactoring.RefactoringWizard#addUserInputPages()
-	 */
-	@Override
-	protected void addUserInputPages() {
-		addPage(new MigrateSkeletalImplementationToInterfaceInputPage());
-	}
-
 	private static class MigrateSkeletalImplementationToInterfaceInputPage extends UserInputWizardPage {
 
 		public static final String PAGE_NAME = "MigrateSkeletalImplementationToInterfaceInputPage"; //$NON-NLS-1$
@@ -125,20 +109,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends R
 					"migrate_skeletal_implementation_to_interface_wizard_page_context");
 		}
 
-		private void setDeprecateEmptyDeclaringTypes(boolean selection) {
-			settings.put(DEPRECATE_EMPTY_DECLARING_TYPES, selection);
-			this.processor.setDeprecateEmptyDeclaringTypes(selection);
-		}
-
-		private void setConsiderNonstandardAnnotationDifferences(boolean selection) {
-			settings.put(CONSIDER_NONSTANDARD_ANNOTATION_DIFFERENCES, selection);
-			processor.setConsiderNonstandardAnnotationDifferences(selection);
-		}
-
-		private void updateStatus() {
-			setPageComplete(true);
-		}
-
 		private void loadSettings() {
 			settings = getDialogSettings().getSection(DIALOG_SETTING_SECTION);
 			if (settings == null) {
@@ -151,6 +121,20 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends R
 					settings.getBoolean(CONSIDER_NONSTANDARD_ANNOTATION_DIFFERENCES));
 		}
 
+		private void setConsiderNonstandardAnnotationDifferences(boolean selection) {
+			settings.put(CONSIDER_NONSTANDARD_ANNOTATION_DIFFERENCES, selection);
+			processor.setConsiderNonstandardAnnotationDifferences(selection);
+		}
+
+		private void setDeprecateEmptyDeclaringTypes(boolean selection) {
+			settings.put(DEPRECATE_EMPTY_DECLARING_TYPES, selection);
+			this.processor.setDeprecateEmptyDeclaringTypes(selection);
+		}
+
+		private void updateStatus() {
+			setPageComplete(true);
+		}
+
 	}
 
 	public static void startRefactoring(IMethod[] methods, Shell shell, Optional<IProgressMonitor> monitor)
@@ -161,5 +145,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringWizard extends R
 
 		new RefactoringStarter().activate(wizard, shell, RefactoringMessages.OpenRefactoringWizardAction_refactoring,
 				RefactoringSaveHelper.SAVE_REFACTORING);
+	}
+
+	public MigrateSkeletalImplementationToInterfaceRefactoringWizard(Refactoring refactoring) {
+		super(refactoring,
+				RefactoringWizard.DIALOG_BASED_USER_INTERFACE & RefactoringWizard.CHECK_INITIAL_CONDITIONS_ON_OPEN);
+		this.setWindowTitle(Messages.Name);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.eclipse.ltk.ui.refactoring.RefactoringWizard#addUserInputPages()
+	 */
+	@Override
+	protected void addUserInputPages() {
+		addPage(new MigrateSkeletalImplementationToInterfaceInputPage());
 	}
 }

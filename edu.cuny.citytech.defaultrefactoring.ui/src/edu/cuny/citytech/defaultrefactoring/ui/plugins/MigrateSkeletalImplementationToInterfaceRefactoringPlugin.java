@@ -13,6 +13,17 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringPlugin extends R
 		return plugin;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#
+	 * getRefactoringId()
+	 */
+	@Override
+	protected String getRefactoringId() {
+		return MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID;
+	}
+
 	@Override
 	public void start(BundleContext context) throws Exception {
 		plugin = this;
@@ -23,16 +34,5 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringPlugin extends R
 	public void stop(BundleContext context) throws Exception {
 		plugin = null;
 		super.stop(context);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#
-	 * getRefactoringId()
-	 */
-	@Override
-	protected String getRefactoringId() {
-		return MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID;
 	}
 }
