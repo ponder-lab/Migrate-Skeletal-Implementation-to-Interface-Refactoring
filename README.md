@@ -26,6 +26,8 @@ Currently, the prototype refactoring works only via the package explorer and the
 
 A beta version of our tool is available via an Eclipse update site at: https://raw.githubusercontent.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/edu.cuny.citytech.defaultrefactoring.updatesite. Please choose the latest version.
 
+You may also install the tool via the [Eclipse Marketplace](https://marketplace.eclipse.org/content/migrate-skeletal-implementation-interface-refactoring): [![Drag to your running Eclipse* workspace. *Requires Eclipse Marketplace Client](https://marketplace.eclipse.org/sites/all/themes/solstice/public/images/marketplace/btn-install.png)](http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=3746776 "Drag to your running Eclipse* workspace. *Requires Eclipse Marketplace Client").
+
 ### Limitations
 
 The research prototype refactoring is conservative. While tool should not produce any type-incorrect or semantic-inequivalent code, it may not refactor *all* code that may be safe to refactor.
