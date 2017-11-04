@@ -35,6 +35,7 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 
 import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
 
+@SuppressWarnings("restriction")
 final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 	/**
 	 *
@@ -77,6 +78,7 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 		return calledProtectedObjectMethodSet;
 	}
 
+	@SuppressWarnings("restriction")
 	private void process(ASTNode node, ThisExpression thisExpression) {
 		switch (node.getNodeType()) {
 		case ASTNode.METHOD_INVOCATION:

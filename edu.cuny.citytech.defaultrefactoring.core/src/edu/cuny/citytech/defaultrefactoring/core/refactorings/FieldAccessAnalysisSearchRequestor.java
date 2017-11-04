@@ -14,6 +14,7 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 
+@SuppressWarnings("restriction")
 final class FieldAccessAnalysisSearchRequestor extends SearchRequestor {
 	/**
 	 *
@@ -29,6 +30,7 @@ final class FieldAccessAnalysisSearchRequestor extends SearchRequestor {
 		this.monitor = monitor;
 	}
 
+	@SuppressWarnings("restriction")
 	@Override
 	public void acceptSearchMatch(SearchMatch match) throws CoreException {
 		if (match.isInsideDocComment())
