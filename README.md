@@ -1,6 +1,6 @@
 # Migrate Skeletal Implementation to Interface Refactoring 
 
-[![Build Status](https://travis-ci.org/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring.svg?branch=master)](https://travis-ci.org/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring) [![Coverage Status](https://coveralls.io/repos/github/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/badge.svg?branch=master&service=github)](https://coveralls.io/github/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring?branch=master) [![GitHub license](https://img.shields.io/badge/license-Eclipse-blue.svg)](https://raw.githubusercontent.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/LICENSE.txt)
+[![Build Status](https://travis-ci.org/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring.svg?branch=master)](https://travis-ci.org/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring) [![Coverage Status](https://coveralls.io/repos/github/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/badge.svg?branch=master&service=github)](https://coveralls.io/github/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring?branch=master) [![GitHub license](https://img.shields.io/badge/license-Eclipse-blue.svg)](https://raw.githubusercontent.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/LICENSE.txt)
 
 ## Screenshot
 
@@ -20,11 +20,11 @@ This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents 
 
 ## Usage
 
-Currently, the prototype refactoring works only via the package explorer and the outline views (see issues [#2](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/2) and [#65](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
+Currently, the prototype refactoring works only via the package explorer and the outline views (see issues [#2](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/2) and [#65](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
 
 ### Installation for Usage
 
-A beta version of our tool is available via an Eclipse update site at: https://raw.githubusercontent.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/edu.cuny.citytech.defaultrefactoring.updatesite. Please choose the latest version.
+A beta version of our tool is available via an Eclipse update site at: https://raw.githubusercontent.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/edu.cuny.citytech.defaultrefactoring.updatesite. Please choose the latest version.
 
 You may also install the tool via the [Eclipse Marketplace](https://marketplace.eclipse.org/content/migrate-skeletal-implementation-interface-refactoring) by dragging this icon to your running Eclipse workspace: [![Drag to your running Eclipse* workspace. *Requires Eclipse Marketplace Client](https://marketplace.eclipse.org/sites/all/themes/solstice/public/images/marketplace/btn-install.png)](http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=3746776 "Drag to your running Eclipse* workspace. *Requires Eclipse Marketplace Client").
 
@@ -34,11 +34,11 @@ The research prototype refactoring is conservative. While tool should not produc
 
 ## Contributing
 
-We are currently seeking new collaborations. If you are interested in contributing, please see refer to our [wiki](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/wiki) and [issues](https://github.com/khatchad/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues). Please also feel free to visit our [research page](https://openlab.citytech.cuny.edu/interfacerefactoring) to get in touch with the authors.
+We are currently seeking new collaborations. If you are interested in contributing, please see refer to our [wiki](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/wiki) and [issues](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues). Please also feel free to visit our [research page](https://openlab.citytech.cuny.edu/interfacerefactoring) to get in touch with the authors.
 
 ### Installation for Development
 
-The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on [edu.cuny.citytech.refactoring.common](/khatchad/edu.cuny.citytech.refactoring.common), the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. The latter three can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
+The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on [edu.cuny.citytech.refactoring.common](/ponder-lab/edu.cuny.citytech.refactoring.common), the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. The latter three can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
 
 ### Running the Evaluator
 
