@@ -31,11 +31,18 @@ import edu.cuny.citytech.defaultrefactoring.eval.utils.Util;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
- * 
+ *
  * @see org.eclipse.core.commands.IHandler
  * @see org.eclipse.core.commands.AbstractHandler
  */
 public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler {
+
+	private static void writeType(CSVPrinter typesPrinter, IType type) throws IOException {
+		typesPrinter.printRecord(
+				Optional.ofNullable(type.getJavaProject()).map(IJavaElement::getElementName).orElse("NULL"),
+				Optional.ofNullable(type.getCompilationUnit()).map(IJavaElement::getElementName).orElse("NULL"),
+				type.getFullyQualifiedName());
+	}
 
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -89,8 +96,7 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 
 								// loop through all methods in the type.
 								IMethod[] methods = type.getMethods();
-								for (int x = 0; x < methods.length; x++) {
-									IMethod method = methods[x];
+								for (IMethod method : methods) {
 									String methodIdentifier = Util.getMethodIdentifier(method);
 									metPrinter.printRecord(methodIdentifier, type.getFullyQualifiedName());
 								}
@@ -102,9 +108,8 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 									classesPrinter.printRecord(type.getFullyQualifiedName());
 
 									// checking if the class is abstract
-									if (Flags.isAbstract(type.getFlags())) {
+									if (Flags.isAbstract(type.getFlags()))
 										abstractClassesPrinter.printRecord(type.getFullyQualifiedName());
-									}
 
 								}
 
@@ -128,13 +133,11 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 								IType[] allSuperInterfaces = typeHierarchy.getAllSuperInterfaces(type);
 
 								// getting all the interface full qualified name
-								if (type.isInterface()) {
+								if (type.isInterface())
 									// write this interface.
 									interfacesPrinter.printRecord(type.getFullyQualifiedName());
 
-								}
-
-								if (type.isClass() && !(type.isEnum()) && allSuperInterfaces.length >= 1) {
+								if (type.isClass() && !(type.isEnum()) && allSuperInterfaces.length >= 1)
 									for (IType superInterface : allSuperInterfaces) {
 										writeType(typesPrinter, superInterface);
 
@@ -144,7 +147,6 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 												superInterface.getFullyQualifiedName());
 
 									}
-								}
 							}
 						}
 					}
@@ -164,12 +166,5 @@ public class FindCandidateSkeletalImplementationsHandler extends AbstractHandler
 			return new Status(IStatus.OK, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(), "Success.");
 		}).schedule();
 		return null;
-	}
-
-	private static void writeType(CSVPrinter typesPrinter, IType type) throws IOException {
-		typesPrinter.printRecord(
-				Optional.ofNullable(type.getJavaProject()).map(IJavaElement::getElementName).orElse("NULL"),
-				Optional.ofNullable(type.getCompilationUnit()).map(IJavaElement::getElementName).orElse("NULL"),
-				type.getFullyQualifiedName());
 	}
 }

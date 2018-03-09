@@ -26,12 +26,18 @@ import edu.cuny.citytech.defaultrefactoring.core.refactorings.MigrateSkeletalImp
 @SuppressWarnings("restriction")
 public final class RefactoringAvailabilityTester {
 
-	private RefactoringAvailabilityTester() {
-	}
-
-	public static boolean isInterfaceMigrationAvailable(IMethod method, Optional<IProgressMonitor> monitor)
+	public static IMethod[] getMigratableSkeletalImplementations(final IType type, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
-		return isInterfaceMigrationAvailable(method, true, monitor);
+		List<IMethod> ret = new ArrayList<>();
+
+		if (type.exists()) {
+			IMethod[] methodsOfType = type.getMethods();
+			for (IMethod method : methodsOfType)
+				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor))
+					ret.add(method);
+		}
+
+		return ret.toArray(new IMethod[ret.size()]);
 	}
 
 	public static boolean isInterfaceMigrationAvailable(IMethod method, boolean allowConcreteClasses,
@@ -56,12 +62,11 @@ public final class RefactoringAvailabilityTester {
 			return false;
 
 		final IType declaring = method.getDeclaringType();
-		if (declaring != null) {
+		if (declaring != null)
 			if (declaring.isInterface())
 				return false; // Method is already in an interface
 			else if (!allowConcreteClasses && !Flags.isAbstract(declaring.getFlags()))
 				return false; // no concrete types allowed.
-		}
 
 		// ensure that there is a target method.
 		IMethod targetMethod = MigrateSkeletalImplementationToInterfaceRefactoringProcessor.getTargetMethod(method,
@@ -70,6 +75,11 @@ public final class RefactoringAvailabilityTester {
 			return false;
 
 		return true;
+	}
+
+	public static boolean isInterfaceMigrationAvailable(IMethod method, Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
+		return isInterfaceMigrationAvailable(method, true, monitor);
 	}
 
 	public static boolean isInterfaceMigrationAvailable(IMethod[] methods, Optional<IProgressMonitor> monitor)
@@ -91,20 +101,7 @@ public final class RefactoringAvailabilityTester {
 		return false;
 	}
 
-	public static IMethod[] getMigratableSkeletalImplementations(final IType type, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		List<IMethod> ret = new ArrayList<>();
-
-		if (type.exists()) {
-			IMethod[] methodsOfType = type.getMethods();
-			for (int i = 0; i < methodsOfType.length; i++) {
-				IMethod method = methodsOfType[i];
-				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor))
-					ret.add(method);
-			}
-		}
-
-		return ret.toArray(new IMethod[ret.size()]);
+	private RefactoringAvailabilityTester() {
 	}
 
 }

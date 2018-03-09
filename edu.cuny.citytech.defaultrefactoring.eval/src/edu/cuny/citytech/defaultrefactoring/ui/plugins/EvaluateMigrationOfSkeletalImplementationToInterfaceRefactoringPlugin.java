@@ -4,9 +4,9 @@ import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
 
 public class EvaluateMigrationOfSkeletalImplementationToInterfaceRefactoringPlugin extends Plugin {
-	
+
 	private static EvaluateMigrationOfSkeletalImplementationToInterfaceRefactoringPlugin plugin;
-	
+
 	public static Plugin getDefault() {
 		return plugin;
 	}
