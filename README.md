@@ -22,7 +22,7 @@ This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents 
 
 Currently, the prototype refactoring works only via the package explorer and the outline views (see issues [#2](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/2) and [#65](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
 
-### Installation for Usage
+### Installation
 
 A beta version of our tool is available via an Eclipse update site at: https://raw.githubusercontent.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/edu.cuny.citytech.defaultrefactoring.updatesite. Please choose the latest version.
 
