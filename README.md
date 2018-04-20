@@ -31,3 +31,15 @@ You may also install the tool via the [Eclipse Marketplace](https://marketplace.
 ### Limitations
 
 The research prototype refactoring is conservative. While tool should not produce any type-incorrect or semantic-inequivalent code, it may not refactor *all* code that may be safe to refactor.
+
+## Contributing
+
+See the [contribution guide](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/blob/master/CONTRIBUTING.md).
+
+## Publications
+
+Raffi Khatchadourian and Hidehiko Masuhara. Proactive empirical assessment of new language feature adoption via automated refactoring: The case of Java 8 default methods. In *International Conference on the Art, Science, and Engineering of Programming*, volume 2 of *Programming '18*, pages 6:1--6:30. AOSA, March 2018. \[ [bib](http://www.cs.hunter.cuny.edu/~Raffi.Khatchadourian99/all_bib.html#Khatchadourian2018) | [DOI](http://dx.doi.org/10.22152/programming-journal.org/2018/2/6) | [http](https://academicworks.cuny.edu/hc_pubs/354) \]
+
+Raffi Khatchadourian and Hidehiko Masuhara. Defaultification refactoring: A tool for automatically converting Java methods to default. In *International Conference on Automated Software Engineering*, ASE '17, pages 984--989, Piscataway, NJ, USA, October 2017. ACM/IEEE, IEEE Press. \[ [bib](http://www.cs.hunter.cuny.edu/~Raffi.Khatchadourian99/all_bib.html#Khatchadourian2017b) | [DOI](http://dx.doi.org/10.1109/ASE.2017.8115716) | [http](http://academicworks.cuny.edu/hc_pubs/329) \]
+
+Raffi Khatchadourian and Hidehiko Masuhara. Automated refactoring of legacy Java software to default methods. In *International Conference on Software Engineering*, ICSE '17, pages 82--93, Piscataway, NJ, USA, May 2017. ACM/IEEE, IEEE Press. \[ [bib](http://www.cs.hunter.cuny.edu/~Raffi.Khatchadourian99/all_bib.html#Khatchadourian2017a) | [DOI](http://dx.doi.org/10.1109/ICSE.2017.16) | [http](http://academicworks.cuny.edu/hc_pubs/287) \]
