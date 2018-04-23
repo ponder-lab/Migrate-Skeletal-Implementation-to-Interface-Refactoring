@@ -22,7 +22,7 @@ This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents 
 
 Currently, the prototype refactoring works only via the package explorer and the outline views (see issues [#2](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/2) and [#65](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues/65)). You can either select a single method to migrate or select a class, package, or (multiple) projects. In the latter case, the tool will find methods in the enclosing item(s) that are eligible for migration.
 
-### Installation for Usage
+### Installation
 
 A beta version of our tool is available via an Eclipse update site at: https://raw.githubusercontent.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/edu.cuny.citytech.defaultrefactoring.updatesite. Please choose the latest version.
 
@@ -34,19 +34,12 @@ The research prototype refactoring is conservative. While tool should not produc
 
 ## Contributing
 
-We are currently seeking new collaborations. If you are interested in contributing, please see refer to our [wiki](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/wiki) and [issues](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/issues). Please also feel free to visit our [research page](https://openlab.citytech.cuny.edu/interfacerefactoring) to get in touch with the authors.
+See the [contribution guide](https://github.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/blob/master/CONTRIBUTING.md).
 
-### Installation for Development
+## Publications
 
-The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on [edu.cuny.citytech.refactoring.common](/ponder-lab/edu.cuny.citytech.refactoring.common), the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. The latter three can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
+Raffi Khatchadourian and Hidehiko Masuhara. Proactive empirical assessment of new language feature adoption via automated refactoring: The case of Java 8 default methods. In *International Conference on the Art, Science, and Engineering of Programming*, volume 2 of *Programming '18*, pages 6:1--6:30. AOSA, March 2018. \[ [bib](http://www.cs.hunter.cuny.edu/~Raffi.Khatchadourian99/all_bib.html#Khatchadourian2018) | [DOI](http://dx.doi.org/10.22152/programming-journal.org/2018/2/6) | [http](https://academicworks.cuny.edu/hc_pubs/354) \]
 
-### Running the Evaluator
+Raffi Khatchadourian and Hidehiko Masuhara. Defaultification refactoring: A tool for automatically converting Java methods to default. In *International Conference on Automated Software Engineering*, ASE '17, pages 984--989, Piscataway, NJ, USA, October 2017. ACM/IEEE, IEEE Press. \[ [bib](http://www.cs.hunter.cuny.edu/~Raffi.Khatchadourian99/all_bib.html#Khatchadourian2017b) | [DOI](http://dx.doi.org/10.1109/ASE.2017.8115716) | [http](http://academicworks.cuny.edu/hc_pubs/329) \]
 
-The plug-in edu.cuny.citytech.defaultrefactoring.eval is the evaluation plug-in. Note that it is not included in the standard update site as that it user focused. To run the evaluator, clone the repository and build and run the plug-in from within Eclipse. This will load the plug-in edu.cuny.citytech.defaultrefactoring.eval (verify in "installation details.").
-
-There is no UI menu options for the evaluator, however, there is an Eclipse command, which is available from the quick execution dialog in Eclipse. Please follow these steps:
-
-1. Select a group of projects.
-2. Press CMD-3 or CTRL-3 (command dialog).
-3. Search for "evaluate." You'll see an option to run the migration evaluator. Choose it.
-4. Once the evaluator completes, a set of `.csv` files will appear in the working directory.
+Raffi Khatchadourian and Hidehiko Masuhara. Automated refactoring of legacy Java software to default methods. In *International Conference on Software Engineering*, ICSE '17, pages 82--93, Piscataway, NJ, USA, May 2017. ACM/IEEE, IEEE Press. \[ [bib](http://www.cs.hunter.cuny.edu/~Raffi.Khatchadourian99/all_bib.html#Khatchadourian2017a) | [DOI](http://dx.doi.org/10.1109/ICSE.2017.16) | [http](http://academicworks.cuny.edu/hc_pubs/287) \]
