@@ -1,6 +1,6 @@
 # Migrate Skeletal Implementation to Interface Refactoring 
 
-[![Build Status](https://travis-ci.org/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring.svg?branch=master)](https://travis-ci.org/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring) [![Coverage Status](https://coveralls.io/repos/github/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/badge.svg?branch=master&service=github)](https://coveralls.io/github/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring?branch=master) [![GitHub license](https://img.shields.io/badge/license-Eclipse-blue.svg)](https://raw.githubusercontent.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/LICENSE.txt)
+[![Build Status](https://travis-ci.org/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring.svg?branch=master)](https://travis-ci.org/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring) [![Coverage Status](https://coveralls.io/repos/github/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/badge.svg?branch=master&service=github)](https://coveralls.io/github/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring?branch=master) [![GitHub license](https://img.shields.io/badge/license-Eclipse-blue.svg)](https://raw.githubusercontent.com/ponder-lab/Migrate-Skeletal-Implementation-to-Interface-Refactoring/master/LICENSE.txt) [![DOI](https://zenodo.org/badge/33016251.svg)](https://zenodo.org/badge/latestdoi/33016251)
 
 ## Screenshot
 
