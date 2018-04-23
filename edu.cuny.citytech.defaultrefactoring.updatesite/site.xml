@@ -5,5 +5,5 @@
 
 This prototype refactoring plug-in for Eclipse represents ongoing work in developing an automated refactoring tool that would assist developers in taking advantage of the enhanced interface feature for their legacy Java software.
    </description>
-   <feature url="features/edu.cuny.citytech.migrate.skeletal.implementation.to.interface.refactoring_0.6.0.201711031958.jar" id="edu.cuny.citytech.migrate.skeletal.implementation.to.interface.refactoring" version="0.6.0.201711031958"/>
+   <feature url="features/edu.cuny.citytech.migrate.skeletal.implementation.to.interface.refactoring_0.7.0.201804231317.jar" id="edu.cuny.citytech.migrate.skeletal.implementation.to.interface.refactoring" version="0.7.0.201804231317"/>
 </site>
