@@ -47,7 +47,7 @@
                 <jacocoReports>
                   <jacocoReport>${project.basedir}/edu.cuny.citytech.defaultrefactoring.tests.report/target/site/jacoco-aggregate/jacoco.xml</jacocoReport>
                 </jacocoReports>
-                <repoToken>zJBWavW3r1LxdIatevcOhLLJoLUQLsObF</repoToken>
+                <repoToken>ppoTCM1j8g3W7nPrbCQp2VUveznGPJ1Go</repoToken>
               </configuration>
             </plugin>
           </plugins>
