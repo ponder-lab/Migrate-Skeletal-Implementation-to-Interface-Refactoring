@@ -4,7 +4,7 @@
   <parent>
     <groupId>edu.cuny.citytech.defaultrefactoring</groupId>
     <artifactId>parent</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>edu.cuny.citytech.defaultrefactoring.tests.report</artifactId>
