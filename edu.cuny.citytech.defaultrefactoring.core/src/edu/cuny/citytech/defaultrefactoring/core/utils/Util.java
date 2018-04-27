@@ -47,7 +47,7 @@ public final class Util {
 
 	public static ProcessorBasedRefactoring createRefactoring(IJavaProject project, IMethod[] methods,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor = createMigrateSkeletalImplementationToInterfaceRefactoringProcessor(
+		edu.cuny.citytech.refactoring.common.core.RefactoringProcessor processor = createMigrateSkeletalImplementationToInterfaceRefactoringProcessor(
 				project, methods, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}

@@ -34,13 +34,14 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 
 import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
+import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
 
 @SuppressWarnings("restriction")
 final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 	/**
 	 *
 	 */
-	private final MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor;
+	private final RefactoringProcessor processor;
 	private Set<IMethod> calledProtectedObjectMethodSet = new HashSet<>();
 	private boolean methodContainsCallToProtectedObjectMethod;
 	private boolean methodContainsQualifiedThisExpression;
@@ -50,7 +51,7 @@ final class SourceMethodBodyAnalysisVisitor extends ASTVisitor {
 	private IMethod sourceMethod;
 
 	public SourceMethodBodyAnalysisVisitor(
-			MigrateSkeletalImplementationToInterfaceRefactoringProcessor migrateSkeletalImplementationToInterfaceRefactoringProcessor,
+			RefactoringProcessor migrateSkeletalImplementationToInterfaceRefactoringProcessor,
 			IMethod sourceMethod, Optional<IProgressMonitor> monitor) {
 		super(false);
 		processor = migrateSkeletalImplementationToInterfaceRefactoringProcessor;

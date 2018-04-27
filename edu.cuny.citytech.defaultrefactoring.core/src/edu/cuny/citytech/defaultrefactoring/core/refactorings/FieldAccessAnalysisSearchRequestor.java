@@ -14,17 +14,19 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 
+import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
+
 @SuppressWarnings("restriction")
 final class FieldAccessAnalysisSearchRequestor extends SearchRequestor {
 	/**
 	 *
 	 */
-	private final MigrateSkeletalImplementationToInterfaceRefactoringProcessor processor;
+	private final RefactoringProcessor processor;
 	private boolean accessesFieldsFromImplicitParameter;
 	private final Optional<IProgressMonitor> monitor;
 
 	FieldAccessAnalysisSearchRequestor(
-			MigrateSkeletalImplementationToInterfaceRefactoringProcessor migrateSkeletalImplementationToInterfaceRefactoringProcessor,
+			RefactoringProcessor migrateSkeletalImplementationToInterfaceRefactoringProcessor,
 			Optional<IProgressMonitor> monitor) {
 		processor = migrateSkeletalImplementationToInterfaceRefactoringProcessor;
 		this.monitor = monitor;

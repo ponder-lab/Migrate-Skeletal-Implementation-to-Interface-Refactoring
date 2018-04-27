@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -75,7 +74,6 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ITrackedNodePosition;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
-import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -95,7 +93,6 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor.
 import org.eclipse.jdt.internal.corext.refactoring.structure.ImportRewriteUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ReferenceFinderUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.TypeVariableMaplet;
-import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
@@ -115,9 +112,6 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
-import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
-import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
-import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 import org.osgi.framework.FrameworkUtil;
@@ -129,9 +123,9 @@ import edu.cuny.citytech.defaultrefactoring.core.descriptors.MigrateSkeletalImpl
 import edu.cuny.citytech.defaultrefactoring.core.messages.Messages;
 import edu.cuny.citytech.defaultrefactoring.core.messages.PreconditionFailure;
 import edu.cuny.citytech.defaultrefactoring.core.utils.RefactoringAvailabilityTester;
-import edu.cuny.citytech.defaultrefactoring.core.utils.TimeCollector;
 import edu.cuny.citytech.defaultrefactoring.core.utils.TypeVariableUtil;
 import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
+import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -139,16 +133,10 @@ import edu.cuny.citytech.defaultrefactoring.core.utils.Util;
  * @author <a href="mailto:rkhatchadourian@citytech.cuny.edu">Raffi
  *         Khatchadourian</a>
  */
-@SuppressWarnings({ "restriction" })
+@SuppressWarnings({ "restriction", "deprecation" })
 public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extends RefactoringProcessor {
 
 	private static final String FUNCTIONAL_INTERFACE_ANNOTATION_NAME = "FunctionalInterface";
-
-	/**
-	 * The minimum logging level, one of the constants in
-	 * org.eclipse.core.runtime.IStatus.
-	 */
-	private static int loggingLevel = IStatus.WARNING;
 
 	private static Table<IMethod, IType, IMethod> methodTargetInterfaceTargetMethodTable = HashBasedTable.create();
 
@@ -221,12 +209,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return createRefactoringStatus(message, member, RefactoringStatus::createFatalErrorStatus);
 	}
 
-	private static RefactoringStatus createRefactoringStatus(String message, IMember member,
-			BiFunction<String, RefactoringStatusContext, RefactoringStatus> function) {
-		String elementName = getElementLabel(member, ALL_FULLY_QUALIFIED);
-		return function.apply(MessageFormat.format(message, elementName), JavaStatusContext.create(member));
-	}
-
 	private static RefactoringStatus createWarning(String message, IMember member) {
 		return createRefactoringStatus(message, member, RefactoringStatus::createWarningStatus);
 	}
@@ -288,15 +270,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	/**
 	 * Returns the possible target interfaces for the migration. NOTE: One
-	 * difference here between this refactoring and pull up is that we can have
-	 * a much more complex type hierarchy due to multiple interface inheritance
-	 * in Java.
+	 * difference here between this refactoring and pull up is that we can have a
+	 * much more complex type hierarchy due to multiple interface inheritance in
+	 * Java.
 	 * <p>
 	 * TODO: It should be possible to pull up a method into an interface (i.e.,
 	 * "Pull Up Method To Interface") that is not implemented explicitly. For
-	 * example, there may be a skeletal implementation class that implements all
-	 * the target interface's methods without explicitly declaring so.
-	 * Effectively skeletal?
+	 * example, there may be a skeletal implementation class that implements all the
+	 * target interface's methods without explicitly declaring so. Effectively
+	 * skeletal?
 	 *
 	 * @param monitor
 	 *            A progress monitor.
@@ -354,10 +336,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return status.getEntryAt(status.getEntries().length - 1);
 	}
 
-	protected static int getLoggingLevel() {
-		return loggingLevel;
-	}
-
 	private static Table<IMethod, IType, IMethod> getMethodTargetInterfaceTargetMethodTable() {
 		return methodTargetInterfaceTargetMethodTable;
 	}
@@ -367,9 +345,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	/**
-	 * Workaround
-	 * org.eclipse.jdt.core.ITypeHierarchy.getAllSuperInterfaces(IType) does not
-	 * seem to consider interface hierarchy
+	 * Workaround org.eclipse.jdt.core.ITypeHierarchy.getAllSuperInterfaces(IType)
+	 * does not seem to consider interface hierarchy
 	 * {@linkplain https://bugs.eclipse.org/bugs/show_bug.cgi?id=496503}.
 	 *
 	 * Returns the direct resolved interfaces that the given type implements or
@@ -384,9 +361,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	 *            The type hierarchy to search.
 	 * @param monitor
 	 *            An optional progress monitor.
-	 * @return the direct resolved interfaces that the given type implements
-	 *         and/or extends limited to the interfaces in this type hierarchy's
-	 *         graph.
+	 * @return the direct resolved interfaces that the given type implements and/or
+	 *         extends limited to the interfaces in this type hierarchy's graph.
 	 * @throws JavaModelException
 	 *             On a java model error.
 	 * @see org.eclipse.jdt.core.ITypeHierarchy#getSuperInterfaces(IType)
@@ -440,15 +416,14 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	/**
-	 * Finds the target (interface) method declaration in the destination
-	 * interface for the given source method.
+	 * Finds the target (interface) method declaration in the destination interface
+	 * for the given source method.
 	 *
-	 * TODO: Something is very wrong here. There can be multiple targets for a
-	 * given source method because it can be declared in multiple interfaces up
-	 * and down the hierarchy. What this method right now is really doing is
-	 * finding the target method for the given source method in the destination
-	 * interface. As such, we should be sure what the destination is prior to
-	 * this call.
+	 * TODO: Something is very wrong here. There can be multiple targets for a given
+	 * source method because it can be declared in multiple interfaces up and down
+	 * the hierarchy. What this method right now is really doing is finding the
+	 * target method for the given source method in the destination interface. As
+	 * such, we should be sure what the destination is prior to this call.
 	 *
 	 * @param sourceMethod
 	 *            The method that will be migrated to the target interface.
@@ -511,8 +486,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	/**
-	 * Returns true if the given type is a pure interface, i.e., it is an
-	 * interface but not an annotation.
+	 * Returns true if the given type is a pure interface, i.e., it is an interface
+	 * but not an annotation.
 	 *
 	 * @param type
 	 *            The type to check.
@@ -553,40 +528,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			return false;
 	}
 
-	/**
-	 * Minimum logging level. One of the constants in
-	 * org.eclipse.core.runtime.IStatus.
-	 *
-	 * @param level
-	 *            The minimum logging level to set.
-	 * @see org.eclipse.core.runtime.IStatus.
-	 */
-	public static void setLoggingLevel(int level) {
-		loggingLevel = level;
-	}
-
-	private Map<ICompilationUnit, CompilationUnitRewrite> compilationUnitToCompilationUnitRewriteMap = new HashMap<>();
-
 	private boolean considerNonstandardAnnotationDifferences = true;
 
 	private boolean deprecateEmptyDeclaringTypes;
 
-	/**
-	 * For excluding AST parse time.
-	 */
-	private TimeCollector excludedTimeCollector = new TimeCollector();
-
-	/** Does the refactoring use a working copy layer? */
-	private final boolean layer;
-
 	private SearchEngine searchEngine = new SearchEngine();
 
-	/** The code generation settings, or <code>null</code> */
-	private CodeGenerationSettings settings;
-
 	private Set<IMethod> sourceMethods = new LinkedHashSet<>();
-
-	private Map<ITypeRoot, CompilationUnit> typeRootToCompilationUnitMap = new HashMap<>();
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
@@ -732,9 +680,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			// NOTE: We are not creating stubs (for now).
 			// Related to https://bugs.eclipse.org/bugs/show_bug.cgi?id=495439.
 			/*
-			 * if (member instanceof IMethod) { final IMethod method = (IMethod)
-			 * member; final IMethod stub =
-			 * target.getMethod(method.getElementName(),
+			 * if (member instanceof IMethod) { final IMethod method = (IMethod) member;
+			 * final IMethod stub = target.getMethod(method.getElementName(),
 			 * method.getParameterTypes()); if (stub.exists()) return true; }
 			 */
 			if (member.getDeclaringType() == null) {
@@ -1068,8 +1015,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	/**
-	 * Annotations between source and target methods must be consistent. Related
-	 * to #45.
+	 * Annotations between source and target methods must be consistent. Related to
+	 * #45.
 	 *
 	 * @param sourceMethod
 	 *            The method to check annotations.
@@ -1110,22 +1057,21 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	/**
-	 * Checks the given class and its subclasses for any required
-	 * implementations of the source method. The required implementations are
-	 * deemed by the interfaces the given class implements.
+	 * Checks the given class and its subclasses for any required implementations of
+	 * the source method. The required implementations are deemed by the interfaces
+	 * the given class implements.
 	 *
 	 * @param sourceMethod
 	 *            The source method being migrated to an interface.
 	 * @param clazz
-	 *            The class to check for any missing needed implementations of
-	 *            the source method.
+	 *            The class to check for any missing needed implementations of the
+	 *            source method.
 	 * @param declaringTypeHierarchy
 	 *            Hierarchy of the source method's declaring type.
-	 * @return {@link RefactoringStatus} indicating the result of the
-	 *         precondition check.
+	 * @return {@link RefactoringStatus} indicating the result of the precondition
+	 *         check.
 	 * @throws JavaModelException
-	 *             When asserting that the given {@link IType} is indeed a
-	 *             class.
+	 *             When asserting that the given {@link IType} is indeed a class.
 	 */
 	private RefactoringStatus checkClassForMissingSourceMethodImplementation(IMethod sourceMethod, IType clazz,
 			ITypeHierarchy declaringTypeHierarchy, Optional<IProgressMonitor> monitor) throws JavaModelException {
@@ -1334,15 +1280,13 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	/**
-	 * #44: Ensure that exception types between the source and target methods
-	 * match.
+	 * #44: Ensure that exception types between the source and target methods match.
 	 *
 	 * @param sourceMethod
 	 *            The source method.
 	 * @return The corresponding {@link RefactoringStatus}.
 	 * @throws JavaModelException
-	 *             If there is trouble retrieving exception types from
-	 *             sourceMethod.
+	 *             If there is trouble retrieving exception types from sourceMethod.
 	 */
 	private RefactoringStatus checkExceptions(IMethod sourceMethod) throws JavaModelException {
 		RefactoringStatus status = new RefactoringStatus();
@@ -1361,12 +1305,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 
 		return status;
-	}
-
-	private RefactoringStatus checkExistence(IMember member, PreconditionFailure failure) {
-		if (member == null || !member.exists())
-			return createError(failure, member);
-		return new RefactoringStatus();
 	}
 
 	@Override
@@ -1504,14 +1442,10 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
 		try {
-			this.clearCaches();
-			this.getExcludedTimeCollector().clear();
-
-			if (this.getSourceMethods().isEmpty())
-				return RefactoringStatus.createFatalErrorStatus(Messages.MethodsNotSpecified);
-			else {
-				RefactoringStatus status = new RefactoringStatus();
-
+			RefactoringStatus status = super.checkInitialConditions(pm);
+			if (this.getSourceMethods().isEmpty()) {
+				status.merge(RefactoringStatus.createFatalErrorStatus(Messages.MethodsNotSpecified));
+			} else {
 				pm.beginTask(Messages.CheckingPreconditions, this.getSourceMethods().size());
 
 				for (IMethod sourceMethod : this.getSourceMethods()) {
@@ -1521,8 +1455,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 					pm.worked(1);
 				}
-				return status;
 			}
+			return status;
 		} catch (Exception e) {
 			JavaPlugin.log(e);
 			throw e;
@@ -1628,8 +1562,7 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 	}
 
 	/**
-	 * Check that return types are compatible between the source and target
-	 * methods.
+	 * Check that return types are compatible between the source and target methods.
 	 *
 	 * @param sourceMethod
 	 *            The method to check.
@@ -1848,14 +1781,15 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 			pm.ifPresent(IProgressMonitor::done);
 		}
 	}
-
-	private RefactoringStatus checkStructure(IMember member) throws JavaModelException {
-		if (!member.isStructureKnown())
-			return RefactoringStatus.createErrorStatus(
-					MessageFormat.format(Messages.CUContainsCompileErrors, getElementLabel(member, ALL_FULLY_QUALIFIED),
-							getElementLabel(member.getCompilationUnit(), ALL_FULLY_QUALIFIED)),
-					JavaStatusContext.create(member.getCompilationUnit()));
+	
+	protected RefactoringStatus checkExistence(IMember member, PreconditionFailure failure) {
+		if (member == null || !member.exists())
+			return createError(failure, member);
 		return new RefactoringStatus();
+	}
+
+	protected RefactoringStatus createError(PreconditionFailure failure, IMember member) {
+		return createRefactoringStatus(failure.getMessage(), member, RefactoringStatus::createErrorStatus);
 	}
 
 	private RefactoringStatus checkTargetMethods(Optional<IProgressMonitor> monitor) throws JavaModelException {
@@ -1960,11 +1894,11 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return new RefactoringStatus();
 	}
 
-	private void clearCaches() {
+	@Override
+	public void clearCaches() {
+		super.clearCaches();
 		getTypeToSuperTypeHierarchyMap().clear();
 		getMethodToTargetMethodMap().clear();
-		getTypeToTypeHierarchyMap().clear();
-		getCompilationUnitToCompilationUnitRewriteMap().clear();
 	}
 
 	private void convertToDefault(MethodDeclaration methodDeclaration, ASTRewrite rewrite) {
@@ -2128,10 +2062,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		}
 	}
 
-	private RefactoringStatus createError(PreconditionFailure failure, IMember member) {
-		return createRefactoringStatus(failure.getMessage(), member, RefactoringStatus::createErrorStatus);
-	}
-
 	private Map<IMethod, Set<IMethod>> createTargetMethodToMigratableSourceMethodsMap(
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		Map<IMethod, Set<IMethod>> ret = new LinkedHashMap<>();
@@ -2183,30 +2113,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private Set<String> getAnnotationElementNames(Set<IAnnotation> set) throws JavaModelException {
 		return set.parallelStream().map(IAnnotation::getElementName).collect(Collectors.toSet());
-	}
-
-	CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
-		CompilationUnit compilationUnit = this.typeRootToCompilationUnitMap.get(root);
-		if (compilationUnit == null) {
-			this.getExcludedTimeCollector().start();
-			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, true, pm);
-			this.getExcludedTimeCollector().stop();
-			this.typeRootToCompilationUnitMap.put(root, compilationUnit);
-		}
-		return compilationUnit;
-	}
-
-	private CompilationUnitRewrite getCompilationUnitRewrite(ICompilationUnit unit, CompilationUnit root) {
-		CompilationUnitRewrite rewrite = this.getCompilationUnitToCompilationUnitRewriteMap().get(unit);
-		if (rewrite == null) {
-			rewrite = new CompilationUnitRewrite(unit, root);
-			this.getCompilationUnitToCompilationUnitRewriteMap().put(unit, rewrite);
-		}
-		return rewrite;
-	}
-
-	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
-		return this.compilationUnitToCompilationUnitRewriteMap;
 	}
 
 	private Collection<? extends IMethod> getConstructorsReferencedIn(IJavaElement[] elements,
@@ -2319,10 +2225,6 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return getMigratableMethods().toArray();
 	}
 
-	public TimeCollector getExcludedTimeCollector() {
-		return excludedTimeCollector;
-	}
-
 	@Override
 	public String getIdentifier() {
 		return MigrateSkeletalImplementationToInterfaceRefactoringDescriptor.REFACTORING_ID;
@@ -2417,25 +2319,8 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 		return match;
 	}
 
-	@Override
-	public RefactoringParticipant[] loadParticipants(RefactoringStatus status, SharableParticipants sharedParticipants)
-			throws CoreException {
-		return new RefactoringParticipant[0];
-	}
-
 	private void logInfo(String message) {
 		log(IStatus.INFO, message);
-	}
-
-	private void manageCompilationUnit(final TextEditBasedChangeManager manager, CompilationUnitRewrite rewrite,
-			Optional<IProgressMonitor> monitor) throws CoreException {
-		monitor.ifPresent(m -> m.beginTask("Creating change ...", IProgressMonitor.UNKNOWN));
-		CompilationUnitChange change = rewrite.createChange(false, monitor.orElseGet(NullProgressMonitor::new));
-
-		if (change != null)
-			change.setTextType("java");
-
-		manager.manage(rewrite.getCu(), change);
 	}
 
 	private void mergeEquivalenceSets(Set<Set<IMethod>> equivalenceSets, Optional<IProgressMonitor> monitor)
@@ -2569,5 +2454,18 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringProcessor extend
 
 	private boolean typeArgumentsAreTypeVariables(ITypeBinding typeArgument, ITypeBinding otherTypeArgument) {
 		return typeArgument.isTypeVariable() && otherTypeArgument.isTypeVariable();
+	}
+
+	protected RefactoringStatus checkStructure(IMember member) throws JavaModelException {
+		return this.checkStructure(member, Messages.CUContainsCompileErrors);
+	}
+	
+	protected RefactoringStatus checkStructure(IMember member, String message) throws JavaModelException {
+		if (!member.isStructureKnown())
+			return RefactoringStatus.createErrorStatus(
+					MessageFormat.format(message, getElementLabel(member, ALL_FULLY_QUALIFIED),
+							getElementLabel(member.getCompilationUnit(), ALL_FULLY_QUALIFIED)),
+					JavaStatusContext.create(member.getCompilationUnit()));
+		return new RefactoringStatus();
 	}
 }
