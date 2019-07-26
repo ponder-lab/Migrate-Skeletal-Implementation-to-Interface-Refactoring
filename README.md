@@ -43,3 +43,27 @@ Raffi Khatchadourian and Hidehiko Masuhara. Proactive empirical assessment of ne
 Raffi Khatchadourian and Hidehiko Masuhara. Defaultification refactoring: A tool for automatically converting Java methods to default. In *International Conference on Automated Software Engineering*, ASE '17, pages 984--989, Piscataway, NJ, USA, October 2017. ACM/IEEE, IEEE Press. \[ [bib](http://www.cs.hunter.cuny.edu/~Raffi.Khatchadourian99/all_bib.html#Khatchadourian2017b) | [DOI](http://dx.doi.org/10.1109/ASE.2017.8115716) | [http](http://academicworks.cuny.edu/hc_pubs/329) \]
 
 Raffi Khatchadourian and Hidehiko Masuhara. Automated refactoring of legacy Java software to default methods. In *International Conference on Software Engineering*, ICSE '17, pages 82--93, Piscataway, NJ, USA, May 2017. ACM/IEEE, IEEE Press. \[ [bib](http://www.cs.hunter.cuny.edu/~Raffi.Khatchadourian99/all_bib.html#Khatchadourian2017a) | [DOI](http://dx.doi.org/10.1109/ICSE.2017.16) | [http](http://academicworks.cuny.edu/hc_pubs/287) \]
+
+## Citation
+
+Please cite this work as follows:
+
+```bibtex
+@inproceedings{Khatchadourian2017b,
+  author = {Khatchadourian, Raffi and Masuhara, Hidehiko},
+  title = {Defaultification Refactoring: A Tool for Automatically Converting {Java} Methods to Default},
+  booktitle = {International Conference on Automated Software Engineering},
+  year = {2017},
+  series = {ASE '17},
+  pages = {984--989},
+  address = {Piscataway, NJ, USA},
+  month = oct,
+  organization = {ACM/IEEE},
+  publisher = {IEEE Press},
+  isbn = {978-1-5386-2684-9},
+  acmid = {3155691},
+  doi = {10.1109/ASE.2017.8115716},
+  location = {Urbana-Champaign, IL, USA},
+  numpages = {6},
+}
+```
