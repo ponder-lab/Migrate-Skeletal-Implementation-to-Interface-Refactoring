@@ -11,10 +11,6 @@ cache:
     apt: true
     directories:
         - $HOME/.m2
-script: xvfb-run mvn install -Pjacoco coveralls:report
-before_install:
-  - sudo apt install -y xvfb
-  - "export DISPLAY=:99.0"
-addons:
-  apt:
-    update: true
+services:
+    - xvfb
+script: mvn clean verify -Pjacoco coveralls:report
