@@ -28,5 +28,4 @@ public class MigrateSkeletalImplementationToInterfaceRefactoringDescriptor exten
 			String comment, @SuppressWarnings("rawtypes") Map arguments, int flags) {
 		super(id, project, description, comment, arguments, flags);
 	}
-
 }
